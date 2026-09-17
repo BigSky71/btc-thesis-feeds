@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "feed_id": "funding_watch",
+  "as_of": "2026-09-16",
+  "overall_severity": "elevated",
+  "overall_detail": "MOVE on/above ~80 fragile line \u2014 plumbing accident residual live; size BTD cautiously",
+  "move": 80.73,
+  "move_as_of": "2026-09-16",
+  "move_recent_high_5d": 83.9,
+  "sofr_pct": 3.62,
+  "sofr_as_of": "2026-09-16",
+  "ust_2y_pct": 4.395,
+  "sofr_minus_2y_bp": -77.5,
+  "bills_share_pct": null,
+  "bills_share_corpus_pct": 22.2,
+  "bills_target_pct": 30.0,
+  "reserves_note": "Live reserves / RMP not wired in v1",
+  "thresholds": {
+    "move_calm_below": 70,
+    "move_watch_band": [
+      70,
+      80
+    ],
+    "move_fragile_at_or_above": 80,
+    "move_note": "Howell: normal MOVE ~50\u201390 centered near 70; thesis watch band 70\u201380; sustained \u226580 = collateral-multiplier / accident residual. Buybacks respond to vol/liquidity (\u2248$30B per +10 MOVE), not YCC. Each ~10pt MOVE fall \u2248 +$3tn GLI.",
+    "sofr_minus_2y_note": "Howell: primary warning = sharp downward lurch in SOFR\u22122y (no absolute cutoff in corpus). Secondary: SOFR/repo vs Fed funds \u2014 normally \u2272~2bp gap; cited stress example ~9bp above FF target. Chip flags narrowing toward 0 / positive as pressure; do not invent a hard SOFR\u22122y cut.",
+    "bills_target_pct": 30,
+    "bills_note": "3-3-3-30: bills \u2192 ~30% of outstanding debt. Corpus: 22.2% (Apr) / ~23% (11 Sep); 25% was end-2027 projection, not the target. Rising share = Treasury QE channel; stress = front-end indigestion (repo/SOFR), not the share alone.",
+    "move_normal_range": [
+      50,
+      90
+    ],
+    "move_calm_center": 70,
+    "sofr_vs_fed_funds_normal_bp": 2,
+    "sofr_vs_fed_funds_stress_example_bp": 9,
+    "reserves_note": "Ample reserves \u2260 easy funding (dealer BS scarce). Operate at/above 'adequate' (corpus markers historically ~$3.35T then revised ~$2.5T; actuals cited ~$3.1T). RMP was plumbing backstop after late-2025 QT/repo stress; Aug\u2013Sep pause was seasonal in Howell reading. Live series not wired in v1."
+  },
+  "flags": [
+    {
+      "id": "move",
+      "title": "MOVE",
+      "value": 80.73,
+      "unit": "index",
+      "as_of": "2026-09-16",
+      "detail": "80.7 \u00b7 fragile (\u226580 collateral-multiplier line)",
+      "severity": "elevated"
+    },
+    {
+      "id": "sofr",
+      "title": "SOFR",
+      "value": 3.62,
+      "unit": "pct",
+      "as_of": "2026-09-16",
+      "detail": "3.62% effective",
+      "severity": "neutral"
+    },
+    {
+      "id": "sofr_minus_2y",
+      "title": "SOFR \u2212 2y",
+      "value": -77.5,
+      "unit": "bp",
+      "as_of": "2026-09-16",
+      "detail": "-78bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
+      "severity": "neutral",
+      "components": {
+        "sofr_pct": 3.62,
+        "ust_2y_pct": 4.395,
+        "ust_2y_ticker": "2YY=F",
+        "ust_2y_as_of": "2026-09-16"
+      }
+    },
+    {
+      "id": "bills_share",
+      "title": "Bills / debt",
+      "value": null,
+      "unit": "pct_of_debt",
+      "as_of": null,
+      "corpus_value_pct": 22.2,
+      "target_pct": 30.0,
+      "detail": "~22.2% corpus \u00b7 climbing toward 30% \u00b7 live share not fetched",
+      "severity": "neutral"
+    },
+    {
+      "id": "reserves",
+      "title": "Reserves",
+      "value": null,
+      "unit": null,
+      "as_of": null,
+      "detail": "Stub \u2014 track vs 'adequate' + RMP on/off; no live series wired yet",
+      "severity": "neutral"
+    }
+  ],
+  "sources": {
+    "move": "Yahoo Finance chart ^MOVE",
+    "sofr": "NY Fed markets API secured/sofr",
+    "ust_2y": "Yahoo Finance 2YY=F",
+    "bills_share": "Capital Wars corpus until Treasury wired",
+    "framework": "Howell / Capital Wars Stealth Accord"
+  },
+  "source_urls": {
+    "move_yahoo": "https://finance.yahoo.com/quote/%5EMOVE",
+    "sofr_nyfed": "https://markets.newyorkfed.org/api/rates/secured/sofr/last/10.json"
+  },
+  "paths": {
+    "box_canonical": "/workspace/btc-thesis-dashboard/data/funding_watch.json",
+    "github_repo_relative": "data/funding_watch.json",
+    "feeds_repo_relative": "funding_watch.json"
+  },
+  "app_mapping": {
+    "soft_update_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/funding_watch.json",
+    "severity_enum": [
+      "neutral",
+      "soft",
+      "elevated"
+    ],
+    "chip_ids": [
+      "move",
+      "sofr_minus_2y",
+      "bills_share",
+      "reserves"
+    ]
+  },
+  "refreshed_at_utc": "2026-09-17T14:01:50.062990+00:00",
+  "notes": [
+    "Refreshed by refresh_funding_watch.py \u2014 do not invent prints.",
+    "Thresholds enriched from Howell corpus pass (MOVE 50\u201390/70, SOFR\u2013FF ~2bp/9bp stress example, reserves adequate markers)."
+  ]
+}

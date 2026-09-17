@@ -14,8 +14,9 @@ fetch weekday refreshes with no token.
 | `btd_watch.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/btd_watch.json |
 | `etf_watch.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/etf_watch.json |
 | `checkonchain_overlays.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/checkonchain_overlays.json |
+| `funding_watch.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/funding_watch.json |
 
 **Do not invent** ratios, ETF flows, or on-chain series. Refresh from CheckOnChain /
-scripts in the private dashboard repo, then copy these three files here and push.
+scripts in the private dashboard repo, then copy these files here and push (BTD, ETF, overlays, funding).
 
 Latest seed: as_of **2026-09-17**.
