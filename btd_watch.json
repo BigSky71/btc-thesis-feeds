@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "sth_mvrv": 1.072566,
+  "sth_sopr": 1.006493,
+  "sth_cost_basis": 71228.23,
+  "spot_ref": 76397.0,
+  "as_of": "2026-09-17",
+  "textbook_btd": false,
+  "approaching": false,
+  "approaching_thresholds": {
+    "sth_mvrv_soft": 1.05,
+    "sth_sopr_soft": 1.05,
+    "hard": 1.0,
+    "note": "textbook = both < 1.0; approaching = both soft (<1.05) or one hard + other soft, early-bull regime only"
+  },
+  "source": "charts-cdn.checkonchain.com",
+  "chart_urls": {
+    "sth_mvrv": "https://charts.checkonchain.com/btconchain/unrealised/sthmvrv_indicator/sthmvrv_indicator_light.html",
+    "sth_sopr": "https://charts.checkonchain.com/btconchain/realised/sthsopr_indicator/sthsopr_indicator_light.html",
+    "cdn_sth_mvrv": "https://charts-cdn.checkonchain.com/btconchain/unrealised/sthmvrv_indicator/sthmvrv_indicator_light.html",
+    "cdn_sth_sopr": "https://charts-cdn.checkonchain.com/btconchain/realised/sthsopr_indicator/sthsopr_indicator_light.html"
+  },
+  "paths": {
+    "box_canonical": "/workspace/btc-thesis-dashboard/data/btd_watch.json",
+    "github_repo_relative": "data/btd_watch.json",
+    "history_csv": "data/btd_watch_history.csv"
+  },
+  "refreshed_at_utc": "2026-09-17T12:12:39.396827+00:00"
+}
