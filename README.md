@@ -19,4 +19,4 @@ fetch weekday refreshes with no token.
 **Do not invent** ratios, ETF flows, or on-chain series. Refresh from CheckOnChain /
 scripts in the private dashboard repo, then copy these files here and push (BTD, ETF, overlays, funding).
 
-Latest seed: as_of **2026-09-17**.
+Latest seed: as_of **2026-09-19**.
