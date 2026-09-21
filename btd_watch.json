@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "sth_mvrv": 1.093006,
-  "sth_sopr": 1.006929,
-  "sth_cost_basis": 71330.21,
-  "spot_ref": 77964.33,
-  "as_of": "2026-09-18",
+  "sth_mvrv": 1.182824,
+  "sth_sopr": 1.013957,
+  "sth_cost_basis": 71733.73,
+  "spot_ref": 84848.4,
+  "as_of": "2026-09-21",
   "textbook_btd": false,
   "approaching": false,
   "approaching_thresholds": {
@@ -25,5 +25,5 @@
     "github_repo_relative": "data/btd_watch.json",
     "history_csv": "data/btd_watch_history.csv"
   },
-  "refreshed_at_utc": "2026-09-18T12:31:28.040807+00:00"
+  "refreshed_at_utc": "2026-09-21T12:23:20.352779+00:00"
 }
