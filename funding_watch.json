@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-09-18",
+  "as_of": "2026-09-21",
   "overall_severity": "elevated",
   "overall_detail": "MOVE on/above ~80 fragile line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 80.64,
-  "move_as_of": "2026-09-18",
-  "move_recent_high_5d": 83.9,
+  "move": 81.2,
+  "move_as_of": "2026-09-21",
+  "move_recent_high_5d": 83.71,
   "sofr_pct": 3.85,
-  "sofr_as_of": "2026-09-18",
-  "ust_2y_pct": 4.416,
-  "sofr_minus_2y_bp": -56.6,
+  "sofr_as_of": "2026-09-21",
+  "ust_2y_pct": 4.422,
+  "sofr_minus_2y_bp": -57.2,
   "bills_share_pct": null,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -31,10 +31,10 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 80.64,
+      "value": 81.2,
       "unit": "index",
-      "as_of": "2026-09-18",
-      "detail": "80.6 \u00b7 fragile (\u226580 collateral-multiplier line)",
+      "as_of": "2026-09-21",
+      "detail": "81.2 \u00b7 fragile (\u226580 collateral-multiplier line)",
       "severity": "elevated"
     },
     {
@@ -42,23 +42,23 @@
       "title": "SOFR",
       "value": 3.85,
       "unit": "pct",
-      "as_of": "2026-09-18",
+      "as_of": "2026-09-21",
       "detail": "3.85% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "SOFR \u2212 2y",
-      "value": -56.6,
+      "value": -57.2,
       "unit": "bp",
-      "as_of": "2026-09-18",
+      "as_of": "2026-09-21",
       "detail": "-57bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
         "sofr_pct": 3.85,
-        "ust_2y_pct": 4.416,
+        "ust_2y_pct": 4.422,
         "ust_2y_ticker": "2YY=F",
-        "ust_2y_as_of": "2026-09-18"
+        "ust_2y_as_of": "2026-09-21"
       }
     },
     {
@@ -112,7 +112,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-09-21T12:23:21.638242+00:00",
+  "refreshed_at_utc": "2026-09-22T12:05:40.625974+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
