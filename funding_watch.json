@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-09-23",
+  "as_of": "2026-09-24",
   "overall_severity": "elevated",
   "overall_detail": "MOVE on/above ~80 fragile line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 95.45,
-  "move_as_of": "2026-09-23",
-  "move_recent_high_5d": 95.45,
+  "move": 104.58,
+  "move_as_of": "2026-09-24",
+  "move_recent_high_5d": 104.58,
   "sofr_pct": 3.87,
   "sofr_as_of": "2026-09-23",
-  "ust_2y_pct": 4.448,
-  "sofr_minus_2y_bp": -57.8,
+  "ust_2y_pct": 4.472,
+  "sofr_minus_2y_bp": -60.2,
   "bills_share_pct": null,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -31,10 +31,10 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 95.45,
+      "value": 104.58,
       "unit": "index",
-      "as_of": "2026-09-23",
-      "detail": "95.4 \u00b7 fragile (\u226580 collateral-multiplier line)",
+      "as_of": "2026-09-24",
+      "detail": "104.6 \u00b7 fragile (\u226580 collateral-multiplier line)",
       "severity": "elevated"
     },
     {
@@ -49,16 +49,16 @@
     {
       "id": "sofr_minus_2y",
       "title": "SOFR \u2212 2y",
-      "value": -57.8,
+      "value": -60.2,
       "unit": "bp",
       "as_of": "2026-09-23",
-      "detail": "-58bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
+      "detail": "-60bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
         "sofr_pct": 3.87,
-        "ust_2y_pct": 4.448,
+        "ust_2y_pct": 4.472,
         "ust_2y_ticker": "2YY=F",
-        "ust_2y_as_of": "2026-09-23"
+        "ust_2y_as_of": "2026-09-24"
       }
     },
     {
@@ -112,7 +112,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-09-24T12:01:07.334379+00:00",
+  "refreshed_at_utc": "2026-09-25T11:50:51.908837+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
