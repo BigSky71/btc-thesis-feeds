@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "as_of": "2026-09-30",
-  "etf_net_flow_1w_usd": -51500000.0,
-  "etf_volume_1w_usd": 5933100703.31,
+  "as_of": "2026-10-01",
+  "etf_net_flow_1w_usd": 44200000.0,
+  "etf_volume_1w_usd": 7893617485.18,
   "source": "charts-cdn.checkonchain.com",
   "chart_urls": {
     "flows_1w": "https://charts.checkonchain.com/btconchain/etfs/etf_flows_1_1w/etf_flows_1_1w_light.html",
@@ -15,12 +15,12 @@
     "etf_volume_1w_usd": "Total Volume"
   },
   "as_of_by_metric": {
-    "etf_net_flow_1w_usd": "2026-09-30",
-    "etf_volume_1w_usd": "2026-09-30"
+    "etf_net_flow_1w_usd": "2026-10-01",
+    "etf_volume_1w_usd": "2026-10-01"
   },
   "paths": {
     "box_canonical": "/workspace/btc-thesis-dashboard/data/etf_watch.json",
     "github_repo_relative": "data/etf_watch.json"
   },
-  "refreshed_at_utc": "2026-10-01T11:52:51.614279+00:00"
+  "refreshed_at_utc": "2026-10-02T11:55:00.265455+00:00"
 }
