@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-10-01",
+  "as_of": "2026-10-02",
   "overall_severity": "elevated",
   "overall_detail": "MOVE on/above ~80 fragile line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 108.13,
-  "move_as_of": "2026-10-01",
+  "move": 107.29,
+  "move_as_of": "2026-10-02",
   "move_recent_high_5d": 110.45,
-  "sofr_pct": 3.9,
-  "sofr_as_of": "2026-09-30",
-  "ust_2y_pct": 4.61,
-  "sofr_minus_2y_bp": -71.0,
+  "sofr_pct": 3.87,
+  "sofr_as_of": "2026-10-01",
+  "ust_2y_pct": 4.635,
+  "sofr_minus_2y_bp": -76.5,
   "bills_share_pct": null,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -31,34 +31,34 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 108.13,
+      "value": 107.29,
       "unit": "index",
-      "as_of": "2026-10-01",
-      "detail": "108.1 \u00b7 fragile (\u226580 collateral-multiplier line)",
+      "as_of": "2026-10-02",
+      "detail": "107.3 \u00b7 fragile (\u226580 collateral-multiplier line)",
       "severity": "elevated"
     },
     {
       "id": "sofr",
       "title": "SOFR",
-      "value": 3.9,
+      "value": 3.87,
       "unit": "pct",
-      "as_of": "2026-09-30",
-      "detail": "3.90% effective",
+      "as_of": "2026-10-01",
+      "detail": "3.87% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "SOFR \u2212 2y",
-      "value": -71.0,
+      "value": -76.5,
       "unit": "bp",
-      "as_of": "2026-09-30",
-      "detail": "-71bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
+      "as_of": "2026-10-01",
+      "detail": "-76bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
-        "sofr_pct": 3.9,
-        "ust_2y_pct": 4.61,
+        "sofr_pct": 3.87,
+        "ust_2y_pct": 4.635,
         "ust_2y_ticker": "2YY=F",
-        "ust_2y_as_of": "2026-10-01"
+        "ust_2y_as_of": "2026-10-02"
       }
     },
     {
@@ -112,7 +112,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-10-02T11:55:00.935773+00:00",
+  "refreshed_at_utc": "2026-10-05T11:53:21.353160+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
