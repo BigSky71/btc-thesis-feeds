@@ -1,0 +1,18 @@
+{
+  "source": "yahoo_BTC-USD live refresh",
+  "as_of_ct": "2026-10-05 07:53 ET",
+  "as_of_utc": "2026-10-05T11:53:45Z",
+  "spot": 86024.84375,
+  "spot_date": "2026-10-05",
+  "wma50": 77729.797890625,
+  "wma50_note": "Yahoo BTC-USD 50-week SMA, excluding in-progress week",
+  "wma50_incl_partial": 77160.845859375,
+  "dma200": 71582.176328125,
+  "mayer_1_5x": 107373.2644921875,
+  "may_high_ref": 82500,
+  "weekly_confirm_ref": 83000,
+  "last_close_date": "2026-10-04",
+  "last_close": 86480.3046875,
+  "n_weeks_used": 50,
+  "current_monday": "2026-10-05"
+}
