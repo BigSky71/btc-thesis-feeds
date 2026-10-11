@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-11",
+  "source_notes": "Static bull-market levels for the BTC Thesis Dashboard. Edit this file to move MRI, the $100k gate, the valuation top, the weekly invalidation, or the first-support price without an app change. Live prints (True Market Mean, short-term holder cost basis, 200-day average, STH Q75/Q90 profit-taking bands, Mayer 1.5×, STH-MVRV, long-term holder supply share, cost-basis cluster) come from bull_watch.json, which refresh_bull_watch.py fills from Bitview. Dollar fallbacks below are used only when that live feed is missing. They are not a second live print.",
+  "levels": [
+    {
+      "id": "weekly_invalidation",
+      "label": "Weekly invalidation",
+      "value": 72000,
+      "kind": "support",
+      "note": "A weekly close under this level invalidates the bull read."
+    },
+    {
+      "id": "first_support_defend",
+      "label": "First support to defend (cleared confirm)",
+      "value": 83000,
+      "kind": "support",
+      "note": "Cleared confirm from 2026-09-24. First support to defend on a pullback. The live 50-week average is a separate line. Chart line still starts at the May 10 2026 peak."
+    },
+    {
+      "id": "sth_q75_fallback",
+      "label": "STH Q75 (profit-taking band)",
+      "value": 87000,
+      "kind": "overhead",
+      "note": "Static fallback only, used when the live STH-MVRV quantile band is unavailable. Research anchor was about $87k. Check's model overheats several times in a bull (local tops)."
+    },
+    {
+      "id": "sth_q90_fallback",
+      "label": "STH Q90 (profit-taking band)",
+      "value": 104000,
+      "kind": "overhead",
+      "note": "Static fallback only, used when the live STH-MVRV quantile band is unavailable. Research anchor was about $104k. Q90 means only about 10% of days were hotter. Check's model overheats several times in a bull (local tops)."
+    },
+    {
+      "id": "mri_midpoint",
+      "label": "Check MRI midpoint",
+      "value": 90000,
+      "kind": "overhead",
+      "note": "Static. Drifting toward $95–100k over about 3 months. Not a live series."
+    },
+    {
+      "id": "recovery_excitement_gate",
+      "label": "$100k recovery to excitement",
+      "value": 100000,
+      "kind": "overhead",
+      "note": "Recovery-to-excitement gate. Expect failed tries before a hold."
+    },
+    {
+      "id": "mayer_multiple",
+      "label": "Mayer multiple",
+      "value": 1.5,
+      "kind": "overhead",
+      "note": "Not a price. The live dollar level is this multiple times the 200-day average."
+    },
+    {
+      "id": "valuation_range_top",
+      "label": "Valuation-range top",
+      "value": 150000,
+      "kind": "overhead",
+      "note": "Check valuation-range top. First big long-term-holder sell zone."
+    },
+    {
+      "id": "sth_mvrv_hot",
+      "label": "STH-MVRV running hot",
+      "value": 1.25,
+      "kind": "signal",
+      "note": "Top-side heat. Warning when STH-MVRV is at or above this. The buy-the-dip card still owns the below-1 side. On Bitview the 2024 peak was about 1.43."
+    },
+    {
+      "id": "lth_share_decline_90d",
+      "label": "LTH supply-share decline",
+      "value": 1.0,
+      "kind": "signal",
+      "note": "Warning when long-term-holder supply as a share of total supply falls by at least this many percentage points over 90 finished days."
+    },
+    {
+      "id": "move_fragile",
+      "label": "MOVE fragile line",
+      "value": 80,
+      "kind": "macro",
+      "note": "Existing collateral-multiplier / fragile line."
+    },
+    {
+      "id": "move_stress",
+      "label": "MOVE stress line",
+      "value": 100,
+      "kind": "macro",
+      "note": "Stress reference. Shown with the fragile line and the recession line."
+    },
+    {
+      "id": "move_recession",
+      "label": "MOVE Howell recession line",
+      "value": 135,
+      "kind": "macro",
+      "note": "Howell recession threshold, about 135."
+    }
+  ]
+}

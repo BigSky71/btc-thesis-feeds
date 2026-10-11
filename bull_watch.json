@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "feed_id": "bull_watch",
+  "as_of": "2026-10-10",
+  "as_of_rule": "Last finished UTC day. The in-progress UTC day is excluded until 00:00 UTC. This run's UTC date was 2026-10-11.",
+  "source": "https://bitview.space",
+  "index": "day1",
+  "true_market_mean": {
+    "series_id": "true_market_mean",
+    "index": "day1",
+    "available": true,
+    "value": 77434.13,
+    "as_of": "2026-10-10"
+  },
+  "sth_cost_basis": {
+    "series_id": "sth_realized_price",
+    "index": "day1",
+    "available": true,
+    "value": 74300.01,
+    "as_of": "2026-10-10"
+  },
+  "dma_200": {
+    "series_id": "price_sma_200d",
+    "index": "day1",
+    "available": true,
+    "value": 71912.46,
+    "as_of": "2026-10-10",
+    "change_30d": 1988.64,
+    "turned_up": true,
+    "slope_days": 30
+  },
+  "quantile_method": {
+    "id": "point_in_time_expanding_window",
+    "estimator": "linear",
+    "formula": "band = sth_realized_price on the as-of day \u00d7 linear percentile of sth_mvrv, position (n-1)*q",
+    "window": "Every finite day1 sth_mvrv print from the first valid day through the as-of date. Later days are excluded, so this is an expanding window with no backfill. The current band is the full finished history through that day. The 2026-09-24 sanity block uses only days on or before 2026-09-24.",
+    "range_filter": "0.05 < sth_mvrv < 10. The live history sits inside that range, so the sample is the full series.",
+    "q90_meaning": "Only about 10% of days in the sample were higher.",
+    "fallback": "bull_levels.json sth_q75_fallback 87000 and sth_q90_fallback 104000 when this calc is unavailable."
+  },
+  "sth_q75": {
+    "series_id": "sth_mvrv",
+    "basis_series_id": "sth_realized_price",
+    "index": "day1",
+    "available": true,
+    "value": 89764.59,
+    "multiple": 1.208137,
+    "quantile": 0.75,
+    "as_of": "2026-10-10",
+    "sth_realized_price": 74300.01,
+    "sample_n": 5885,
+    "sample_start": "2010-08-31",
+    "sample_end": "2026-10-10",
+    "share_of_days_higher": 0.25,
+    "method": "point_in_time_expanding_window",
+    "note": "That day's short-term holder realized price times the point-in-time Q75 of historical sth_mvrv. Q90 means only about 10% of days the indicator was higher. Check's model overheats several times in a bull (local tops)."
+  },
+  "sth_q90": {
+    "series_id": "sth_mvrv",
+    "basis_series_id": "sth_realized_price",
+    "index": "day1",
+    "available": true,
+    "value": 107470.61,
+    "multiple": 1.446441,
+    "quantile": 0.9,
+    "as_of": "2026-10-10",
+    "sth_realized_price": 74300.01,
+    "sample_n": 5885,
+    "sample_start": "2010-08-31",
+    "sample_end": "2026-10-10",
+    "share_of_days_higher": 0.1001,
+    "method": "point_in_time_expanding_window",
+    "note": "That day's short-term holder realized price times the point-in-time Q90 of historical sth_mvrv. Q90 means only about 10% of days the indicator was higher. Check's model overheats several times in a bull (local tops)."
+  },
+  "sanity_2026_09_24": {
+    "available": true,
+    "date": "2026-09-24",
+    "inputs_as_of": "2026-09-24",
+    "expected": "Q75 near $87\u201388k and Q90 near $104k (about 1.17\u00d7 and 1.40\u00d7 short-term holder cost basis). Small drift is expected.",
+    "sth_realized_price": 72700.11,
+    "q75_multiple": 1.208984,
+    "q90_multiple": 1.446505,
+    "q75_band": 87893.27,
+    "q90_band": 105161.06,
+    "sample_n": 5869,
+    "sample_start": "2010-08-31",
+    "sample_end": "2026-09-24",
+    "share_of_days_higher_than_q75": 0.25,
+    "share_of_days_higher_than_q90": 0.1,
+    "method": "point_in_time_expanding_window",
+    "drift_note": "Bitview short-term holders are under 150 days. Check's bands use about 155 days, so the multiple and the dollar band can sit a little off the published anchors."
+  },
+  "sth_cost_basis_cluster": {
+    "available": true,
+    "p75": {
+      "series_id": "sth_cost_basis_per_coin_pct75",
+      "index": "day1",
+      "available": true,
+      "value": 83074.0,
+      "as_of": "2026-10-10"
+    },
+    "p90": {
+      "series_id": "sth_cost_basis_per_coin_pct90",
+      "index": "day1",
+      "available": true,
+      "value": 85103.0,
+      "as_of": "2026-10-10"
+    },
+    "note": "Where recent buyers bought. Supply here turns underwater on a dip. Not a target."
+  },
+  "mayer_1_5": {
+    "available": true,
+    "value": 107868.69,
+    "multiple": 1.5,
+    "basis_series_id": "price_sma_200d",
+    "as_of": "2026-10-10",
+    "note": "Computed as 1.5 \u00d7 Bitview price_sma_200d. Search for a Mayer series returned nothing."
+  },
+  "sth_mvrv": {
+    "series_id": "sth_mvrv",
+    "index": "day1",
+    "available": true,
+    "value": 1.118568,
+    "as_of": "2026-10-10",
+    "hot_at_or_above": 1.25,
+    "warning": false
+  },
+  "lth_supply_share": {
+    "available": true,
+    "lth_series_id": "lth_supply",
+    "supply_series_id": "supply",
+    "index": "day1",
+    "lth_supply_btc": 16474731.32,
+    "supply_btc": 20096176.12,
+    "share": 0.819794,
+    "as_of": "2026-10-10",
+    "high_180d": 0.841731,
+    "high_180d_as_of": "2026-07-27",
+    "change_30d_pp": -0.361,
+    "change_90d_pp": -2.051,
+    "warning_decline_pp": 1.0,
+    "warning": true,
+    "warning_rule": "Steady decline: 90-day change in the supply share is at least 1 percentage point lower."
+  },
+  "leverage": {
+    "available": false,
+    "warning": false,
+    "detail": "not wired",
+    "note": "funding_watch.json has MOVE, SOFR, and the 2-year Treasury spread. It has no perpetual funding rate and no futures open interest. Bitview search did not return a futures open-interest or perpetual-funding series."
+  },
+  "series_used": [
+    {
+      "id": "true_market_mean",
+      "index": "day1",
+      "role": "True Market Mean"
+    },
+    {
+      "id": "sth_realized_price",
+      "index": "day1",
+      "role": "Short-term holder cost basis, and the base of the Q75/Q90 profit-taking bands"
+    },
+    {
+      "id": "price_sma_200d",
+      "index": "day1",
+      "role": "200-day average and Mayer base"
+    },
+    {
+      "id": "sth_mvrv",
+      "index": "day1",
+      "role": "STH-MVRV level, and the full history behind the Q75/Q90 profit-taking bands"
+    },
+    {
+      "id": "sth_cost_basis_per_coin_pct75",
+      "index": "day1",
+      "role": "Cost-basis cluster P75. Where recent buyers bought. Not a target."
+    },
+    {
+      "id": "sth_cost_basis_per_coin_pct90",
+      "index": "day1",
+      "role": "Cost-basis cluster P90. Where recent buyers bought. Not a target."
+    },
+    {
+      "id": "lth_supply",
+      "index": "day1",
+      "role": "Long-term holder supply"
+    },
+    {
+      "id": "supply",
+      "index": "day1",
+      "role": "Total supply, denominator for the LTH share"
+    }
+  ],
+  "series_not_found": [
+    {
+      "query": "mayer",
+      "note": "No Mayer multiple series. The dollar level is 1.5 \u00d7 price_sma_200d. price_sma_200d_x2_4 exists and was not used (that is 2.4\u00d7)."
+    },
+    {
+      "query": "futures open interest / oi",
+      "note": "No futures open-interest series. Search hits were unrelated (OP_RETURN, coinflow)."
+    },
+    {
+      "query": "perpetual funding rate",
+      "note": "No perpetual funding-rate series. The funding-watch feed also has no funding-rate or open-interest field."
+    }
+  ],
+  "paths": {
+    "github_repo_relative": "data/bull_watch.json",
+    "bundled_resource": "Shared/Resources/bull_watch.json",
+    "levels_file": "data/bull_levels.json",
+    "feeds_repo_relative": "bull_watch.json"
+  },
+  "app_mapping": {
+    "soft_update_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_watch.json",
+    "levels_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_levels.json"
+  },
+  "refreshed_at_utc": "2026-10-11T18:28:48.849468+00:00",
+  "notes": [
+    "Refreshed by refresh_bull_watch.py. Do not invent prints.",
+    "Chart True Mean and STH cost basis overlays stay on the CheckOnChain file. This feed is the bull-card live layer.",
+    "STH Q75/Q90 are profit-taking bands: that day's sth_realized_price times a point-in-time expanding-window quantile of historical sth_mvrv. Not the cost-basis percentiles.",
+    "sth_cost_basis_per_coin_pct75/pct90 are the cost-basis cluster in the secondary panel. They are where recent buyers bought, not targets.",
+    "If the quantile calc is unavailable, the app falls back to static 87000 / 104000 in bull_levels.json."
+  ]
+}
