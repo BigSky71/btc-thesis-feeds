@@ -94,5 +94,55 @@
       "kind": "macro",
       "note": "Howell recession threshold, about 135."
     }
-  ]
+  ],
+  "leverage": {
+    "funding_z": {
+      "label": "Longs paying up vs normal",
+      "source": "check",
+      "watch_above": 1.0,
+      "warning_above": 1.5,
+      "shorts_crowded_below": -1.0,
+      "note": "365-day funding z-score. Watch above +1.0. Warning above +1.5. Below −1 is info only: Shorts crowded (contrarian bullish)."
+    },
+    "funding_annualised": {
+      "label": "Cost of being long",
+      "calm": {
+        "source": "check",
+        "rule": "7d average below live SOFR",
+        "note": "Check: funding below the T-bill rate is not overheated. SOFR is sofr_pct in funding_watch.json."
+      },
+      "watch": {
+        "source": "check",
+        "avg_30d_above": 0.062,
+        "note": "30-day average above 6.2%, about Check's 1-year median."
+      },
+      "warning": {
+        "source": "heuristic",
+        "avg_7d_at_or_above": 0.15,
+        "avg_30d_at_or_above": 0.10,
+        "note": "Sustained: 7-day average at least 15% and 30-day average at least 10%, annualised."
+      }
+    },
+    "oi_change": {
+      "label": "Leverage piling in fast",
+      "source": "check",
+      "warning_above_sd": 2.0,
+      "change_days": 7,
+      "baseline_days": 365,
+      "note": "7-calendar-day percent change in Futures OI versus its trailing 365-observation mean and sample standard deviation. Warning above +2sd. Below −2sd is info only: Leverage flush, often a local low."
+    },
+    "futures_lev_ratio": {
+      "label": "Leverage vs market size",
+      "watch": {
+        "source": "heuristic",
+        "rise_30d_pp": 0.5,
+        "note": "30-day rise of at least 0.5 percentage points, and the ratio is at least 0.5 percentage points above its trailing 1-year low."
+      },
+      "warning": {
+        "source": "heuristic",
+        "at_or_above": 0.04,
+        "note": "At or above 4.0%, near the 4.23% November 2022 peak."
+      }
+    }
+  }
 }
