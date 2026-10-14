@@ -1,31 +1,31 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "feed_id": "bull_watch",
-  "as_of": "2026-10-12",
-  "as_of_rule": "Last finished UTC day. The in-progress UTC day is excluded until 00:00 UTC. This run's UTC date was 2026-10-13.",
+  "as_of": "2026-10-13",
+  "as_of_rule": "Last finished UTC day. The in-progress UTC day is excluded until 00:00 UTC. This run's UTC date was 2026-10-14.",
   "source": "https://bitview.space",
   "index": "day1",
   "true_market_mean": {
     "series_id": "true_market_mean",
     "index": "day1",
     "available": true,
-    "value": 77467.56,
-    "as_of": "2026-10-12"
+    "value": 77484.2,
+    "as_of": "2026-10-13"
   },
   "sth_cost_basis": {
     "series_id": "sth_realized_price",
     "index": "day1",
     "available": true,
-    "value": 74292.17,
-    "as_of": "2026-10-12"
+    "value": 74400.96,
+    "as_of": "2026-10-13"
   },
   "dma_200": {
     "series_id": "price_sma_200d",
     "index": "day1",
     "available": true,
-    "value": 72050.23,
-    "as_of": "2026-10-12",
-    "change_30d": 1985.86,
+    "value": 72137.71,
+    "as_of": "2026-10-13",
+    "change_30d": 2017.57,
     "turned_up": true,
     "slope_days": 30
   },
@@ -43,14 +43,14 @@
     "basis_series_id": "sth_realized_price",
     "index": "day1",
     "available": true,
-    "value": 89752.78,
-    "multiple": 1.208106,
+    "value": 89883.04,
+    "multiple": 1.20809,
     "quantile": 0.75,
-    "as_of": "2026-10-12",
-    "sth_realized_price": 74292.17,
-    "sample_n": 5887,
+    "as_of": "2026-10-13",
+    "sth_realized_price": 74400.96,
+    "sample_n": 5888,
     "sample_start": "2010-08-31",
-    "sample_end": "2026-10-12",
+    "sample_end": "2026-10-13",
     "share_of_days_higher": 0.25,
     "method": "point_in_time_expanding_window",
     "note": "That day's short-term holder realized price times the point-in-time Q75 of historical sth_mvrv. Q90 means only about 10% of days the indicator was higher. Check's model overheats several times in a bull (local tops)."
@@ -60,15 +60,15 @@
     "basis_series_id": "sth_realized_price",
     "index": "day1",
     "available": true,
-    "value": 107458.62,
-    "multiple": 1.446433,
+    "value": 107615.65,
+    "multiple": 1.446428,
     "quantile": 0.9,
-    "as_of": "2026-10-12",
-    "sth_realized_price": 74292.17,
-    "sample_n": 5887,
+    "as_of": "2026-10-13",
+    "sth_realized_price": 74400.96,
+    "sample_n": 5888,
     "sample_start": "2010-08-31",
-    "sample_end": "2026-10-12",
-    "share_of_days_higher": 0.1001,
+    "sample_end": "2026-10-13",
+    "share_of_days_higher": 0.1,
     "method": "point_in_time_expanding_window",
     "note": "That day's short-term holder realized price times the point-in-time Q90 of historical sth_mvrv. Q90 means only about 10% of days the indicator was higher. Check's model overheats several times in a bull (local tops)."
   },
@@ -23224,8 +23224,756 @@
     {
       "t": 1791763200,
       "v": 89752.78
+    },
+    {
+      "t": 1791849600,
+      "v": 89883.04
     }
   ],
+  "urpd_poc": {
+    "available": true,
+    "value": 84500.0,
+    "bin_floor": 84000.0,
+    "bin_width": 1000.0,
+    "btc_in_bin": 948931.38,
+    "as_of": "2026-10-13",
+    "history": [
+      {
+        "t": 1776297600,
+        "v": 84500.0
+      },
+      {
+        "t": 1776384000,
+        "v": 84500.0
+      },
+      {
+        "t": 1776470400,
+        "v": 84500.0
+      },
+      {
+        "t": 1776556800,
+        "v": 84500.0
+      },
+      {
+        "t": 1776643200,
+        "v": 84500.0
+      },
+      {
+        "t": 1776729600,
+        "v": 84500.0
+      },
+      {
+        "t": 1776816000,
+        "v": 84500.0
+      },
+      {
+        "t": 1776902400,
+        "v": 84500.0
+      },
+      {
+        "t": 1776988800,
+        "v": 84500.0
+      },
+      {
+        "t": 1777075200,
+        "v": 84500.0
+      },
+      {
+        "t": 1777161600,
+        "v": 84500.0
+      },
+      {
+        "t": 1777248000,
+        "v": 84500.0
+      },
+      {
+        "t": 1777334400,
+        "v": 84500.0
+      },
+      {
+        "t": 1777420800,
+        "v": 84500.0
+      },
+      {
+        "t": 1777507200,
+        "v": 84500.0
+      },
+      {
+        "t": 1777593600,
+        "v": 84500.0
+      },
+      {
+        "t": 1777680000,
+        "v": 84500.0
+      },
+      {
+        "t": 1777766400,
+        "v": 84500.0
+      },
+      {
+        "t": 1777852800,
+        "v": 84500.0
+      },
+      {
+        "t": 1777939200,
+        "v": 84500.0
+      },
+      {
+        "t": 1778025600,
+        "v": 84500.0
+      },
+      {
+        "t": 1778112000,
+        "v": 84500.0
+      },
+      {
+        "t": 1778198400,
+        "v": 84500.0
+      },
+      {
+        "t": 1778284800,
+        "v": 84500.0
+      },
+      {
+        "t": 1778371200,
+        "v": 84500.0
+      },
+      {
+        "t": 1778457600,
+        "v": 84500.0
+      },
+      {
+        "t": 1778544000,
+        "v": 84500.0
+      },
+      {
+        "t": 1778630400,
+        "v": 84500.0
+      },
+      {
+        "t": 1778716800,
+        "v": 84500.0
+      },
+      {
+        "t": 1778803200,
+        "v": 84500.0
+      },
+      {
+        "t": 1778889600,
+        "v": 84500.0
+      },
+      {
+        "t": 1778976000,
+        "v": 84500.0
+      },
+      {
+        "t": 1779062400,
+        "v": 84500.0
+      },
+      {
+        "t": 1779148800,
+        "v": 84500.0
+      },
+      {
+        "t": 1779235200,
+        "v": 84500.0
+      },
+      {
+        "t": 1779321600,
+        "v": 84500.0
+      },
+      {
+        "t": 1779408000,
+        "v": 84500.0
+      },
+      {
+        "t": 1779494400,
+        "v": 84500.0
+      },
+      {
+        "t": 1779580800,
+        "v": 84500.0
+      },
+      {
+        "t": 1779667200,
+        "v": 84500.0
+      },
+      {
+        "t": 1779753600,
+        "v": 84500.0
+      },
+      {
+        "t": 1779840000,
+        "v": 84500.0
+      },
+      {
+        "t": 1779926400,
+        "v": 84500.0
+      },
+      {
+        "t": 1780012800,
+        "v": 84500.0
+      },
+      {
+        "t": 1780099200,
+        "v": 84500.0
+      },
+      {
+        "t": 1780185600,
+        "v": 84500.0
+      },
+      {
+        "t": 1780272000,
+        "v": 84500.0
+      },
+      {
+        "t": 1780358400,
+        "v": 84500.0
+      },
+      {
+        "t": 1780444800,
+        "v": 84500.0
+      },
+      {
+        "t": 1780531200,
+        "v": 84500.0
+      },
+      {
+        "t": 1780617600,
+        "v": 84500.0
+      },
+      {
+        "t": 1780704000,
+        "v": 84500.0
+      },
+      {
+        "t": 1780790400,
+        "v": 84500.0
+      },
+      {
+        "t": 1780876800,
+        "v": 84500.0
+      },
+      {
+        "t": 1780963200,
+        "v": 84500.0
+      },
+      {
+        "t": 1781049600,
+        "v": 84500.0
+      },
+      {
+        "t": 1781136000,
+        "v": 84500.0
+      },
+      {
+        "t": 1781222400,
+        "v": 84500.0
+      },
+      {
+        "t": 1781308800,
+        "v": 84500.0
+      },
+      {
+        "t": 1781395200,
+        "v": 84500.0
+      },
+      {
+        "t": 1781481600,
+        "v": 84500.0
+      },
+      {
+        "t": 1781568000,
+        "v": 84500.0
+      },
+      {
+        "t": 1781654400,
+        "v": 84500.0
+      },
+      {
+        "t": 1781740800,
+        "v": 84500.0
+      },
+      {
+        "t": 1781827200,
+        "v": 84500.0
+      },
+      {
+        "t": 1781913600,
+        "v": 84500.0
+      },
+      {
+        "t": 1782000000,
+        "v": 84500.0
+      },
+      {
+        "t": 1782086400,
+        "v": 84500.0
+      },
+      {
+        "t": 1782172800,
+        "v": 84500.0
+      },
+      {
+        "t": 1782259200,
+        "v": 84500.0
+      },
+      {
+        "t": 1782345600,
+        "v": 84500.0
+      },
+      {
+        "t": 1782432000,
+        "v": 84500.0
+      },
+      {
+        "t": 1782518400,
+        "v": 84500.0
+      },
+      {
+        "t": 1782604800,
+        "v": 84500.0
+      },
+      {
+        "t": 1782691200,
+        "v": 84500.0
+      },
+      {
+        "t": 1782777600,
+        "v": 84500.0
+      },
+      {
+        "t": 1782864000,
+        "v": 84500.0
+      },
+      {
+        "t": 1782950400,
+        "v": 84500.0
+      },
+      {
+        "t": 1783036800,
+        "v": 84500.0
+      },
+      {
+        "t": 1783123200,
+        "v": 84500.0
+      },
+      {
+        "t": 1783209600,
+        "v": 84500.0
+      },
+      {
+        "t": 1783296000,
+        "v": 84500.0
+      },
+      {
+        "t": 1783382400,
+        "v": 84500.0
+      },
+      {
+        "t": 1783468800,
+        "v": 84500.0
+      },
+      {
+        "t": 1783555200,
+        "v": 84500.0
+      },
+      {
+        "t": 1783641600,
+        "v": 84500.0
+      },
+      {
+        "t": 1783728000,
+        "v": 84500.0
+      },
+      {
+        "t": 1783814400,
+        "v": 63500.0,
+        "step": true
+      },
+      {
+        "t": 1783900800,
+        "v": 84500.0,
+        "step": true
+      },
+      {
+        "t": 1783987200,
+        "v": 84500.0
+      },
+      {
+        "t": 1784073600,
+        "v": 84500.0
+      },
+      {
+        "t": 1784160000,
+        "v": 84500.0
+      },
+      {
+        "t": 1784246400,
+        "v": 84500.0
+      },
+      {
+        "t": 1784332800,
+        "v": 84500.0
+      },
+      {
+        "t": 1784419200,
+        "v": 84500.0
+      },
+      {
+        "t": 1784505600,
+        "v": 84500.0
+      },
+      {
+        "t": 1784592000,
+        "v": 84500.0
+      },
+      {
+        "t": 1784678400,
+        "v": 84500.0
+      },
+      {
+        "t": 1784764800,
+        "v": 84500.0
+      },
+      {
+        "t": 1784851200,
+        "v": 84500.0
+      },
+      {
+        "t": 1784937600,
+        "v": 84500.0
+      },
+      {
+        "t": 1785024000,
+        "v": 84500.0
+      },
+      {
+        "t": 1785110400,
+        "v": 84500.0
+      },
+      {
+        "t": 1785196800,
+        "v": 84500.0
+      },
+      {
+        "t": 1785283200,
+        "v": 84500.0
+      },
+      {
+        "t": 1785369600,
+        "v": 84500.0
+      },
+      {
+        "t": 1785456000,
+        "v": 84500.0
+      },
+      {
+        "t": 1785542400,
+        "v": 84500.0
+      },
+      {
+        "t": 1785628800,
+        "v": 63500.0,
+        "step": true
+      },
+      {
+        "t": 1785715200,
+        "v": 63500.0
+      },
+      {
+        "t": 1785801600,
+        "v": 63500.0
+      },
+      {
+        "t": 1785888000,
+        "v": 63500.0
+      },
+      {
+        "t": 1785974400,
+        "v": 63500.0
+      },
+      {
+        "t": 1786060800,
+        "v": 63500.0
+      },
+      {
+        "t": 1786147200,
+        "v": 64500.0
+      },
+      {
+        "t": 1786233600,
+        "v": 64500.0
+      },
+      {
+        "t": 1786320000,
+        "v": 63500.0
+      },
+      {
+        "t": 1786406400,
+        "v": 63500.0
+      },
+      {
+        "t": 1786492800,
+        "v": 63500.0
+      },
+      {
+        "t": 1786579200,
+        "v": 63500.0
+      },
+      {
+        "t": 1786665600,
+        "v": 63500.0
+      },
+      {
+        "t": 1786752000,
+        "v": 63500.0
+      },
+      {
+        "t": 1786838400,
+        "v": 63500.0
+      },
+      {
+        "t": 1786924800,
+        "v": 63500.0
+      },
+      {
+        "t": 1787011200,
+        "v": 63500.0
+      },
+      {
+        "t": 1787097600,
+        "v": 63500.0
+      },
+      {
+        "t": 1787184000,
+        "v": 63500.0
+      },
+      {
+        "t": 1787270400,
+        "v": 63500.0
+      },
+      {
+        "t": 1787356800,
+        "v": 63500.0
+      },
+      {
+        "t": 1787443200,
+        "v": 63500.0
+      },
+      {
+        "t": 1787529600,
+        "v": 63500.0
+      },
+      {
+        "t": 1787616000,
+        "v": 63500.0
+      },
+      {
+        "t": 1787702400,
+        "v": 63500.0
+      },
+      {
+        "t": 1787788800,
+        "v": 63500.0
+      },
+      {
+        "t": 1787875200,
+        "v": 63500.0
+      },
+      {
+        "t": 1787961600,
+        "v": 63500.0
+      },
+      {
+        "t": 1788048000,
+        "v": 84500.0,
+        "step": true
+      },
+      {
+        "t": 1788134400,
+        "v": 84500.0
+      },
+      {
+        "t": 1788220800,
+        "v": 84500.0
+      },
+      {
+        "t": 1788307200,
+        "v": 84500.0
+      },
+      {
+        "t": 1788393600,
+        "v": 84500.0
+      },
+      {
+        "t": 1788480000,
+        "v": 84500.0
+      },
+      {
+        "t": 1788566400,
+        "v": 84500.0
+      },
+      {
+        "t": 1788652800,
+        "v": 84500.0
+      },
+      {
+        "t": 1788739200,
+        "v": 84500.0
+      },
+      {
+        "t": 1788825600,
+        "v": 84500.0
+      },
+      {
+        "t": 1788912000,
+        "v": 84500.0
+      },
+      {
+        "t": 1788998400,
+        "v": 84500.0
+      },
+      {
+        "t": 1789084800,
+        "v": 84500.0
+      },
+      {
+        "t": 1789171200,
+        "v": 84500.0
+      },
+      {
+        "t": 1789257600,
+        "v": 84500.0
+      },
+      {
+        "t": 1789344000,
+        "v": 84500.0
+      },
+      {
+        "t": 1789430400,
+        "v": 84500.0
+      },
+      {
+        "t": 1789516800,
+        "v": 84500.0
+      },
+      {
+        "t": 1789603200,
+        "v": 84500.0
+      },
+      {
+        "t": 1789689600,
+        "v": 84500.0
+      },
+      {
+        "t": 1789776000,
+        "v": 84500.0
+      },
+      {
+        "t": 1789862400,
+        "v": 84500.0
+      },
+      {
+        "t": 1789948800,
+        "v": 84500.0
+      },
+      {
+        "t": 1790035200,
+        "v": 84500.0
+      },
+      {
+        "t": 1790121600,
+        "v": 84500.0
+      },
+      {
+        "t": 1790208000,
+        "v": 84500.0
+      },
+      {
+        "t": 1790294400,
+        "v": 84500.0
+      },
+      {
+        "t": 1790380800,
+        "v": 84500.0
+      },
+      {
+        "t": 1790467200,
+        "v": 84500.0
+      },
+      {
+        "t": 1790553600,
+        "v": 84500.0
+      },
+      {
+        "t": 1790640000,
+        "v": 84500.0
+      },
+      {
+        "t": 1790726400,
+        "v": 84500.0
+      },
+      {
+        "t": 1790812800,
+        "v": 84500.0
+      },
+      {
+        "t": 1790899200,
+        "v": 84500.0
+      },
+      {
+        "t": 1790985600,
+        "v": 84500.0
+      },
+      {
+        "t": 1791072000,
+        "v": 84500.0
+      },
+      {
+        "t": 1791158400,
+        "v": 84500.0
+      },
+      {
+        "t": 1791244800,
+        "v": 84500.0
+      },
+      {
+        "t": 1791331200,
+        "v": 84500.0
+      },
+      {
+        "t": 1791417600,
+        "v": 84500.0
+      },
+      {
+        "t": 1791504000,
+        "v": 84500.0
+      },
+      {
+        "t": 1791590400,
+        "v": 84500.0
+      },
+      {
+        "t": 1791676800,
+        "v": 84500.0
+      },
+      {
+        "t": 1791763200,
+        "v": 84500.0
+      },
+      {
+        "t": 1791849600,
+        "v": 84500.0
+      }
+    ],
+    "step_threshold_usd": 5000.0,
+    "previous_value": 63500.0,
+    "previous_until": "2026-08-29",
+    "changed_on": "2026-08-30",
+    "source": "https://bitview.space/api/urpd/all/<date>",
+    "note": "Live proxy (URPD POC), not Check MRI. Point of control of Bitview's all-cohort cost-basis distribution in $1k bins above $10k."
+  },
   "sth_q90_history": [
     {
       "t": 1291766400,
@@ -46378,14 +47126,18 @@
     {
       "t": 1791763200,
       "v": 107458.62
+    },
+    {
+      "t": 1791849600,
+      "v": 107615.65
     }
   ],
   "band_history": {
     "format": "{t,v} with t = unix seconds at UTC midnight, v = USD. Same shape as checkonchain_overlays.json.",
     "method": "point_in_time_expanding_window",
     "min_sample": 100,
-    "q75_points": 5788,
-    "q90_points": 5788,
+    "q75_points": 5789,
+    "q90_points": 5789,
     "note": "Each point is that day's sth_realized_price times the expanding-window Q75 or Q90 of sth_mvrv through that day. Later days are not included. sth_q75 and sth_q90 stay the latest finished values for the card."
   },
   "sanity_2026_09_24": {
@@ -46412,32 +47164,32 @@
       "series_id": "sth_cost_basis_per_coin_pct75",
       "index": "day1",
       "available": true,
-      "value": 83105.0,
-      "as_of": "2026-10-12"
+      "value": 83175.0,
+      "as_of": "2026-10-13"
     },
     "p90": {
       "series_id": "sth_cost_basis_per_coin_pct90",
       "index": "day1",
       "available": true,
-      "value": 84340.0,
-      "as_of": "2026-10-12"
+      "value": 84267.0,
+      "as_of": "2026-10-13"
     },
     "note": "Where recent buyers bought. Supply here turns underwater on a dip. Not a target."
   },
   "mayer_1_5": {
     "available": true,
-    "value": 108075.35,
+    "value": 108206.57,
     "multiple": 1.5,
     "basis_series_id": "price_sma_200d",
-    "as_of": "2026-10-12",
+    "as_of": "2026-10-13",
     "note": "Computed as 1.5 \u00d7 Bitview price_sma_200d. Search for a Mayer series returned nothing."
   },
   "sth_mvrv": {
     "series_id": "sth_mvrv",
     "index": "day1",
     "available": true,
-    "value": 1.103263,
-    "as_of": "2026-10-12",
+    "value": 1.118125,
+    "as_of": "2026-10-13",
     "hot_at_or_above": 1.25,
     "warning": false
   },
@@ -46446,21 +47198,21 @@
     "lth_series_id": "lth_supply",
     "supply_series_id": "supply",
     "index": "day1",
-    "lth_supply_btc": 16490867.44,
-    "supply_btc": 20097138.62,
-    "share": 0.820558,
-    "as_of": "2026-10-12",
+    "lth_supply_btc": 16468651.21,
+    "supply_btc": 20097648.0,
+    "share": 0.819432,
+    "as_of": "2026-10-13",
     "high_180d": 0.841731,
     "high_180d_as_of": "2026-07-27",
-    "change_30d_pp": -0.442,
-    "change_90d_pp": -1.947,
+    "change_30d_pp": -0.594,
+    "change_90d_pp": -1.995,
     "warning_decline_pp": 1.0,
     "warning": true,
     "warning_rule": "Steady decline: 90-day change in the supply share is at least 1 percentage point lower."
   },
   "leverage": {
     "available": true,
-    "as_of": "2026-10-12",
+    "as_of": "2026-10-13",
     "source": "https://charts-cdn.checkonchain.com/btconchain/derivatives",
     "charts": [
       "https://charts-cdn.checkonchain.com/btconchain/derivatives/leverageratio_0/leverageratio_0_light.html",
@@ -46468,36 +47220,32 @@
       "https://charts-cdn.checkonchain.com/btconchain/derivatives/fundingrate_zscore/fundingrate_zscore_light.html",
       "https://charts-cdn.checkonchain.com/btconchain/derivatives/derivatives_futuresoi_1daychange/derivatives_futuresoi_1daychange_light.html"
     ],
-    "futures_lev_ratio": 0.031494,
-    "global_lev_ratio": 0.076113,
-    "futures_oi_usd": 51878633675.0,
-    "funding_annualised": 0.038968,
-    "funding_avg_7d": 0.03801,
-    "funding_avg_30d": 0.050849,
-    "funding_z": 0.072961,
-    "oi_7d_change": -0.061185,
-    "oi_7d_mean_365d": -0.006451,
-    "oi_7d_sd_365d": 0.070649,
+    "futures_lev_ratio": 0.030677,
+    "global_lev_ratio": 0.076123,
+    "futures_oi_usd": 51289236227.0,
+    "funding_annualised": 0.023629,
+    "funding_avg_7d": 0.036097,
+    "funding_avg_30d": 0.049391,
+    "funding_z": -0.062303,
+    "oi_7d_change": -0.066771,
+    "oi_7d_mean_365d": -0.00611,
+    "oi_7d_sd_365d": 0.070052,
     "oi_7d_baseline_n": 365,
-    "oi_7d_plus_2sd": 0.134847,
-    "oi_7d_minus_2sd": -0.147749,
-    "oi_chart_change": -0.061185,
-    "oi_chart_plus_2sd": 0.134847,
+    "oi_7d_plus_2sd": 0.133995,
+    "oi_7d_minus_2sd": -0.146215,
+    "oi_chart_change": -0.066771,
+    "oi_chart_plus_2sd": 0.133995,
     "oi_chart_matches_7d": true,
     "lev_ratio_low_1y": 0.029992,
     "lev_ratio_low_1y_as_of": "2026-03-04",
-    "lev_change_30d_pp": -0.1647,
-    "lev_rise_from_1y_low_pp": 0.1502,
+    "lev_change_30d_pp": -0.2279,
+    "lev_rise_from_1y_low_pp": 0.0685,
     "sofr_pct": 3.87,
-    "sofr_as_of": "2026-10-08",
+    "sofr_as_of": "2026-10-09",
     "sofr_error": null,
     "history_1y": {
       "format": "{t,v} unix UTC midnight seconds. Last 365 finished days through as_of.",
       "futures_lev_ratio": [
-        {
-          "t": 1760313600,
-          "v": 0.032663
-        },
         {
           "t": 1760400000,
           "v": 0.033283
@@ -47953,13 +48701,13 @@
         {
           "t": 1791763200,
           "v": 0.031494
+        },
+        {
+          "t": 1791849600,
+          "v": 0.030677
         }
       ],
       "funding_annualised": [
-        {
-          "t": 1760313600,
-          "v": 0.024709
-        },
         {
           "t": 1760400000,
           "v": 0.034249
@@ -49415,6 +50163,10 @@
         {
           "t": 1791763200,
           "v": 0.038968
+        },
+        {
+          "t": 1791849600,
+          "v": 0.023629
         }
       ]
     },
@@ -49501,7 +50253,7 @@
     "soft_update_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_watch.json",
     "levels_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_levels.json"
   },
-  "refreshed_at_utc": "2026-10-13T12:00:16.636631+00:00",
+  "refreshed_at_utc": "2026-10-14T12:04:05.599666+00:00",
   "notes": [
     "Refreshed by refresh_bull_watch.py. Do not invent prints.",
     "Chart True Mean and STH cost basis overlays stay on the CheckOnChain file. This feed is the bull-card live layer.",
