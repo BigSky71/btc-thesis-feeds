@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-10-14",
+  "as_of": "2026-10-15",
   "overall_severity": "elevated",
-  "overall_detail": "MOVE on/above ~80 fragile line, under the 100 stress line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 99.06,
-  "move_as_of": "2026-10-14",
-  "move_recent_high_5d": 102.56,
-  "sofr_pct": 3.89,
-  "sofr_as_of": "2026-10-13",
+  "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
+  "move": 102.49,
+  "move_as_of": "2026-10-15",
+  "move_recent_high_5d": 102.49,
+  "sofr_pct": 3.88,
+  "sofr_as_of": "2026-10-14",
   "ust_2y_pct": 4.75,
-  "sofr_minus_2y_bp": -86.0,
+  "sofr_minus_2y_bp": -87.0,
   "bills_share_pct": null,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -33,31 +33,31 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 99.06,
+      "value": 102.49,
       "unit": "index",
-      "as_of": "2026-10-14",
-      "detail": "99.1 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-10-15",
+      "detail": "102.5 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
       "id": "sofr",
       "title": "SOFR",
-      "value": 3.89,
+      "value": 3.88,
       "unit": "pct",
-      "as_of": "2026-10-13",
-      "detail": "3.89% effective",
+      "as_of": "2026-10-14",
+      "detail": "3.88% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "SOFR \u2212 2y",
-      "value": -86.0,
+      "value": -87.0,
       "unit": "bp",
-      "as_of": "2026-10-13",
-      "detail": "-86bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
+      "as_of": "2026-10-14",
+      "detail": "-87bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
-        "sofr_pct": 3.89,
+        "sofr_pct": 3.88,
         "ust_2y_pct": 4.75,
         "ust_2y_ticker": "2YY=F",
         "ust_2y_as_of": "2026-10-13"
@@ -114,7 +114,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-10-15T11:56:10.883718+00:00",
+  "refreshed_at_utc": "2026-10-16T11:52:26.101555+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
