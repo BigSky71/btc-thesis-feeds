@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "sth_mvrv": 1.103173,
-  "sth_sopr": 1.000352,
-  "sth_cost_basis": 74467.61,
-  "spot_ref": 82150.69,
-  "as_of": "2026-10-16",
+  "sth_mvrv": 1.10383,
+  "sth_sopr": 1.00248,
+  "sth_cost_basis": 74522.33,
+  "spot_ref": 82260.0,
+  "as_of": "2026-10-19",
   "textbook_btd": false,
   "approaching": false,
   "approaching_thresholds": {
@@ -25,7 +25,7 @@
     "github_repo_relative": "data/btd_watch.json",
     "history_csv": "data/btd_watch_history.csv"
   },
-  "refreshed_at_utc": "2026-10-16T11:52:18.643267+00:00",
+  "refreshed_at_utc": "2026-10-19T11:55:27.729517+00:00",
   "bitview": {
     "ok": true,
     "api": "https://bitview.space",
@@ -37,16 +37,16 @@
       "spot_ref": "price/day1",
       "true_market_mean": "true_market_mean/day1"
     },
-    "sth_mvrv": 1.10534,
-    "sth_sopr": 1.002433,
-    "sth_cost_basis": 74469.0,
-    "spot_ref": 82313.54,
-    "true_market_mean": 77478.43,
+    "sth_mvrv": 1.103589,
+    "sth_sopr": 1.002155,
+    "sth_cost_basis": 74526.7,
+    "spot_ref": 82246.87,
+    "true_market_mean": 77530.06,
     "vs_check": {
-      "sth_mvrv_delta": 0.002167,
-      "sth_sopr_delta": 0.002082,
-      "sth_cost_basis_delta": 1.39,
-      "spot_ref_delta": 162.85
+      "sth_mvrv_delta": -0.000241,
+      "sth_sopr_delta": -0.000326,
+      "sth_cost_basis_delta": 4.37,
+      "spot_ref_delta": -13.13
     },
     "note": "Cross-check only. Banner textbook_btd/approaching use Check CDN. BRK STH cohort is <150d; Check often ~155d. SOPR window is 24h trailing."
   }
