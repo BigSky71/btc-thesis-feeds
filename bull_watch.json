@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
   "feed_id": "bull_watch",
-  "as_of": "2026-10-19",
-  "as_of_rule": "Last finished UTC day. The in-progress UTC day is excluded until 00:00 UTC. This run's UTC date was 2026-10-20.",
+  "as_of": "2026-10-20",
+  "as_of_rule": "Last finished UTC day. The in-progress UTC day is excluded until 00:00 UTC. This run's UTC date was 2026-10-21.",
   "source": "https://bitview.space",
   "index": "day1",
   "true_market_mean": {
     "series_id": "true_market_mean",
     "index": "day1",
     "available": true,
-    "value": 77545.68,
-    "as_of": "2026-10-19"
+    "value": 77564.28,
+    "as_of": "2026-10-20"
   },
   "sth_cost_basis": {
     "series_id": "sth_realized_price",
     "index": "day1",
     "available": true,
-    "value": 74554.16,
-    "as_of": "2026-10-19"
+    "value": 74612.94,
+    "as_of": "2026-10-20"
   },
   "dma_200": {
     "series_id": "price_sma_200d",
     "index": "day1",
     "available": true,
-    "value": 72600.88,
-    "as_of": "2026-10-19",
-    "change_30d": 2149.35,
+    "value": 72680.18,
+    "as_of": "2026-10-20",
+    "change_30d": 2175.22,
     "turned_up": true,
     "slope_days": 30
   },
@@ -43,15 +43,15 @@
     "basis_series_id": "sth_realized_price",
     "index": "day1",
     "available": true,
-    "value": 90062.04,
-    "multiple": 1.208008,
+    "value": 90130.68,
+    "multiple": 1.207977,
     "quantile": 0.75,
-    "as_of": "2026-10-19",
-    "sth_realized_price": 74554.16,
-    "sample_n": 5894,
+    "as_of": "2026-10-20",
+    "sth_realized_price": 74612.94,
+    "sample_n": 5895,
     "sample_start": "2010-08-31",
-    "sample_end": "2026-10-19",
-    "share_of_days_higher": 0.2501,
+    "sample_end": "2026-10-20",
+    "share_of_days_higher": 0.25,
     "method": "point_in_time_expanding_window",
     "note": "That day's short-term holder realized price times the point-in-time Q75 of historical sth_mvrv. Q90 means only about 10% of days the indicator was higher. Check's model overheats several times in a bull (local tops)."
   },
@@ -60,14 +60,14 @@
     "basis_series_id": "sth_realized_price",
     "index": "day1",
     "available": true,
-    "value": 107834.22,
-    "multiple": 1.446388,
+    "value": 107918.56,
+    "multiple": 1.446379,
     "quantile": 0.9,
-    "as_of": "2026-10-19",
-    "sth_realized_price": 74554.16,
-    "sample_n": 5894,
+    "as_of": "2026-10-20",
+    "sth_realized_price": 74612.94,
+    "sample_n": 5895,
     "sample_start": "2010-08-31",
-    "sample_end": "2026-10-19",
+    "sample_end": "2026-10-20",
     "share_of_days_higher": 0.1001,
     "method": "point_in_time_expanding_window",
     "note": "That day's short-term holder realized price times the point-in-time Q90 of historical sth_mvrv. Q90 means only about 10% of days the indicator was higher. Check's model overheats several times in a bull (local tops)."
@@ -23252,6 +23252,10 @@
     {
       "t": 1792368000,
       "v": 90062.04
+    },
+    {
+      "t": 1792454400,
+      "v": 90130.68
     }
   ],
   "sth_q90_history": [
@@ -46434,14 +46438,18 @@
     {
       "t": 1792368000,
       "v": 107834.22
+    },
+    {
+      "t": 1792454400,
+      "v": 107918.56
     }
   ],
   "band_history": {
     "format": "{t,v} with t = unix seconds at UTC midnight, v = USD. Same shape as checkonchain_overlays.json.",
     "method": "point_in_time_expanding_window",
     "min_sample": 100,
-    "q75_points": 5795,
-    "q90_points": 5795,
+    "q75_points": 5796,
+    "q90_points": 5796,
     "note": "Each point is that day's sth_realized_price times the expanding-window Q75 or Q90 of sth_mvrv through that day. Later days are not included. sth_q75 and sth_q90 stay the latest finished values for the card."
   },
   "sanity_2026_09_24": {
@@ -46468,32 +46476,32 @@
       "series_id": "sth_cost_basis_per_coin_pct75",
       "index": "day1",
       "available": true,
-      "value": 82330.0,
-      "as_of": "2026-10-19"
+      "value": 82497.0,
+      "as_of": "2026-10-20"
     },
     "p90": {
       "series_id": "sth_cost_basis_per_coin_pct90",
       "index": "day1",
       "available": true,
-      "value": 84124.0,
-      "as_of": "2026-10-19"
+      "value": 84100.0,
+      "as_of": "2026-10-20"
     },
     "note": "Where recent buyers bought. Supply here turns underwater on a dip. Not a target."
   },
   "mayer_1_5": {
     "available": true,
-    "value": 108901.32,
+    "value": 109020.27,
     "multiple": 1.5,
     "basis_series_id": "price_sma_200d",
-    "as_of": "2026-10-19",
+    "as_of": "2026-10-20",
     "note": "Computed as 1.5 \u00d7 Bitview price_sma_200d. Search for a Mayer series returned nothing."
   },
   "sth_mvrv": {
     "series_id": "sth_mvrv",
     "index": "day1",
     "available": true,
-    "value": 1.101336,
-    "as_of": "2026-10-19",
+    "value": 1.112059,
+    "as_of": "2026-10-20",
     "hot_at_or_above": 1.25,
     "warning": false
   },
@@ -46502,21 +46510,21 @@
     "lth_series_id": "lth_supply",
     "supply_series_id": "supply",
     "index": "day1",
-    "lth_supply_btc": 16444374.5,
-    "supply_btc": 20100491.75,
-    "share": 0.818108,
-    "as_of": "2026-10-19",
+    "lth_supply_btc": 16434491.75,
+    "supply_btc": 20101007.37,
+    "share": 0.817595,
+    "as_of": "2026-10-20",
     "high_180d": 0.841731,
     "high_180d_as_of": "2026-07-27",
-    "change_30d_pp": -0.799,
-    "change_90d_pp": -2.255,
+    "change_30d_pp": -0.927,
+    "change_90d_pp": -2.268,
     "warning_decline_pp": 1.0,
     "warning": true,
     "warning_rule": "Steady decline: 90-day change in the supply share is at least 1 percentage point lower."
   },
   "leverage": {
     "available": true,
-    "as_of": "2026-10-19",
+    "as_of": "2026-10-20",
     "source": "https://charts-cdn.checkonchain.com/btconchain/derivatives",
     "charts": [
       "https://charts-cdn.checkonchain.com/btconchain/derivatives/leverageratio_0/leverageratio_0_light.html",
@@ -46524,36 +46532,32 @@
       "https://charts-cdn.checkonchain.com/btconchain/derivatives/fundingrate_zscore/fundingrate_zscore_light.html",
       "https://charts-cdn.checkonchain.com/btconchain/derivatives/derivatives_futuresoi_1daychange/derivatives_futuresoi_1daychange_light.html"
     ],
-    "futures_lev_ratio": 0.031667,
-    "global_lev_ratio": 0.07717,
-    "futures_oi_usd": 52263819934.0,
-    "funding_annualised": 0.089487,
-    "funding_avg_7d": 0.060069,
-    "funding_avg_30d": 0.048226,
-    "funding_z": 0.754311,
-    "oi_7d_change": 0.007425,
-    "oi_7d_mean_365d": -0.004066,
-    "oi_7d_sd_365d": 0.067214,
+    "futures_lev_ratio": 0.031616,
+    "global_lev_ratio": 0.077174,
+    "futures_oi_usd": 52731598193.0,
+    "funding_annualised": 0.084098,
+    "funding_avg_7d": 0.068708,
+    "funding_avg_30d": 0.048306,
+    "funding_z": 0.828405,
+    "oi_7d_change": 0.028122,
+    "oi_7d_mean_365d": -0.003843,
+    "oi_7d_sd_365d": 0.067185,
     "oi_7d_baseline_n": 365,
-    "oi_7d_plus_2sd": 0.130361,
-    "oi_7d_minus_2sd": -0.138493,
-    "oi_chart_change": 0.007425,
-    "oi_chart_plus_2sd": 0.130361,
+    "oi_7d_plus_2sd": 0.130527,
+    "oi_7d_minus_2sd": -0.138214,
+    "oi_chart_change": 0.028122,
+    "oi_chart_plus_2sd": 0.130527,
     "oi_chart_matches_7d": true,
     "lev_ratio_low_1y": 0.029992,
     "lev_ratio_low_1y_as_of": "2026-03-04",
-    "lev_change_30d_pp": -0.2836,
-    "lev_rise_from_1y_low_pp": 0.1674,
-    "sofr_pct": 3.89,
-    "sofr_as_of": "2026-10-15",
+    "lev_change_30d_pp": -0.2635,
+    "lev_rise_from_1y_low_pp": 0.1624,
+    "sofr_pct": 3.88,
+    "sofr_as_of": "2026-10-16",
     "sofr_error": null,
     "history_1y": {
       "format": "{t,v} unix UTC midnight seconds. Last 365 finished days through as_of.",
       "futures_lev_ratio": [
-        {
-          "t": 1760918400,
-          "v": 0.032144
-        },
         {
           "t": 1761004800,
           "v": 0.033529
@@ -48009,13 +48013,13 @@
         {
           "t": 1792368000,
           "v": 0.031667
+        },
+        {
+          "t": 1792454400,
+          "v": 0.031616
         }
       ],
       "funding_annualised": [
-        {
-          "t": 1760918400,
-          "v": 0.021408
-        },
         {
           "t": 1761004800,
           "v": 0.028859
@@ -49471,6 +49475,10 @@
         {
           "t": 1792368000,
           "v": 0.089487
+        },
+        {
+          "t": 1792454400,
+          "v": 0.084098
         }
       ]
     },
@@ -49557,7 +49565,7 @@
     "soft_update_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_watch.json",
     "levels_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_levels.json"
   },
-  "refreshed_at_utc": "2026-10-20T11:57:18.198359+00:00",
+  "refreshed_at_utc": "2026-10-21T11:59:14.783099+00:00",
   "notes": [
     "Refreshed by refresh_bull_watch.py. Do not invent prints.",
     "Chart True Mean and STH cost basis overlays stay on the CheckOnChain file. This feed is the bull-card live layer.",
