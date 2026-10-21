@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
-  "as_of": "2026-10-11",
-  "source_notes": "Static bull-market levels for the BTC Thesis Dashboard. Edit this file to move MRI, the $100k gate, the valuation top, the weekly invalidation, or the first-support price without an app change. Live prints (True Market Mean, short-term holder cost basis, 200-day average, STH Q75/Q90 profit-taking bands, Mayer 1.5×, STH-MVRV, long-term holder supply share, cost-basis cluster) come from bull_watch.json, which refresh_bull_watch.py fills from Bitview. Dollar fallbacks below are used only when that live feed is missing. They are not a second live print.",
+  "schema_version": 2,
+  "as_of": "2026-10-13",
+  "source_notes": "Static bull-market levels for the BTC Thesis Dashboard. Edit this file to move MRI, the $100k gate, the valuation top, the weekly invalidation, or the first-support price without an app change. Live prints (True Market Mean, short-term holder cost basis, 200-day average, STH Q75/Q90 profit-taking bands, Mayer 1.5×, STH-MVRV, long-term holder supply share, cost-basis cluster) come from bull_watch.json, which refresh_bull_watch.py fills from Bitview. Dollar fallbacks below are used only when that live feed is missing. They are not a second live print. Check Q50/Q75 entries are dated Check values (value, as_of, source). The app shows their age; BTC Analyst updates them when Check publishes. schema_version 2: the app ignores a remote copy with a lower schema_version than the bundled one.",
   "levels": [
     {
       "id": "weekly_invalidation",
@@ -16,6 +16,25 @@
       "value": 83000,
       "kind": "support",
       "note": "Cleared confirm from 2026-09-24. First support to defend on a pullback. The live 50-week average is a separate line. Chart line still starts at the May 10 2026 peak."
+    },
+    {
+      "id": "check_q50",
+      "label": "Check Q50 (MRI centroid)",
+      "value": 84100,
+      "kind": "pivot",
+      "as_of": "2026-10-13",
+      "source": "Check, \"Lingering Fear\" (Oct 13, 2026)",
+      "note": "Dated Check value, not live. Key pivot just above the $83k first support. URPD point of control stepped up from $64k to about $84.1k. A weekly close above it means the market is moving into its more exciting phase."
+    },
+    {
+      "id": "check_q75",
+      "label": "Check Q75 (sell side starts)",
+      "value": 100000,
+      "kind": "overhead",
+      "as_of": "2026-10-13",
+      "source": "Check, \"Lingering Fear\" (Oct 13, 2026)",
+      "status": "provisional (pending Check reverse values)",
+      "note": "Dated Check value, not live. Where the sell side starts. Provisional until Check publishes the reverse-value (sell-side MRI) zones."
     },
     {
       "id": "sth_q75_fallback",
@@ -119,7 +138,7 @@
       "warning": {
         "source": "heuristic",
         "avg_7d_at_or_above": 0.15,
-        "avg_30d_at_or_above": 0.10,
+        "avg_30d_at_or_above": 0.1,
         "note": "Sustained: 7-day average at least 15% and 30-day average at least 10%, annualised."
       }
     },
