@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-10-21",
+  "as_of": "2026-10-22",
   "overall_severity": "elevated",
-  "overall_detail": "MOVE on/above ~80 fragile line, under the 100 stress line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 95.94,
-  "move_as_of": "2026-10-21",
-  "move_recent_high_5d": 102.49,
+  "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
+  "move": 106.84,
+  "move_as_of": "2026-10-22",
+  "move_recent_high_5d": 106.84,
   "sofr_pct": 3.88,
-  "sofr_as_of": "2026-10-20",
+  "sofr_as_of": "2026-10-21",
   "ust_2y_pct": 4.75,
   "sofr_minus_2y_bp": -87.0,
   "bills_share_pct": null,
@@ -33,10 +33,10 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 95.94,
+      "value": 106.84,
       "unit": "index",
-      "as_of": "2026-10-21",
-      "detail": "95.9 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-10-22",
+      "detail": "106.8 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
@@ -44,7 +44,7 @@
       "title": "SOFR",
       "value": 3.88,
       "unit": "pct",
-      "as_of": "2026-10-20",
+      "as_of": "2026-10-21",
       "detail": "3.88% effective",
       "severity": "neutral"
     },
@@ -53,14 +53,14 @@
       "title": "SOFR \u2212 2y",
       "value": -87.0,
       "unit": "bp",
-      "as_of": "2026-10-20",
+      "as_of": "2026-10-21",
       "detail": "-87bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
         "sofr_pct": 3.88,
         "ust_2y_pct": 4.75,
         "ust_2y_ticker": "2YY=F",
-        "ust_2y_as_of": "2026-10-21"
+        "ust_2y_as_of": "2026-10-22"
       }
     },
     {
@@ -114,7 +114,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-10-22T11:53:11.873413+00:00",
+  "refreshed_at_utc": "2026-10-23T11:56:41.148684+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
