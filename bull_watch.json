@@ -53333,7 +53333,7 @@
     "lev_change_30d_pp": 0.1948,
     "lev_rise_from_1y_low_pp": 0.3889,
     "sofr_pct": 3.94,
-    "sofr_as_of": "2026-10-28",
+    "sofr_as_of": "2026-10-29",
     "sofr_error": null,
     "history_1y": {
       "format": "{t,v} unix UTC midnight seconds. Last 365 finished days through as_of.",
@@ -56345,7 +56345,7 @@
     "soft_update_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_watch.json",
     "levels_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_levels.json"
   },
-  "refreshed_at_utc": "2026-11-02T12:54:10.684737+00:00",
+  "refreshed_at_utc": "2026-11-02T12:55:07.679494+00:00",
   "notes": [
     "Refreshed by refresh_bull_watch.py. Do not invent prints.",
     "Chart True Mean and STH cost basis overlays stay on the CheckOnChain file. This feed is the bull-card live layer.",

@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-10-29",
+  "as_of": "2026-10-30",
   "overall_severity": "elevated",
-  "overall_detail": "MOVE on/above ~80 fragile line, under the 100 stress line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 93.54,
-  "move_as_of": "2026-10-29",
-  "move_recent_high_5d": 103.31,
+  "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
+  "move": 100.2,
+  "move_as_of": "2026-10-30",
+  "move_recent_high_5d": 102.19,
   "sofr_pct": 3.94,
-  "sofr_as_of": "2026-10-28",
+  "sofr_as_of": "2026-10-29",
   "ust_2y_pct": 4.75,
   "sofr_minus_2y_bp": -81.0,
   "bills_share_pct": null,
@@ -33,10 +33,10 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 93.54,
+      "value": 100.2,
       "unit": "index",
-      "as_of": "2026-10-29",
-      "detail": "93.5 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-10-30",
+      "detail": "100.2 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
@@ -44,7 +44,7 @@
       "title": "SOFR",
       "value": 3.94,
       "unit": "pct",
-      "as_of": "2026-10-28",
+      "as_of": "2026-10-29",
       "detail": "3.94% effective",
       "severity": "neutral"
     },
@@ -53,7 +53,7 @@
       "title": "SOFR \u2212 2y",
       "value": -81.0,
       "unit": "bp",
-      "as_of": "2026-10-28",
+      "as_of": "2026-10-29",
       "detail": "-81bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
@@ -114,7 +114,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-10-30T11:54:03.357321+00:00",
+  "refreshed_at_utc": "2026-11-02T12:54:47.672892+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
