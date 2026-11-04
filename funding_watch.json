@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-11-02",
+  "as_of": "2026-11-03",
   "overall_severity": "elevated",
-  "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
-  "move": 100.36,
-  "move_as_of": "2026-11-02",
+  "overall_detail": "MOVE on/above ~80 fragile line, under the 100 stress line \u2014 plumbing accident residual live; size BTD cautiously",
+  "move": 99.97,
+  "move_as_of": "2026-11-03",
   "move_recent_high_5d": 100.36,
   "sofr_pct": 3.95,
-  "sofr_as_of": "2026-10-30",
+  "sofr_as_of": "2026-11-02",
   "ust_2y_pct": 4.75,
   "sofr_minus_2y_bp": -80.0,
   "bills_share_pct": null,
@@ -33,10 +33,10 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 100.36,
+      "value": 99.97,
       "unit": "index",
-      "as_of": "2026-11-02",
-      "detail": "100.4 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-11-03",
+      "detail": "100.0 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
@@ -44,7 +44,7 @@
       "title": "SOFR",
       "value": 3.95,
       "unit": "pct",
-      "as_of": "2026-10-30",
+      "as_of": "2026-11-02",
       "detail": "3.95% effective",
       "severity": "neutral"
     },
@@ -53,7 +53,7 @@
       "title": "SOFR \u2212 2y",
       "value": -80.0,
       "unit": "bp",
-      "as_of": "2026-10-30",
+      "as_of": "2026-11-02",
       "detail": "-80bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
@@ -114,7 +114,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-11-03T12:52:49.248797+00:00",
+  "refreshed_at_utc": "2026-11-04T12:57:21.797685+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
