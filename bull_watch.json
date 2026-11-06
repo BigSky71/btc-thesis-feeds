@@ -56377,7 +56377,7 @@
     "soft_update_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_watch.json",
     "levels_url": "https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/bull_levels.json"
   },
-  "refreshed_at_utc": "2026-11-06T12:56:09.241146+00:00",
+  "refreshed_at_utc": "2026-11-06T13:04:07.317781+00:00",
   "notes": [
     "Refreshed by refresh_bull_watch.py. Do not invent prints.",
     "Chart True Mean and STH cost basis overlays stay on the CheckOnChain file. This feed is the bull-card live layer.",
