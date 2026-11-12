@@ -60,7 +60,7 @@
         "sofr_pct": 3.88,
         "ust_2y_pct": 4.775,
         "ust_2y_ticker": "2YY=F",
-        "ust_2y_as_of": "2026-11-10"
+        "ust_2y_as_of": "2026-11-11"
       }
     },
     {
@@ -114,7 +114,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-11-11T12:58:13.100863+00:00",
+  "refreshed_at_utc": "2026-11-12T12:50:09.677468+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
