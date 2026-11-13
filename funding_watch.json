@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-11-10",
+  "as_of": "2026-11-12",
   "overall_severity": "elevated",
   "overall_detail": "MOVE on/above ~80 fragile line, under the 100 stress line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 92.43,
-  "move_as_of": "2026-11-10",
-  "move_recent_high_5d": 97.92,
-  "sofr_pct": 3.88,
-  "sofr_as_of": "2026-11-09",
+  "move": 98.43,
+  "move_as_of": "2026-11-12",
+  "move_recent_high_5d": 98.43,
+  "sofr_pct": 3.89,
+  "sofr_as_of": "2026-11-10",
   "ust_2y_pct": 4.775,
-  "sofr_minus_2y_bp": -89.5,
+  "sofr_minus_2y_bp": -88.5,
   "bills_share_pct": null,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -33,34 +33,34 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 92.43,
+      "value": 98.43,
       "unit": "index",
-      "as_of": "2026-11-10",
-      "detail": "92.4 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-11-12",
+      "detail": "98.4 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
       "id": "sofr",
       "title": "SOFR",
-      "value": 3.88,
+      "value": 3.89,
       "unit": "pct",
-      "as_of": "2026-11-09",
-      "detail": "3.88% effective",
+      "as_of": "2026-11-10",
+      "detail": "3.89% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "SOFR \u2212 2y",
-      "value": -89.5,
+      "value": -88.5,
       "unit": "bp",
-      "as_of": "2026-11-09",
-      "detail": "-90bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
+      "as_of": "2026-11-10",
+      "detail": "-88bp \u00b7 SOFR well below 2y (foot-drag / accommodative per Howell framing)",
       "severity": "neutral",
       "components": {
-        "sofr_pct": 3.88,
+        "sofr_pct": 3.89,
         "ust_2y_pct": 4.775,
         "ust_2y_ticker": "2YY=F",
-        "ust_2y_as_of": "2026-11-11"
+        "ust_2y_as_of": "2026-11-12"
       }
     },
     {
@@ -114,7 +114,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-11-12T12:50:09.677468+00:00",
+  "refreshed_at_utc": "2026-11-13T12:57:30.035643+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
