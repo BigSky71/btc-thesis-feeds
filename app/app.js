@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.0.0';
+const WEB_VERSION = 'web 1.1.0';
 const CHART_VERSION = 'chart v2.31';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -482,7 +482,7 @@ async function loadSpot() {
   try {
     const tk = await fetchJSON(`${CB}/ticker`, 8000);
     const p = parseFloat(tk.price);
-    if (p > 0) { state.spot = p; state.spotAt = Date.now() / 1000; return; }
+    if (p > 0) { state.spot = p; state.spotAt = Date.now() / 1000; state.liveAt = Date.now(); state.liveErr = null; applySpotToMaster(); return; }
   } catch (e) { /* fall through */ }
   if (state.master && state.master.length) { state.spot = state.master[state.master.length - 1].c; state.spotAt = Date.now() / 1000; state.spotFallback = true; }
 }
@@ -507,14 +507,13 @@ function dailyDisplayStart(range) {
   return Math.floor(d.getTime() / 1000);
 }
 
-async function buildBundle(range) {
+function buildBundle(range, displayBars) {
   const notes = [];
   const master = state.master || [];
   const closes = master.map(b => b.c);
   const wma50R = rollingSMA(closes, 350), wma200R = rollingSMA(closes, 1400), dma200R = rollingSMA(closes, 200);
   const intraday = isIntraday(range);
-  let displayBars = [];
-  if (intraday) displayBars = await fetchDisplayBars(range);
+  displayBars = intraday ? (displayBars || []) : [];
 
   let spotPts;
   if (intraday) spotPts = displayBars.map(b => ({ t: b.t, v: b.c }));
@@ -767,7 +766,7 @@ const bannerHTML = (b) => `<div class="banner tone-${b.tone}"><span class="ico">
 
 // ---------- chart card ----------
 const chartCard = h(`<div class="card" id="chartCard">
-  <div class="chart-head"><div><h2 style="font-size:20px">BTC Overlay Chart</h2><div class="caption2" id="chartSource">${CHART_VERSION}</div></div></div>
+  <div class="chart-head"><div><h2 style="font-size:20px">BTC Overlay Chart</h2><div class="caption2" id="chartSource">${CHART_VERSION}</div></div><div class="live-box" id="liveBox"><div class="live-px" id="livePx"></div><div class="live-slot"></div></div></div>
   <div class="pills" id="pills">${RANGES.map(r => `<button class="pill" data-range="${r}">${r}</button>`).join('')}</div>
   <div class="chart-wrap" id="chartWrap"><div class="chart-price" id="chartPrice"></div><div class="chart-vol" id="chartVol"></div><div class="chart-msg" id="chartMsg" hidden></div></div>
   <div id="chartBanner"></div>
@@ -810,24 +809,10 @@ function xAxisValues(range) {
 }
 function axisUSD(v) { return v >= 1000 ? usd(v) : '$' + Math.round(v); }
 
-function renderChart() {
-  const b = state.bundle;
-  const msg = chartCard.querySelector('#chartMsg');
-  const priceEl = chartCard.querySelector('#chartPrice'), volEl = chartCard.querySelector('#chartVol');
-  chartCard.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.dataset.range === state.range));
-  chartCard.querySelector('#chartSource').textContent = b ? b.sourceLabel : CHART_VERSION;
-  chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
-  if (uPrice) { uPrice.destroy(); uPrice = null; }
-  if (uVol) { uVol.destroy(); uVol = null; }
-  const vis = visibleSeries();
-  if (!b || !vis.length) {
-    priceEl.hidden = volEl.hidden = true; msg.hidden = false;
-    msg.className = 'chart-msg' + (state.chartError ? ' err' : '');
-    msg.textContent = state.chartError ? state.chartError : (state.loading ? 'Loading…' : 'No series for this range yet.');
-    renderLegend(); renderNotes();
-    return;
-  }
-  priceEl.hidden = false; msg.hidden = true;
+// Everything the two plots need for the current bundle + toggles. Live polls reuse the same
+// uPlot instances (setData) when the plotted set and gutter are unchanged, so nothing flickers.
+let view = null;
+function computeView() {
   const domain = yScaleDomain() || [0, 1];
   const xd = xDomain();
   const plot = plottableSeries(domain);
@@ -846,19 +831,62 @@ function renderChart() {
     if (isMarker(s.id)) sOpts.push({ label: def.short, stroke: def.color, width: 0, paths: () => null, points: { show: true, size: 10, width: 1.5, stroke: def.color, fill: def.color, space: 0 } });
     else sOpts.push({ label: def.short, stroke: def.color, width: def.width, dash: def.dash || undefined, spanGaps: true, points: { show: false } });
   }
-  chartData = { xs, plot };
-  const width = Math.max(200, chartCard.querySelector('#chartWrap').clientWidth);
   const gutter = gutterWidth(domain[1]);
+  const b = state.bundle;
+  const vols = aggregateVolume(b.volumePoints, state.range).filter(p => p.t >= xd[0] - 40 * DAY && p.t <= xd[1]);
+  const vmax = vols.length ? Math.max(...vols.map(p => p.v)) : 1;
+  const sig = plot.map(p => p.id).join(',') + '|' + gutter + '|' + (vols.length > 0) + '|' + state.range;
+  return { domain, xd, plot, xs, data, sOpts, gutter, vols, vmax, sig };
+}
+function liveRedraw() {
+  if (!uPrice || !view || !state.bundle || !visibleSeries().length) { renderChart(); return; }
+  const v = computeView();
+  if (v.sig !== view.sig || (!!uVol) !== (v.vols.length > 0)) { renderChart(); return; }
+  view = v;
+  uPrice.setData(v.data);
+  if (uVol) { uVol.setData([v.vols.map(p => p.t), v.vols.map(p => p.v)]); state.volDisplay = v.vols; }
+  if (state.sel != null) {
+    syncing = true;
+    uPrice.setCursor({ left: uPrice.valToPos(state.sel, 'x'), top: 10 });
+    if (uVol) uVol.setCursor({ left: uVol.valToPos(state.sel, 'x'), top: 10 });
+    syncing = false;
+  }
+  chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
+  renderLegend();
+}
+
+function renderChart() {
+  const b = state.bundle;
+  const msg = chartCard.querySelector('#chartMsg');
+  const priceEl = chartCard.querySelector('#chartPrice'), volEl = chartCard.querySelector('#chartVol');
+  chartCard.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.dataset.range === state.range));
+  chartCard.querySelector('#chartSource').textContent = b ? b.sourceLabel : CHART_VERSION;
+  chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
+  if (uPrice) { uPrice.destroy(); uPrice = null; }
+  if (uVol) { uVol.destroy(); uVol = null; }
+  const vis = visibleSeries();
+  if (!b || !vis.length) {
+    priceEl.hidden = volEl.hidden = true; msg.hidden = false;
+    msg.className = 'chart-msg' + (state.chartError ? ' err' : '');
+    msg.textContent = state.chartError ? state.chartError : (state.loading ? 'Loading…' : 'No series for this range yet.');
+    renderLegend(); renderNotes();
+    return;
+  }
+  priceEl.hidden = false; msg.hidden = true;
+  const v = computeView();
+  view = v;
+  const { domain, xd, data, sOpts, gutter } = v;
+  const width = Math.max(200, chartCard.querySelector('#chartWrap').clientWidth);
   const priceH = Math.max(240, Math.min(420, Math.round(width * 0.62)));
   const common = {
     width, legend: { show: false }, padding: [8, 0, 0, 4],
     cursor: { y: false, points: { show: false }, drag: { x: false, y: false, setScale: false }, focus: { prox: -1 } },
-    scales: { x: { time: true, range: () => [xd[0], xd[1]] } },
+    scales: { x: { time: true, range: () => [view.xd[0], view.xd[1]] } },
     ...(isIntraday(state.range) ? {} : { tzDate: ts => uPlot.tzDate(new Date(ts * 1e3), 'Etc/UTC') }),
   };
   uPrice = new uPlot({
     ...common, height: priceH,
-    scales: { ...common.scales, y: { range: () => domain } },
+    scales: { ...common.scales, y: { range: () => view.domain } },
     axes: [
       { stroke: T.text2, font: XAXIS_FONT, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, size: 26, space: Math.max(60, width / 6), values: xAxisValues(state.range) },
       { side: 1, stroke: T.text2, font: AXIS_FONT, size: gutter, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: Math.max(36, priceH / 6), values: (u, vals) => vals.map(axisUSD) },
@@ -867,16 +895,15 @@ function renderChart() {
     hooks: { setCursor: [u => onCursor(u, 'price')] },
   }, data, priceEl);
   // Volume strip: same width, same right gutter (blank labels), no date labels.
-  const vols = aggregateVolume(b.volumePoints, state.range).filter(p => p.t >= xd[0] - 40 * DAY && p.t <= xd[1]);
+  const vols = v.vols;
   if (vols.length) {
     volEl.hidden = false;
     const vx = vols.map(p => p.t);
     const vy = vols.map(p => p.v);
-    const vmax = Math.max(...vy);
     const fixedW = { '1D': 2.5, '1W': 2.0, '1M': 2.0, '6M': 2.0, '5Y': 2.0 }[state.range];
     uVol = new uPlot({
       ...common, height: 56, padding: [2, 0, 0, 4],
-      scales: { ...common.scales, y: { range: () => [0, vmax * 1.02] } },
+      scales: { ...common.scales, y: { range: () => [0, view.vmax * 1.02] } },
       axes: [
         { show: true, size: 0, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, values: () => [], space: Math.max(60, width / 6) },
         { side: 1, size: gutter, grid: { show: false }, ticks: { show: false }, values: (u, vals) => vals.map(() => '') },
@@ -894,9 +921,10 @@ function renderChart() {
           const y0 = u.valToPos(0, 'y', true);
           ctx.save();
           ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
-          for (let i = 0; i < vols.length; i++) {
-            const x = u.valToPos(vols[i].t, 'x', true), y = u.valToPos(vols[i].v, 'y', true);
-            ctx.fillStyle = vols[i].up === true ? 'rgb(38,166,154)' : vols[i].up === false ? 'rgb(239,83,80)' : 'rgb(140,140,140)';
+          const vb = view.vols;
+          for (let i = 0; i < vb.length; i++) {
+            const x = u.valToPos(vb[i].t, 'x', true), y = u.valToPos(vb[i].v, 'y', true);
+            ctx.fillStyle = vb[i].up === true ? 'rgb(38,166,154)' : vb[i].up === false ? 'rgb(239,83,80)' : 'rgb(140,140,140)';
             ctx.fillRect(x - w / 2, y, w, y0 - y);
           }
           ctx.restore();
@@ -977,8 +1005,11 @@ async function refreshChart() {
   state.loading = true; setSpinner();
   renderChart(); // paint pills + keep last bundle while loading
   try {
-    const b = await buildBundle(state.range);
+    const range = state.range;
+    const bars = isIntraday(range) ? await fetchDisplayBars(range) : null;
     if (gen !== chartGen) return;
+    state.displayBars = bars;
+    const b = buildBundle(range, bars);
     state.bundle = b; state.chartError = null;
     for (const id of Object.keys(b.series)) if (b.series[id].available && isPriceDerived(id)) state.enabled.add(id);
     persistEnabled();
@@ -1032,7 +1063,7 @@ function renderDailyLevels() {
     if (spot != null && l.price) { const d = spot - l.price, p = d / l.price * 100; dist = `<span class="dist ${d >= 0 ? 'c-pos' : 'c-neg'}">${d >= 0 ? '+' : '-'}${nf0.format(Math.round(Math.abs(d)))}&nbsp;&nbsp;(${fx(p, 1)}%)</span>`; }
     return `<div class="lv"><div class="lv-top"><span class="brow-title">${esc(l.title)}</span>${badge}</div><div class="lv-mid"><span class="price">${price}</span>${dist}</div>${l.note ? `<div class="caption2">${esc(l.note)}</div>` : ''}</div>`;
   }).join('');
-  const spotBox = spot != null ? `<div class="spot-box"><div class="caption2">Spot</div><div class="v">${usd(spot)}</div></div>` : '';
+  const spotBox = spot != null ? `<div class="spot-box"><div class="caption2">Spot</div><div class="v">${usd(spot)}</div><div class="live-slot">${liveTagHTML()}</div></div>` : '';
   const asOf = snap && snap.asOf ? `<div class="caption2">As of ${new Date(snap.asOf * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>` : '';
   const mock = snap && snap.source === 'mock' ? '<div class="banner tone-warning">Using mock market data — 50-week average labeled mock ≈ 79k (not the first support to defend, not May high).</div>' : '';
   dailyLevelsEl.innerHTML = card(`<div class="row-between"><h2>Daily Levels</h2>${spotBox}</div>${bannerHTML(soWhat())}${mock}${asOf}<div>${rows}</div>`);
@@ -1256,7 +1287,7 @@ async function refreshAll() {
   await loadSpot();
   state.lastRefresh = Date.now();
   state.feedsLoading = false;
-  renderCards();
+  renderCards(); renderLive();
   await refreshChart();
   if (!$('#floorSheet').hidden) renderFloorSheet();
 }
@@ -1271,9 +1302,83 @@ window.addEventListener('resize', () => {
     if (w !== lastW) { lastW = w; renderChart(); if (!$('#floorSheet').hidden) renderFloorSheet(); }
   }, 150);
 });
+// ---------- live price ----------
+// While the page is visible: every 60 s pull the Coinbase spot (and, on 1H..1M, the newest candles),
+// write the spot into today's daily bar (so 3M..10Y end on the live price, not yesterday's close),
+// rebuild the bundle in memory and push it into the existing plots with setData: no teardown, no
+// flicker, toggles and the inspected point stay put. Hidden page: no polling. Visible again: tick now.
+const LIVE_MS = 60 * 1000;
+let liveTimer = 0, liveBusy = false;
+function applySpotToMaster() {
+  const m = state.master, p = state.spot;
+  if (!m || !m.length || !(p > 0) || state.spotFallback) return;
+  const today = Math.floor(Date.now() / 1000 / DAY) * DAY;
+  const last = m[m.length - 1];
+  if (last.t === today) last.c = p;
+  else if (last.t < today) m.push({ t: today, c: p, v: null });
+}
+async function mergeIntraday(range) {
+  const cfg = INTRADAY[range];
+  const bars = state.displayBars;
+  if (!cfg || !bars || !bars.length) return;
+  const now = Math.floor(Date.now() / 1000);
+  const fresh = await fetchCandles(cfg.gran, bars[bars.length - 1].t, now + 60);
+  const byT = new Map(bars.filter(b => !b.live).map(b => [b.t, b]));
+  for (const b of fresh) byT.set(b.t, b);
+  let out = [...byT.values()].sort((a, b) => a.t - b.t);
+  // Current, still-forming candle ends on the live spot.
+  const cur = Math.floor(now / cfg.gran) * cfg.gran;
+  if (out.length && out[out.length - 1].t === cur) out[out.length - 1] = { ...out[out.length - 1], c: state.spot };
+  else if (out.length && out[out.length - 1].t < cur) out.push({ t: cur, c: state.spot, v: null, live: true });
+  if (cfg.clipMin) { const lastT = out[out.length - 1].t; out = out.filter(b => b.t >= lastT - cfg.clipMin * 60); }
+  else out = out.filter(b => b.t >= now - cfg.seconds);
+  return out;
+}
+async function liveTick() {
+  if (liveBusy || document.visibilityState !== 'visible' || !state.master || state.feedsLoading) return;
+  liveBusy = true;
+  const gen = chartGen, range = state.range;
+  try {
+    const tk = await fetchJSON(`${CB}/ticker`, 8000);
+    const p = parseFloat(tk.price);
+    if (!(p > 0)) throw new Error('no price');
+    state.spot = p; state.spotAt = Date.now() / 1000; state.spotFallback = false;
+    state.liveAt = Date.now(); state.liveErr = null;
+    applySpotToMaster();
+    let bars = state.displayBars;
+    if (isIntraday(range)) { try { bars = (await mergeIntraday(range)) || bars; } catch (e) { /* keep last candles; spot still updates */ } }
+    if (gen === chartGen && range === state.range && !state.loading && state.bundle && state.bundle.range === range) {
+      state.displayBars = isIntraday(range) ? bars : state.displayBars;
+      state.bundle = buildBundle(range, state.displayBars);
+      liveRedraw();
+    }
+    renderDailyLevels(); renderBull();
+  } catch (e) { state.liveErr = e.message || String(e); }
+  finally { liveBusy = false; renderLive(); }
+}
+function stopLive() { if (liveTimer) clearInterval(liveTimer); liveTimer = 0; }
+function startLive() { stopLive(); liveTimer = setInterval(liveTick, LIVE_MS); }
+const hm = ms => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M$/i, '');
+function liveLabel() {
+  if (!state.liveAt) return { cls: 'off', txt: state.spotFallback ? 'Last close · live price unavailable' : 'Connecting…' };
+  const stale = Date.now() - state.liveAt > 3 * LIVE_MS || state.liveErr;
+  return { cls: stale ? 'stale' : 'on', txt: `${stale ? 'Delayed' : 'Live'} · updated ${hm(state.liveAt)}` };
+}
+function liveTagHTML() { const l = liveLabel(); return `<span class="live-tag ${l.cls}"><span class="dot"></span><span class="live-txt">${esc(l.txt)}</span></span>`; }
+function renderLive() {
+  const px = chartCard.querySelector('#livePx');
+  if (px) px.textContent = state.spot != null ? usd(state.spot) : '';
+  const box = chartCard.querySelector('#liveBox');
+  if (box) box.querySelector('.live-slot').innerHTML = liveTagHTML();
+  document.querySelectorAll('.spot-box .live-slot').forEach(el => { el.innerHTML = liveTagHTML(); });
+}
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && state.lastRefresh && Date.now() - state.lastRefresh > 60 * 1000) refreshAll();
+  if (document.visibilityState !== 'visible') { stopLive(); return; }
+  if (state.lastRefresh && Date.now() - state.lastRefresh > 15 * 60 * 1000) refreshAll(); else liveTick();
+  startLive();
 });
+window.addEventListener('online', () => liveTick());
+window.addEventListener('pageshow', e => { if (e.persisted) { liveTick(); startLive(); } });
 
 // Boot
 placeDailyLevels();
@@ -1281,9 +1386,10 @@ $('#chartSlotOverview').appendChild(chartCard);
 renderCards();
 renderChart();
 lastW = chartCard.querySelector('#chartWrap').clientWidth;
-refreshAll();
+refreshAll(); startLive();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 window.__btc = state; // for debugging / verification
+window.__btcLive = { get uPrice() { return uPrice; }, get timer() { return !!liveTimer; }, tick: () => liveTick() };
 })();
