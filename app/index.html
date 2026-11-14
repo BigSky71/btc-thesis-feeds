@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1217">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BTC Thesis">
+<title>BTC Thesis</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="lib/uPlot.min.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="topbar-title" id="topbarTitle">BTC Thesis</span>
+    <span class="spinner" id="spinner" hidden></span>
+    <button class="icon-btn" id="refreshBtn" aria-label="Refresh market data" title="Refresh market data">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 4a8 8 0 0 1 7.75 6h-2.1A6 6 0 1 0 18 13h2a8 8 0 1 1-8-9zm5-1v5h-5l1.9-1.9A5.98 5.98 0 0 0 12 6V4c2.05 0 3.92.78 5.33 2.05L17 3z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <section id="view-overview" class="view">
+    <div class="layout">
+      <div class="col col-main" id="overviewMain">
+        <div class="header-bar">
+          <div>
+            <h1>BTC Thesis Dashboard</h1>
+            <div class="sub">Chart · bull levels · regime · BTD · ETF · liquidity</div>
+          </div>
+        </div>
+        <div id="chartSlotOverview"></div>
+        <div id="dailyLevelsSlotMain"></div>
+      </div>
+      <div class="col col-side" id="overviewSide">
+        <div id="bullCard"></div>
+        <div id="dailyLevelsSlotPhone"></div>
+        <div id="regimeCard"></div>
+        <div id="btdCard"></div>
+        <div id="etfCard"></div>
+        <div id="liquidityCard"></div>
+        <div class="footer" id="footerOverview"></div>
+      </div>
+    </div>
+  </section>
+  <section id="view-chart" class="view" hidden>
+    <div id="chartSlotChart"></div>
+    <div class="footer" id="footerChart"></div>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab active" data-tab="overview">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>
+    <span>Overview</span>
+  </button>
+  <button class="tab" data-tab="chart">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg>
+    <span>Chart</span>
+  </button>
+</nav>
+
+<div class="sheet" id="floorSheet" hidden>
+  <div class="sheet-bar">
+    <span class="sheet-title">Support floors · history</span>
+    <button class="text-btn" id="floorSheetDone">Done</button>
+  </div>
+  <div class="sheet-body" id="floorSheetBody"></div>
+</div>
+
+<script src="lib/uPlot.iife.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

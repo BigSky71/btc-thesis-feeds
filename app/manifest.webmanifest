@@ -1,0 +1,26 @@
+{
+  "name": "BTC Thesis",
+  "short_name": "BTC Thesis",
+  "description": "BTC Thesis Dashboard: overlay chart, bull levels, support floors, BTD, ETF and liquidity watch.",
+  "id": "/btc-thesis-feeds/app/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1217",
+  "theme_color": "#0f1217",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
