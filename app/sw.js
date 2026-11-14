@@ -1,7 +1,7 @@
 /* BTC Thesis service worker: network-first with a short timeout, cache fallback.
  * App files and data feeds always try the network first (so a new version or a new
  * daily feed shows up on the next open), and fall back to the last good copy offline. */
-const VERSION = 'btc-thesis-web-1.2.0';
+const VERSION = 'btc-thesis-web-1.3.0';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest', 'lib/uPlot.iife.min.js', 'lib/uPlot.min.css',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/favicon-32.png'];
 
