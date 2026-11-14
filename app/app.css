@@ -75,6 +75,8 @@ main { padding: var(--gap) calc(var(--gap) + var(--sar)) calc(84px + var(--sab))
 .chart-wrap { position: relative; margin-top: 4px; overflow: hidden; }
 .chart-price, .chart-vol { width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .chart-vol { margin-top: 2px; }
+.chart-macro-head { font-size: 11px; font-weight: 600; color: var(--text2); margin: 8px 0 2px; }
+.chart-macro { width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .chart-msg { min-height: 240px; display: grid; place-items: center; font-size: 12px; color: var(--text2); text-align: center; padding: 0 12px; }
 .chart-msg.err { color: var(--warning); }
 .u-cursor-x { border-right: 1px dashed rgba(142, 142, 147, 0.55) !important; }
@@ -219,3 +221,11 @@ table.lows td:first-child { font-family: inherit; }
 #view-sellers .card { scroll-margin-top: 8px; scroll-margin-bottom: 100px; }
 #sthUwPlot { padding-top: 38px; }
 .sth-ev-label { position: absolute; font-size: 9px; font-weight: 600; color: var(--text2); transform: translateX(-50%); white-space: nowrap; pointer-events: none; }
+
+/* Yields & dollar (macro panel + Overview tile) */
+.macro-tile { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.macro-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.macro-cell .k { font-size: 12px; font-weight: 600; }
+.macro-cell .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 20px; }
+.macro-cell .w { font-size: 11px; color: var(--text2); margin-top: 2px; line-height: 1.35; }
+#macroLegend { padding-top: 0; }

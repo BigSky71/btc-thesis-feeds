@@ -55,6 +55,13 @@ const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'realizedPrice
 const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', realized: 'realizedPrice', lth: 'lthCostBasis' };
 const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50', 'checkQ75', 'checkQ50Proxy']);
 
+const MACRO_SERIES = [
+  { id: 'ust10y', title: 'US 10-year yield', short: '10-year', color: rgba(0.92, 0.78, 0.35), width: 1.6 },
+  { id: 'dxy', title: 'Dollar index (DXY)', short: 'DXY', color: rgba(0.40, 0.72, 0.95), width: 1.6 },
+];
+const MACRO_SID = Object.fromEntries(MACRO_SERIES.map(s => [s.id, s]));
+const MACRO_DEFAULT_ON = new Set(['ust10y', 'dxy']);
+
 // ---------- ranges (ChartRange) ----------
 const RANGES = ['1H', '1D', '1W', '1M', '3M', '6M', '1Y', '2Y', '5Y', '10Y'];
 const isIntraday = r => r === '1H' || r === '1D' || r === '1W' || r === '1M';
@@ -99,6 +106,15 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const isNum = v => typeof v === 'number' && isFinite(v);
 const pos = v => isNum(v) && v > 0 ? v : null;
 const compactVolume = v => { const a = Math.abs(v); return a >= 1e9 ? fx(v / 1e9, 2) + 'B' : a >= 1e6 ? fx(v / 1e6, 1) + 'M' : a >= 1e3 ? fx(v / 1e3, 1) + 'K' : fx(v, 0); };
+const fmtYield = v => fx(v, 2) + '%';
+const fmtDxy = v => fx(v, 2);
+const fmtMacroVal = (id, v) => id === 'ust10y' ? fmtYield(v) : fmtDxy(v);
+const weekPhrase = ch => {
+  if (!isNum(ch)) return '1-week change unavailable';
+  if (Math.abs(ch) < 0.005) return 'unchanged from a week ago';
+  return (ch > 0 ? 'up ' : 'down ') + fx(Math.abs(ch), 2) + ' from a week ago';
+};
+const shortDate = t => { const d = new Date((typeof t === 'number' ? t : isoToUnix(t)) * 1000); return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const isoToUnix = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 1000 : null; };
 const shortDateISO = s => { const t = isoToUnix(s); if (t == null) return null; const d = new Date(t * 1000); return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
@@ -155,6 +171,7 @@ const state = {
   range: localStorage.getItem('chart.range') || '1Y',
   bundle: null, chartError: null, loading: false,
   enabled: loadEnabled(),
+  macroEnabled: loadMacroEnabled(),
   sel: null,          // selected (inspected) unix time
   tab: 'overview',
   intradayCache: {},
@@ -176,6 +193,24 @@ function loadEnabled() {
 // overridden (not by range switches, refreshes, live polls or reloads).
 function persistEnabled(id) {
   try { localStorage.setItem('chart.enabledSeries.' + id, state.enabled.has(id) ? '1' : '0'); } catch (e) { /* private mode */ }
+}
+function loadMacroEnabled() {
+  const set = new Set();
+  for (const s of MACRO_SERIES) {
+    const v = localStorage.getItem('chart.enabledSeries.' + s.id);
+    if (v != null) { if (v === '1') set.add(s.id); }
+    else if (MACRO_DEFAULT_ON.has(s.id)) set.add(s.id);
+  }
+  return set;
+}
+function persistMacroEnabled(id) {
+  try { localStorage.setItem('chart.enabledSeries.' + id, state.macroEnabled.has(id) ? '1' : '0'); } catch (e) { /* private mode */ }
+}
+function toggleMacro(id) {
+  if (state.macroEnabled.has(id)) state.macroEnabled.delete(id);
+  else state.macroEnabled.add(id);
+  persistMacroEnabled(id);
+  renderChart();
 }
 
 // ---------- math ----------
@@ -770,7 +805,8 @@ const bannerHTML = (b) => `<div class="banner tone-${b.tone}"><span class="ico">
 const chartCard = h(`<div class="card" id="chartCard">
   <div class="chart-head"><div><h2 style="font-size:20px">BTC Overlay Chart</h2><div class="caption2" id="chartSource">${CHART_VERSION}</div></div><div class="live-box" id="liveBox"><div class="live-px" id="livePx"></div><div class="live-slot"></div></div></div>
   <div class="pills" id="pills">${RANGES.map(r => `<button class="pill" data-range="${r}">${r}</button>`).join('')}</div>
-  <div class="chart-wrap" id="chartWrap"><div class="chart-price" id="chartPrice"></div><div class="chart-vol" id="chartVol"></div><div class="chart-msg" id="chartMsg" hidden></div></div>
+  <div class="chart-wrap" id="chartWrap"><div class="chart-price" id="chartPrice"></div><div class="chart-vol" id="chartVol"></div><div class="chart-macro-head" id="chartMacroHead" hidden>Yields & dollar</div><div class="chart-macro" id="chartMacro" hidden></div><div class="chart-msg" id="chartMsg" hidden></div></div>
+  <div class="legend" id="macroLegend" hidden></div>
   <div id="chartBanner"></div>
   <div class="legend" id="legend"></div>
   <div class="floor-btn-row" id="floorBtnRow" hidden><button class="floor-btn" id="floorBtn">⟲ Support floors history</button></div>
@@ -784,9 +820,13 @@ chartCard.querySelector('#legend').addEventListener('click', e => {
   const b = e.target.closest('[data-sid]'); if (!b || b.disabled) return;
   toggleSeries(b.dataset.sid);
 });
+chartCard.querySelector('#macroLegend').addEventListener('click', e => {
+  const b = e.target.closest('[data-mid]'); if (!b || b.disabled) return;
+  toggleMacro(b.dataset.mid);
+});
 chartCard.querySelector('#floorBtn').addEventListener('click', () => openFloorSheet());
 
-let uPrice = null, uVol = null, chartData = null;
+let uPrice = null, uVol = null, uMacro = null, chartData = null;
 const AXIS_FONT = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
 const XAXIS_FONT = '11px -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif';
 const measureCtx = document.createElement('canvas').getContext('2d');
@@ -811,6 +851,53 @@ function xAxisValues(range) {
 }
 function axisUSD(v) { return v >= 1000 ? usd(v) : '$' + Math.round(v); }
 
+// Daily 10-year yield + DXY (macro_history.json). Used by the Chart-tab panel and the Overview tile.
+function hasMacroFeed() {
+  const j = state.feeds['macro_history.json'];
+  return !!(j && Array.isArray(j.t) && j.t.length);
+}
+function showMacroPanel() { return state.tab === 'chart' && hasMacroFeed(); }
+function macroPoints(id) {
+  const j = state.feeds['macro_history.json'];
+  const col = id === 'ust10y' ? 'ust10y_v' : id === 'dxy' ? 'dxy_v' : null;
+  if (!j || !col || !Array.isArray(j[col])) return [];
+  const out = [];
+  for (let i = 0; i < j.t.length; i++) if (isNum(j[col][i])) out.push({ t: j.t[i], v: j[col][i] });
+  return out;
+}
+// Hold the last print to the window edges so a daily series still spans the BTC x-axis
+// (including on 1H–1M). This repeats the last known print; it does not invent a new one.
+function stepHold(points, xd0, xd1) {
+  if (!points.length || xd1 < xd0) return [];
+  const out = [];
+  let i = -1;
+  for (let k = 0; k < points.length; k++) { if (points[k].t <= xd0) i = k; else break; }
+  if (i >= 0) out.push({ t: xd0, v: points[i].v });
+  for (const p of points) if (p.t > xd0 && p.t <= xd1) out.push(p);
+  if (out.length && out[out.length - 1].t < xd1) out.push({ t: xd1, v: out[out.length - 1].v });
+  return out;
+}
+function macroValueAt(id, t) {
+  const pts = macroPoints(id);
+  if (!pts.length) return null;
+  const i = nearestIdx(pts, t);
+  if (i < 0) return null;
+  // Daily series: use the last print on or before the inspected time; ignore a next-day print.
+  if (pts[i].t <= t) return pts[i].v;
+  return i > 0 ? pts[i - 1].v : null;
+}
+function gutterWidthText(sample) {
+  measureCtx.font = AXIS_FONT;
+  return Math.ceil(measureCtx.measureText(sample).width) + 14;
+}
+function yPadRange(vals, minSpan) {
+  if (!vals.length) return [0, 1];
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi <= lo) { const pad = Math.max(Math.abs(lo) * 0.04, minSpan); lo -= pad; hi += pad; }
+  else { const pad = Math.max((hi - lo) * 0.12, minSpan); lo -= pad; hi += pad; }
+  return [lo, hi];
+}
+
 // Everything the two plots need for the current bundle + toggles. Live polls reuse the same
 // uPlot instances (setData) when the plotted set and gutter are unchanged, so nothing flickers.
 let view = null;
@@ -833,12 +920,15 @@ function computeView() {
     if (isMarker(s.id)) sOpts.push({ label: def.short, stroke: def.color, width: 0, paths: () => null, points: { show: true, size: 10, width: 1.5, stroke: def.color, fill: def.color, space: 0 } });
     else sOpts.push({ label: def.short, stroke: def.color, width: def.width, dash: def.dash || undefined, spanGaps: true, points: { show: false } });
   }
-  const gutter = gutterWidth(domain[1]);
+  const withMacro = showMacroPanel();
+  const leftG = withMacro ? gutterWidthText('0.00%') : 0;
+  const rightG = Math.max(gutterWidth(domain[1]), withMacro ? gutterWidthText('120.00') : 0);
   const b = state.bundle;
   const vols = aggregateVolume(b.volumePoints, state.range).filter(p => p.t >= xd[0] - 40 * DAY && p.t <= xd[1]);
   const vmax = vols.length ? Math.max(...vols.map(p => p.v)) : 1;
-  const sig = plot.map(p => p.id).join(',') + '|' + gutter + '|' + (vols.length > 0) + '|' + state.range;
-  return { domain, xd, plot, xs, data, sOpts, gutter, vols, vmax, sig };
+  const macroOn = withMacro ? MACRO_SERIES.map(s => s.id).filter(id => state.macroEnabled.has(id) && macroPoints(id).length).join(',') : '';
+  const sig = plot.map(p => p.id).join(',') + '|' + leftG + '|' + rightG + '|' + (vols.length > 0) + '|' + state.range + '|' + withMacro + '|' + macroOn;
+  return { domain, xd, plot, xs, data, sOpts, gutter: rightG, leftG, rightG, withMacro, vols, vmax, sig };
 }
 function liveRedraw() {
   if (!uPrice || !view || !state.bundle || !visibleSeries().length) { renderChart(); return; }
@@ -847,14 +937,21 @@ function liveRedraw() {
   view = v;
   uPrice.setData(v.data);
   if (uVol) { uVol.setData([v.vols.map(p => p.t), v.vols.map(p => p.v)]); state.volDisplay = v.vols; }
+  if (v.withMacro) {
+    if (!uMacro) { renderChart(); return; }
+    const md = buildMacroData(v.xd);
+    uMacro.setData(md.data);
+  } else if (uMacro) { renderChart(); return; }
   if (state.sel != null) {
     syncing = true;
     uPrice.setCursor({ left: uPrice.valToPos(state.sel, 'x'), top: 10 });
     if (uVol) uVol.setCursor({ left: uVol.valToPos(state.sel, 'x'), top: 10 });
+    if (uMacro) uMacro.setCursor({ left: uMacro.valToPos(state.sel, 'x'), top: 10 });
     syncing = false;
   }
   chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
   renderLegend();
+  renderMacroLegend();
 }
 
 function renderChart() {
@@ -866,20 +963,22 @@ function renderChart() {
   chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
   if (uPrice) { uPrice.destroy(); uPrice = null; }
   if (uVol) { uVol.destroy(); uVol = null; }
+  if (uMacro) { uMacro.destroy(); uMacro = null; }
   const vis = visibleSeries();
   if (!b || !vis.length) {
     priceEl.hidden = volEl.hidden = true; msg.hidden = false;
     msg.className = 'chart-msg' + (state.chartError ? ' err' : '');
     msg.textContent = state.chartError ? state.chartError : (state.loading ? 'Loading…' : 'No series for this range yet.');
-    renderLegend(); renderNotes();
+    hideMacroPlot(); renderLegend(); renderMacroLegend(); renderNotes();
     return;
   }
   priceEl.hidden = false; msg.hidden = true;
   const v = computeView();
   view = v;
-  const { domain, xd, data, sOpts, gutter } = v;
+  const { domain, xd, data, sOpts, gutter, leftG, rightG, withMacro } = v;
   const width = Math.max(200, chartCard.querySelector('#chartWrap').clientWidth);
   const priceH = Math.max(240, Math.min(420, Math.round(width * 0.62)));
+  const leftAxis = leftG ? [{ side: 3, size: leftG, grid: { show: false }, ticks: { show: false }, values: () => [], stroke: 'transparent' }] : [];
   const common = {
     width, legend: { show: false }, padding: [8, 0, 0, 4],
     cursor: { y: false, points: { show: false }, drag: { x: false, y: false, setScale: false }, focus: { prox: -1 } },
@@ -891,7 +990,8 @@ function renderChart() {
     scales: { ...common.scales, y: { range: () => view.domain } },
     axes: [
       { stroke: T.text2, font: XAXIS_FONT, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, size: 26, space: Math.max(60, width / 6), values: xAxisValues(state.range) },
-      { side: 1, stroke: T.text2, font: AXIS_FONT, size: gutter, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: Math.max(36, priceH / 6), values: (u, vals) => vals.map(axisUSD) },
+      ...leftAxis,
+      { side: 1, stroke: T.text2, font: AXIS_FONT, size: rightG, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: Math.max(36, priceH / 6), values: (u, vals) => vals.map(axisUSD) },
     ],
     series: sOpts,
     hooks: { setCursor: [u => onCursor(u, 'price')] },
@@ -908,7 +1008,8 @@ function renderChart() {
       scales: { ...common.scales, y: { range: () => [0, view.vmax * 1.02] } },
       axes: [
         { show: true, size: 0, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, values: () => [], space: Math.max(60, width / 6) },
-        { side: 1, size: gutter, grid: { show: false }, ticks: { show: false }, values: (u, vals) => vals.map(() => '') },
+        ...leftAxis,
+        { side: 1, size: rightG, grid: { show: false }, ticks: { show: false }, values: (u, vals) => vals.map(() => '') },
       ],
       series: [{}, { stroke: 'transparent', paths: () => null, points: { show: false } }],
       hooks: {
@@ -936,7 +1037,9 @@ function renderChart() {
     state.volDisplay = vols;
   } else { volEl.hidden = true; state.volDisplay = []; }
   attachTouch(uPrice); if (uVol) attachTouch(uVol);
-  renderLegend(); renderNotes();
+  if (withMacro) renderMacroPlot(common, leftAxis, leftG, rightG, width, xd);
+  else hideMacroPlot();
+  renderLegend(); renderMacroLegend(); renderNotes();
 }
 
 // Selection: hover (mouse) or press-drag (touch) only moves a rule and updates the bottom legend.
@@ -946,14 +1049,16 @@ function onCursor(u, which) {
   const left = u.cursor.left;
   let t = null;
   if (left != null && left >= 0 && u.cursor.idx != null) t = u.posToVal(left, 'x');
-  const other = which === 'price' ? uVol : uPrice;
-  if (other) {
+  const others = [uPrice, uVol, uMacro].filter(o => o && o !== u);
+  if (others.length) {
     syncing = true;
-    if (t == null) other.setCursor({ left: -10, top: -10 });
-    else other.setCursor({ left: other.valToPos(t, 'x'), top: 10 });
+    for (const other of others) {
+      if (t == null) other.setCursor({ left: -10, top: -10 });
+      else other.setCursor({ left: other.valToPos(t, 'x'), top: 10 });
+    }
     syncing = false;
   }
-  if (t !== state.sel) { state.sel = t; if (!legendRAF) legendRAF = requestAnimationFrame(() => { legendRAF = 0; renderLegend(); }); }
+  if (t !== state.sel) { state.sel = t; if (!legendRAF) legendRAF = requestAnimationFrame(() => { legendRAF = 0; renderLegend(); renderMacroLegend(); }); }
 }
 function attachTouch(u) {
   const over = u.over;
@@ -997,8 +1102,135 @@ function renderNotes() {
   const hasFloors = b && Object.values(FLOOR_ID).some(id => b.series[id] && b.series[id].available);
   chartCard.querySelector('#floorBtnRow').hidden = !hasFloors;
   const notes = (b ? b.notes : []).map(n => `<div>${esc(n)}</div>`);
+  if (showMacroPanel()) {
+    const j = state.feeds['macro_history.json'];
+    notes.push(`<div>Yields & dollar (daily): US 10-year from FRED DGS10${j && j.ust10y && j.ust10y.source && j.ust10y.source.includes('^TNX') ? ', latest session from Yahoo ^TNX until FRED publishes it' : ''}. Dollar index is DXY (Yahoo DX-Y.NYB).</div>`);
+  }
   if (state.chartError && b) notes.push(`<div class="c-warn">${esc(state.chartError)}</div>`);
   chartCard.querySelector('#chartNotes').innerHTML = notes.join('');
+}
+
+function hideMacroPlot() {
+  const head = chartCard.querySelector('#chartMacroHead');
+  const el = chartCard.querySelector('#chartMacro');
+  const legend = chartCard.querySelector('#macroLegend');
+  if (head) head.hidden = true;
+  if (el) el.hidden = true;
+  if (legend) legend.hidden = true;
+  if (uMacro) { uMacro.destroy(); uMacro = null; }
+}
+function buildMacroData(xd) {
+  const series = [{}];
+  const data = [[]];
+  const scales = {};
+  const axesExtra = [];
+  const on = [];
+  for (const def of MACRO_SERIES) {
+    const pts = stepHold(macroPoints(def.id), xd[0], xd[1]);
+    const enabled = state.macroEnabled.has(def.id) && pts.length;
+    if (!enabled) continue;
+    on.push({ def, pts, scale: def.id === 'ust10y' ? 'yUst' : 'yDxy' });
+  }
+  // Shared x: union of timestamps so both lines share one axis window (range is forced to xd).
+  const ts = new Set();
+  for (const s of on) for (const p of s.pts) ts.add(p.t);
+  const xs = [...ts].sort((a, b) => a - b);
+  const index = new Map(xs.map((t, i) => [t, i]));
+  data[0] = xs;
+  for (const s of on) {
+    const arr = new Array(xs.length).fill(null);
+    for (const p of s.pts) { const i = index.get(p.t); if (i != null) arr[i] = p.v; }
+    data.push(arr);
+    series.push({ label: s.def.short, stroke: s.def.color, width: s.def.width, scale: s.scale, spanGaps: true, points: { show: false } });
+    const vals = s.pts.map(p => p.v);
+    scales[s.scale] = { range: () => yPadRange(vals, s.def.id === 'ust10y' ? 0.2 : 0.8) };
+  }
+  return { data, series, scales, on };
+}
+function renderMacroPlot(common, leftAxis, leftG, rightG, width, xd) {
+  const el = chartCard.querySelector('#chartMacro');
+  const head = chartCard.querySelector('#chartMacroHead');
+  const legend = chartCard.querySelector('#macroLegend');
+  head.hidden = false;
+  legend.hidden = false;
+  const md = buildMacroData(xd);
+  if (!md.on.length) {
+    el.hidden = true;
+    if (uMacro) { uMacro.destroy(); uMacro = null; }
+    return;
+  }
+  el.hidden = false;
+  const ustOn = md.on.some(s => s.def.id === 'ust10y');
+  const dxyOn = md.on.some(s => s.def.id === 'dxy');
+  const ustColor = MACRO_SID.ust10y.color, dxyColor = MACRO_SID.dxy.color;
+  const axes = [
+    { show: true, size: 0, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, values: () => [], space: Math.max(60, width / 6) },
+    { side: 3, scale: ustOn ? 'yUst' : (md.on[0].scale), size: leftG, gap: 4, stroke: ustOn ? ustColor : 'transparent', font: AXIS_FONT,
+      grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 28,
+      values: (u, vals) => ustOn ? vals.map(v => fmtYield(v)) : vals.map(() => '') },
+    { side: 1, scale: dxyOn ? 'yDxy' : (md.on[0].scale), size: rightG, gap: 4, stroke: dxyOn ? dxyColor : 'transparent', font: AXIS_FONT,
+      grid: { show: false }, ticks: { show: false }, space: 28,
+      values: (u, vals) => dxyOn ? vals.map(v => fmtDxy(v)) : vals.map(() => '') },
+  ];
+  uMacro = new uPlot({
+    ...common, height: 120, padding: [6, 0, 0, 4],
+    scales: { ...common.scales, ...md.scales },
+    axes,
+    series: md.series,
+    hooks: { setCursor: [u => onCursor(u, 'macro')] },
+  }, md.data, el);
+  attachTouch(uMacro);
+}
+function renderMacroLegend() {
+  const el = chartCard.querySelector('#macroLegend');
+  if (!el) return;
+  if (!showMacroPanel()) { el.hidden = true; return; }
+  el.hidden = false;
+  const j = state.feeds['macro_history.json'];
+  let cap;
+  if (state.sel != null) cap = `Inspecting · ${isIntraday(state.range) ? fmtDate(state.sel, true) : fmtUTCDate(state.sel)}`;
+  else {
+    const last = j && (j.ust10y && j.ust10y.last || j.dxy && j.dxy.last);
+    cap = last ? `Latest · ${last} · touch the chart to inspect` : 'Yields & dollar';
+  }
+  const rows = MACRO_SERIES.map(def => {
+    const pts = macroPoints(def.id);
+    const available = pts.length > 0;
+    const on = state.macroEnabled.has(def.id) && available;
+    let value = null;
+    if (available) {
+      if (state.sel != null) value = macroValueAt(def.id, state.sel);
+      else value = pts[pts.length - 1].v;
+    }
+    const dot = available ? def.color : 'rgba(255,255,255,0.19)';
+    const val = available && value != null ? `<span class="lval" style="color:${on ? def.color : T.text2}">${fmtMacroVal(def.id, value)}</span>` : (!available ? '<span class="lna">n/a</span>' : '');
+    return `<button class="lrow" data-mid="${def.id}" ${available ? '' : 'disabled'} aria-pressed="${on}">
+      <span class="ldot" style="background:${dot};opacity:${on ? 1 : 0.35}"></span>
+      <span class="ltitle" style="color:${available ? T.text : T.text2}">${esc(def.title)}</span>${val}${on ? ICON.check(def.color) : ICON.circle(T.text2)}</button>`;
+  }).join('');
+  el.innerHTML = `<div class="legend-cap">${esc(cap)}</div>${rows}`;
+}
+function renderMacroCard() {
+  const root = $('#macroCard');
+  if (!root) return;
+  const j = state.feeds['macro_history.json'];
+  if (!j || !j.ust10y && !j.dxy) {
+    root.innerHTML = card(`<h2>Yields & dollar</h2><div class="caption">Waiting on the daily yield and dollar-index feed.</div>`);
+    return;
+  }
+  const cell = (id, title, meta) => {
+    const latest = meta && meta.latest;
+    if (!latest || !isNum(latest.value)) {
+      return `<div class="macro-cell"><div class="k">${esc(title)}</div><div class="v c-2">n/a</div><div class="w">No print in the feed yet.</div></div>`;
+    }
+    const asOf = latest.date ? `As of ${shortDate(latest.date)}` : '';
+    const week = weekPhrase(latest.week_change);
+    return `<div class="macro-cell"><div class="k">${esc(title)}</div><div class="v" style="color:${MACRO_SID[id].color}">${fmtMacroVal(id, latest.value)}</div><div class="w">${esc(week)}${asOf ? ` · ${asOf}` : ''}</div></div>`;
+  };
+  const src = 'US 10-year from the Treasury daily yield (FRED DGS10). Dollar index is DXY (Yahoo DX-Y.NYB), not the broad trade-weighted dollar.';
+  root.innerHTML = card(`<h2>Yields & dollar</h2>
+    <div class="macro-tile">${cell('ust10y', 'US 10-year yield', j.ust10y)}${cell('dxy', 'Dollar index (DXY)', j.dxy)}</div>
+    <div class="caption2">${esc(src)}</div>`);
 }
 
 let chartGen = 0;
@@ -1141,7 +1373,7 @@ function renderLiquidity() {
 function renderFooter() {
   const errs = state.feedErrors.slice();
   if (state.spotFallback) errs.push('Live spot unavailable (Coinbase); showing the last daily close.');
-  const html = `<div>${esc(`${WEB_VERSION} · ${CHART_VERSION} · feed v2.3 · Coinbase/Yahoo/CheckOnChain/Bitview`)}</div>` +
+  const html = `<div>${esc(`${WEB_VERSION} · ${CHART_VERSION} · feed v2.3 · Coinbase/Yahoo/CheckOnChain/Bitview/FRED`)}</div>` +
     (state.lastRefresh ? `<div>Updated ${new Date(state.lastRefresh).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${navigator.onLine === false ? ' · offline (cached data)' : ''}</div>` : '') +
     errs.map(e => `<div class="err">Live fetch note: ${esc(e)}</div>`).join('');
   $('#footerOverview').innerHTML = html; $('#footerChart').innerHTML = html; const fs = $('#footerSellers'); if (fs) fs.innerHTML = html;
@@ -1152,7 +1384,7 @@ function placeDailyLevels() {
   const slot = wide ? $('#dailyLevelsSlotMain') : $('#dailyLevelsSlotPhone');
   if (dailyLevelsEl.parentElement !== slot) slot.appendChild(dailyLevelsEl);
 }
-function renderCards() { renderBull(); renderDailyLevels(); renderRegime(); renderBTD(); renderETF(); renderLiquidity(); renderFooter(); }
+function renderCards() { renderBull(); renderDailyLevels(); renderRegime(); renderBTD(); renderETF(); renderMacroCard(); renderLiquidity(); renderFooter(); }
 
 // ---------- support floors history sheet (SupportFloorsHistoryView) ----------
 const SPANS = [['all', 'Since 2012', null], ['y8', '8Y', 8], ['y4', '4Y', 4], ['y1', '1Y', 1]];
@@ -1883,7 +2115,7 @@ function setTab(tab) {
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();
