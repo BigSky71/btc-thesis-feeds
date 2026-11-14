@@ -16,6 +16,7 @@ fetch weekday refreshes with no token.
 | `checkonchain_overlays.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/checkonchain_overlays.json |
 | `funding_watch.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/funding_watch.json |
 | `rotation_watch.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/rotation_watch.json |
+| `sth_exhaustion.json` | https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/sth_exhaustion.json |
 
 **Do not invent** ratios, ETF flows, or on-chain series. Refresh from CheckOnChain /
 scripts in the private dashboard repo, then copy these files here and push (BTD, ETF, overlays, funding).
@@ -36,3 +37,4 @@ in `app/app.js` on each app change.
 | File | Purpose |
 |------|---------|
 | `price_history.json` | Daily BTC-USD closes 2010→last finished UTC day + Yahoo daily volume (columnar `t`/`c`/`v`) |
+| `sth_exhaustion.json` | Short-term holder seller-exhaustion gauge + weekly/2y charts (Bitview, last finished UTC day; written by `data/refresh_sth_exhaustion.py` in the dashboard repo) |
