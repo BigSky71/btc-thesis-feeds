@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.1.0';
+const WEB_VERSION = 'web 1.1.1';
 const CHART_VERSION = 'chart v2.31';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -168,13 +168,15 @@ function loadEnabled() {
     if (v != null) { if (v === '1') set.add(s.id); }
     else if (DEFAULT_ON.has(s.id)) set.add(s.id);
   }
-  if (!set.size) set.add('spot');
+  set.add('spot'); // BTC can't be turned off
   return set;
 }
-function persistEnabled() {
-  for (const s of SERIES) localStorage.setItem('chart.enabledSeries.' + s.id, state.enabled.has(s.id) ? '1' : '0');
+// localStorage is the only source of truth for toggles: a key is written only when the user
+// toggles that line, so untouched lines keep following DEFAULT_ON and a saved choice is never
+// overridden (not by range switches, refreshes, live polls or reloads).
+function persistEnabled(id) {
+  try { localStorage.setItem('chart.enabledSeries.' + id, state.enabled.has(id) ? '1' : '0'); } catch (e) { /* private mode */ }
 }
-persistEnabled();
 
 // ---------- math ----------
 function rollingSMA(closes, w) {
@@ -709,7 +711,7 @@ function legendRows() {
 function toggleSeries(id) {
   if (state.enabled.has(id)) { if (id === 'spot') return; state.enabled.delete(id); }
   else { const s = state.bundle && state.bundle.series[id]; if (!s || !s.available) return; state.enabled.add(id); }
-  persistEnabled();
+  persistEnabled(id);
   state.sel = null;
   renderChart();
 }
@@ -1011,8 +1013,6 @@ async function refreshChart() {
     state.displayBars = bars;
     const b = buildBundle(range, bars);
     state.bundle = b; state.chartError = null;
-    for (const id of Object.keys(b.series)) if (b.series[id].available && isPriceDerived(id)) state.enabled.add(id);
-    persistEnabled();
   } catch (e) {
     if (gen !== chartGen) return;
     state.chartError = (isIntraday(state.range) ? 'Live intraday prices unavailable (Coinbase): ' : 'Chart data unavailable: ') + (e.message || e);
