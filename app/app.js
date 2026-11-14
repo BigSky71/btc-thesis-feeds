@@ -1144,7 +1144,7 @@ function renderFooter() {
   const html = `<div>${esc(`${WEB_VERSION} · ${CHART_VERSION} · feed v2.3 · Coinbase/Yahoo/CheckOnChain/Bitview`)}</div>` +
     (state.lastRefresh ? `<div>Updated ${new Date(state.lastRefresh).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${navigator.onLine === false ? ' · offline (cached data)' : ''}</div>` : '') +
     errs.map(e => `<div class="err">Live fetch note: ${esc(e)}</div>`).join('');
-  $('#footerOverview').innerHTML = html; $('#footerChart').innerHTML = html;
+  $('#footerOverview').innerHTML = html; $('#footerChart').innerHTML = html; const fs = $('#footerSellers'); if (fs) fs.innerHTML = html;
 }
 const dailyLevelsEl = document.createElement('div');
 function placeDailyLevels() {
@@ -1257,6 +1257,613 @@ function renderHistLows(snap) {
   $('#histLows').innerHTML = `<div style="font-size:15px;font-weight:600">Price ÷ floor at each bear low</div><div class="caption2">Below 1.00× means price closed under that floor.</div><table class="lows">${head}${rows}${latest}</table>`;
 }
 
+// ---------- short-term sellers tab ----------
+const STH_FEED = 'sth_exhaustion.json';
+const sth = {
+  range: (localStorage.getItem('sth.range') === '2y' ? '2y' : 'all'),
+  lossUnit: (localStorage.getItem('sth.lossUnit') === 'usd' ? 'usd' : 'pct'),
+  sel: { uw: null, loss: null, sopr: null },
+  plots: { uw: null, loss: null, sopr: null },
+  points: [],
+  width: 0,
+};
+const STH_RANGE_PILLS = [['all', 'Since 2011'], ['2y', '2Y']];
+const STH_SCORE_COLOR = { 0: T.negative, 1: T.warning, 2: T.accent, 3: T.positive };
+const STH_STRIP_FILL = {
+  0: 'rgba(242,89,97,0.85)',
+  1: 'rgba(242,184,64,0.85)',
+  2: 'rgba(245,158,31,0.9)',
+  3: 'rgba(51,199,122,0.9)',
+};
+const sthCheck = color => `<svg class="sth-mark" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="${color}"/><path d="M5.2 9.2l2.5 2.5 5.2-5.4" stroke="#111" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const sthCross = color => `<svg class="sth-mark" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="none" stroke="${color}" stroke-width="1.5"/><path d="M6 6l6 6M12 6l-6 6" stroke="${color}" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+
+function sthFeed() { return state.feeds[STH_FEED] || null; }
+
+function persistSth(key, val) {
+  try { localStorage.setItem('sth.' + key, val); } catch (e) { /* private mode */ }
+}
+
+function parseSthChart(block) {
+  if (!block || !Array.isArray(block.columns) || !Array.isArray(block.rows)) return [];
+  const idx = Object.fromEntries(block.columns.map((c, i) => [c, i]));
+  const need = ['date', 'price', 'uw_share_pct', 'sth_loss_1w_usd_m', 'sth_loss_1w_pct_cap', 'sth_sopr_1w', 'gauge_score'];
+  if (need.some(k => idx[k] == null)) return [];
+  const out = [];
+  for (const r of block.rows) {
+    const t = isoToUnix(r[idx.date]);
+    if (t == null) continue;
+    out.push({
+      t, date: r[idx.date],
+      price: r[idx.price],
+      sth_cost_basis: idx.sth_cost_basis != null ? r[idx.sth_cost_basis] : null,
+      uw: r[idx.uw_share_pct],
+      uw_wmax: idx.uw_share_week_max_pct != null ? r[idx.uw_share_week_max_pct] : r[idx.uw_share_pct],
+      loss_m: r[idx.sth_loss_1w_usd_m],
+      loss_pct: r[idx.sth_loss_1w_pct_cap],
+      sopr: r[idx.sth_sopr_1w],
+      score: r[idx.gauge_score],
+      uw_btc: idx.uw_btc != null ? r[idx.uw_btc] : null,
+    });
+  }
+  return out;
+}
+
+function sthPoints() {
+  const f = sthFeed();
+  if (!f) return [];
+  const block = sth.range === '2y' ? f.chart_daily_2y : f.chart_weekly;
+  return parseSthChart(block).map(p => ({
+    ...p,
+    uwLine: sth.range === 'all' ? (p.uw_wmax != null ? p.uw_wmax : p.uw) : p.uw,
+  }));
+}
+
+function sthEventLabel(name) {
+  const m = /(\w{3}) (\d{4})/.exec(name || '');
+  return m ? `${m[1]} '${m[2].slice(2)}` : name;
+}
+
+function sthPastEvents() {
+  const f = sthFeed();
+  if (!f || !Array.isArray(f.events)) return [];
+  return f.events.filter(e => e && e.kind !== 'current' && e.price_low_date);
+}
+
+function fmtBtc(v) {
+  if (!isNum(v)) return 'n/a';
+  if (Math.abs(v) >= 1e6) return fx(v / 1e6, 2) + 'M BTC';
+  if (Math.abs(v) >= 1e3) return fx(v / 1e3, 1) + 'k BTC';
+  return nf0.format(Math.round(v)) + ' BTC';
+}
+
+function fmtLossB(v) {
+  if (!isNum(v)) return 'n/a';
+  const a = Math.abs(v);
+  if (a >= 100) return '$' + fx(v, 0) + 'B';
+  if (a >= 1) return '$' + fx(v, 2).replace(/0$/, '').replace(/\.0$/, '') + 'B';
+  return '$' + fx(v * 1000, 0) + 'M';
+}
+
+function fmtLossM(v) {
+  if (!isNum(v)) return 'n/a';
+  if (Math.abs(v) >= 1000) return fmtLossB(v / 1000);
+  if (Math.abs(v) >= 100) return '$' + fx(v, 0) + 'M';
+  return '$' + fx(v, 1) + 'M';
+}
+
+function sthUwRangeText(f) {
+  const rng = f.past_low_uw_range;
+  if (rng && isNum(rng.min) && isNum(rng.max)) return `Past lows reached ${fx(rng.min, 1)}–${fx(rng.max, 1)}%`;
+  const peaks = sthPastEvents().map(e => e.uw_share_peak).filter(isNum);
+  if (!peaks.length) return 'Past lows not in this feed';
+  return `Past lows reached ${fx(Math.min(...peaks), 1)}–${fx(Math.max(...peaks), 1)}%`;
+}
+
+function sthPartDetails(f) {
+  const t = f.today || {};
+  const past = sthUwRangeText(f);
+  const uw = isNum(t.uw_share) ? fx(t.uw_share, 1) + '%' : 'n/a';
+  const btc = fmtBtc(t.uw_btc);
+  const peak = isNum(t.uw_peak_90d) ? fx(t.uw_peak_90d, 1) + '%' : 'n/a';
+  let aDetail;
+  if (t.parts && t.parts.a_underwater_peaked_and_rolling_over) {
+    const drop = isNum(t.uw_peak_90d) && isNum(t.uw_share) ? fx(t.uw_peak_90d - t.uw_share, 1) : null;
+    aDetail = `Underwater: ${uw} (${btc}) — down${drop ? ' ' + drop + ' pts' : ''} from a 90-day high of ${peak}. ${past}.`;
+  } else if (isNum(t.uw_peak_90d) && t.uw_peak_90d < 95) {
+    aDetail = `Underwater: ${uw} (${btc}) — 90-day high ${peak}, short of the 95% flush. ${past}.`;
+  } else {
+    aDetail = `Underwater: ${uw} (${btc}) — 90-day high ${peak}, not yet down 10 pts. ${past}.`;
+  }
+
+  const loss = fmtLossB(t.loss_1w_usd_b);
+  const lossPeak = fmtLossB(t.loss_1w_peak_90d_usd_b);
+  let bDetail;
+  if (t.parts && t.parts.b_losses_faded_half) {
+    const pctOff = isNum(t.loss_1w_usd_b) && isNum(t.loss_1w_peak_90d_usd_b) && t.loss_1w_peak_90d_usd_b > 0
+      ? Math.round((1 - t.loss_1w_usd_b / t.loss_1w_peak_90d_usd_b) * 100) : null;
+    bDetail = `Weekly losses: ${loss}, down${pctOff != null ? ' ' + pctOff + '%' : ''} from the 90-day high of ${lossPeak}.`;
+  } else if (isNum(t.loss_1w_usd_b) && isNum(t.loss_1w_peak_90d_usd_b) && t.loss_1w_usd_b >= t.loss_1w_peak_90d_usd_b * 0.99) {
+    bDetail = `Weekly losses: ${loss}, still at the 90-day high.`;
+  } else if (isNum(t.uw_peak_90d) && t.uw_peak_90d < 95) {
+    bDetail = `Weekly losses: ${loss} vs a 90-day high of ${lossPeak}. Fade only counts after a 95%+ underwater flush.`;
+  } else {
+    bDetail = `Weekly losses: ${loss} vs a 90-day high of ${lossPeak}, not yet down 50%.`;
+  }
+
+  const sopr = isNum(t.sopr_1w) ? fx(t.sopr_1w, 4) : 'n/a';
+  const days = isNum(t.sopr_days_above_1) ? t.sopr_days_above_1 : 0;
+  let cDetail;
+  if (t.parts && t.parts.c_sopr_above1_7d) {
+    cDetail = `Profit ratio: ${sopr}, ${days} days above 1.`;
+  } else if (days > 0) {
+    cDetail = `Profit ratio: ${sopr}, ${days} day${days === 1 ? '' : 's'} above 1 (needs 7).`;
+  } else {
+    cDetail = `Profit ratio: ${sopr}, 0 days above 1.`;
+  }
+  return { a: aDetail, b: bDetail, c: cDetail };
+}
+
+function sthVerdict(score) {
+  if (score >= 3) return 'This wave of short-term selling looks finished.';
+  if (score === 2) return 'Selling is fading.';
+  return 'Short-term sellers still active.';
+}
+
+function ensureSthShell() {
+  const root = $('#sthRoot');
+  if (!root || root.dataset.ready) return root;
+  root.innerHTML = `
+    <div class="card" id="sthGaugeCard"></div>
+    <div class="card" id="sthUwCard">
+      <div class="sth-head"><div><h3>Underwater share</h3><div class="caption">% of short-term holder supply sitting at a loss</div></div></div>
+      <div class="pills" id="sthPills">${STH_RANGE_PILLS.map(([id, label]) => `<button class="pill" data-sth-range="${id}">${label}</button>`).join('')}</div>
+      <div class="sth-chart-plot" id="sthUwPlot"></div>
+      <div class="legend" id="sthUwLegend"></div>
+    </div>
+    <div class="card" id="sthLossCard">
+      <div class="sth-head">
+        <div><h3>Short-term loss spikes</h3><div class="caption">Weekly realized losses by short-term holders</div></div>
+        <div class="pills" id="sthLossUnit"><button class="pill" data-loss-unit="usd">USD</button><button class="pill" data-loss-unit="pct">% of cap</button></div>
+      </div>
+      <div class="sth-chart-plot" id="sthLossPlot"></div>
+      <div class="legend" id="sthLossLegend"></div>
+    </div>
+    <div class="card" id="sthSoprCard">
+      <div class="sth-head"><div><h3>Sellers' profit ratio</h3><div class="caption">Above 1 = recent buyers selling at a profit; below 1 = selling at a loss.</div></div></div>
+      <div class="sth-chart-plot" id="sthSoprPlot"></div>
+      <div class="legend" id="sthSoprLegend"></div>
+    </div>`;
+  root.addEventListener('click', e => {
+    const rb = e.target.closest('[data-sth-range]');
+    if (rb && rb.dataset.sthRange !== sth.range) {
+      sth.range = rb.dataset.sthRange;
+      persistSth('range', sth.range);
+      sth.sel = { uw: null, loss: null, sopr: null };
+      renderSthCharts(true);
+      renderSthGaugeStrip();
+      return;
+    }
+    const ub = e.target.closest('[data-loss-unit]');
+    if (ub && ub.dataset.lossUnit !== sth.lossUnit) {
+      sth.lossUnit = ub.dataset.lossUnit;
+      persistSth('lossUnit', sth.lossUnit);
+      sth.sel.loss = sth.sel.loss; // keep inspect point
+      renderSthLossChart(true);
+    }
+  });
+  root.dataset.ready = '1';
+  return root;
+}
+
+function renderSthGauge() {
+  const el = $('#sthGaugeCard');
+  if (!el) return;
+  const f = sthFeed();
+  if (!f || !f.today) {
+    el.innerHTML = `<h3>Seller exhaustion</h3><div class="chart-msg">Short-term sellers feed unavailable.</div>`;
+    return;
+  }
+  const t = f.today;
+  const score = t.score || 0;
+  const color = STH_SCORE_COLOR[score] || T.text;
+  const parts = t.parts || {};
+  const labels = f.labels || {};
+  const det = sthPartDetails(f);
+  const rows = [
+    ['a', labels.a || 'Underwater share hit 95%+ and has dropped 10+ pts', parts.a_underwater_peaked_and_rolling_over, det.a],
+    ['b', labels.b || 'Weekly losses down 50%+ from the spike', parts.b_losses_faded_half, det.b],
+    ['c', labels.c || 'Sellers back in profit (7+ days)', parts.c_sopr_above1_7d, det.c],
+  ].map(([id, label, on, detail]) => `
+    <div class="sth-part" data-part="${id}">
+      ${on ? sthCheck(T.positive) : sthCross(T.text2)}
+      <div class="sth-part-body">
+        <div class="sth-part-label" style="color:${on ? T.positive : T.text}">${esc(label)}</div>
+        <div class="sth-part-detail">${esc(detail)}</div>
+      </div>
+    </div>`).join('');
+  const asOf = t.date ? fmtUTCDate(isoToUnix(t.date)) : '';
+  el.innerHTML = `
+    <div class="sth-score-row">
+      <div>
+        <div class="sth-score" style="color:${color}">Seller exhaustion: ${score} of 3</div>
+        <div class="sth-verdict" style="color:${color}">${esc(sthVerdict(score))}</div>
+        <div class="sth-asof">${asOf ? `As of ${esc(asOf)} · last finished UTC day` : ''}</div>
+      </div>
+    </div>
+    ${rows}
+    <div class="sth-caption">${esc(f.gauge_caption || '')}</div>
+    <div>
+      <div class="sth-strip-label">Gauge history</div>
+      <div class="sth-strip" id="sthStrip"><canvas id="sthStripCanvas"></canvas></div>
+    </div>`;
+  renderSthGaugeStrip();
+}
+
+function renderSthGaugeStrip() {
+  const canvas = $('#sthStripCanvas');
+  if (!canvas) return;
+  const pts = sthPoints();
+  const wrap = canvas.parentElement;
+  const w = Math.max(1, wrap.clientWidth);
+  const h = Math.max(1, wrap.clientHeight);
+  const dpr = devicePixelRatio || 1;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!pts.length) return;
+  const n = pts.length;
+  const bw = w / n;
+  for (let i = 0; i < n; i++) {
+    const s = pts[i].score || 0;
+    ctx.fillStyle = STH_STRIP_FILL[s] || STH_STRIP_FILL[0];
+    const bh = ((s + 1) / 4) * (h - 2);
+    ctx.fillRect(Math.floor(i * bw), h - bh, Math.max(1, Math.ceil(bw)), bh);
+  }
+}
+
+function sthLegendCap(key, pts) {
+  const t = sth.sel[key];
+  if (t != null) return `Inspecting · ${fmtUTCDate(t)}`;
+  const last = pts.length ? pts[pts.length - 1].t : null;
+  return last ? `Latest · ${fmtUTCDate(last)} · touch the chart to inspect` : '';
+}
+
+function rowHTML(name, color, val, extra) {
+  return `<div class="lrow"><span class="ldot" style="background:${color}"></span><span class="ltitle">${esc(name)}</span>${extra || ''}<span class="lval" style="color:${val == null ? T.text2 : color}">${val == null ? 'n/a' : esc(val)}</span></div>`;
+}
+
+function sthAt(pts, t) {
+  if (!pts.length) return null;
+  const i = t == null ? pts.length - 1 : nearestIdx(pts, t);
+  return i >= 0 ? pts[i] : null;
+}
+
+function renderSthUwLegend() {
+  const el = $('#sthUwLegend'); if (!el) return;
+  const pts = sth.points;
+  const p = sthAt(pts, sth.sel.uw);
+  const ev = p ? sthPastEvents().find(e => {
+    const et = isoToUnix(e.price_low_date);
+    return et != null && p.t && Math.abs(et - p.t) <= (sth.range === 'all' ? 8 : 2) * DAY;
+  }) : null;
+  const evNote = ev ? `<span class="caption2" style="white-space:nowrap">${esc(sthEventLabel(ev.name))} low</span>` : '';
+  el.innerHTML = `<div class="legend-cap">${esc(sthLegendCap('uw', pts))}</div>` +
+    rowHTML('Underwater share', rgba(0.95, 0.45, 0.55), p && isNum(p.uwLine) ? fx(p.uwLine, 1) + '%' : null, evNote) +
+    rowHTML('Supply in loss', rgba(0.95, 0.45, 0.55, 0.7), p && isNum(p.uw_btc) ? fmtBtc(p.uw_btc) : null) +
+    rowHTML('BTC price', T.accent, p && isNum(p.price) ? usd(p.price) : null);
+}
+
+function renderSthLossLegend() {
+  const el = $('#sthLossLegend'); if (!el) return;
+  const pts = sth.points;
+  const p = sthAt(pts, sth.sel.loss);
+  const usdVal = p && isNum(p.loss_m) ? fmtLossM(p.loss_m) : null;
+  const pctVal = p && isNum(p.loss_pct) ? fx(p.loss_pct, 2) + '%' : null;
+  const main = sth.lossUnit === 'pct' ? pctVal : usdVal;
+  const other = sth.lossUnit === 'pct' ? usdVal : pctVal;
+  const otherLabel = sth.lossUnit === 'pct' ? 'USD' : '% of cap';
+  el.innerHTML = `<div class="legend-cap">${esc(sthLegendCap('loss', pts))}</div>` +
+    rowHTML(sth.lossUnit === 'pct' ? 'Weekly losses, % of STH cap' : 'Weekly losses, USD', rgba(0.95, 0.55, 0.30), main) +
+    rowHTML(otherLabel, T.text2, other);
+}
+
+function renderSthSoprLegend() {
+  const el = $('#sthSoprLegend'); if (!el) return;
+  const pts = sth.points;
+  const p = sthAt(pts, sth.sel.sopr);
+  const v = p && isNum(p.sopr) ? fx(p.sopr, 4) : null;
+  const side = p && isNum(p.sopr) ? (p.sopr >= 1 ? 'above 1 · selling at a profit' : 'below 1 · selling at a loss') : '';
+  el.innerHTML = `<div class="legend-cap">${esc(sthLegendCap('sopr', pts))}</div>` +
+    rowHTML("Sellers' profit ratio (1w)", p && isNum(p.sopr) && p.sopr >= 1 ? T.positive : T.negative, v,
+      side ? `<span class="caption2" style="white-space:nowrap">${esc(side)}</span>` : '');
+}
+
+function destroySthPlot(key) {
+  if (sth.plots[key]) { sth.plots[key].destroy(); sth.plots[key] = null; }
+}
+
+function sthCursorHook(key) {
+  return u => {
+    const left = u.cursor.left;
+    let t = null;
+    if (left != null && left >= 0 && u.cursor.idx != null) t = u.posToVal(left, 'x');
+    if (t !== sth.sel[key]) {
+      sth.sel[key] = t;
+      if (key === 'uw') renderSthUwLegend();
+      else if (key === 'loss') renderSthLossLegend();
+      else renderSthSoprLegend();
+    }
+  };
+}
+
+function sthCommonOpts(width, height, xd, xRangeKey, gutterRight, gutterLeft) {
+  const leftPad = gutterLeft || 4;
+  return {
+    width, height, legend: { show: false }, padding: [8, 0, 0, leftPad],
+    cursor: { y: false, points: { show: false }, drag: { x: false, y: false, setScale: false }, focus: { prox: -1 } },
+    tzDate: ts => uPlot.tzDate(new Date(ts * 1e3), 'Etc/UTC'),
+    scales: { x: { time: true, range: () => xd } },
+    axes: [
+      { stroke: T.text2, font: XAXIS_FONT, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, size: 26, space: Math.max(60, width / 6), values: xAxisValues(xRangeKey) },
+    ],
+  };
+}
+
+function gutterFor(texts) {
+  measureCtx.font = AXIS_FONT;
+  return Math.ceil(Math.max(...texts.map(t => measureCtx.measureText(t).width))) + 12;
+}
+
+
+function placeSthEventLabels(u, evs, el) {
+  el.querySelectorAll('.sth-ev-label').forEach(n => n.remove());
+  const er = el.getBoundingClientRect(), or = u.over.getBoundingClientRect();
+  const plotTop = or.top - er.top, plotLeft = or.left - er.left, plotW = or.width;
+  const rows = [[], [], []];
+  const rowH = 11;
+  evs.slice().sort((a, b) => a.t - b.t).forEach(e => {
+    const lab = document.createElement('div');
+    lab.className = 'sth-ev-label';
+    lab.textContent = sthEventLabel(e.name);
+    el.appendChild(lab);
+    const w = lab.offsetWidth;
+    const xRaw = plotLeft + u.valToPos(e.t, 'x');
+    const x = Math.max(plotLeft + w / 2, Math.min(plotLeft + plotW - w / 2, xRaw));
+    const overlaps = list => list.some(p => Math.abs(p.x - x) < (p.w + w) / 2 + 4);
+    let row = rows.findIndex(list => !overlaps(list));
+    if (row < 0) row = 0;
+    rows[row].push({ x, w });
+    lab.style.left = x + 'px';
+    lab.style.top = (plotTop - 12 - (rows.length - 1 - row) * rowH) + 'px';
+  });
+}
+
+function renderSthUwChart() {
+  const el = $('#sthUwPlot'); if (!el) return;
+  destroySthPlot('uw');
+  const pts = sth.points;
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No underwater-share history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 210;
+  const xs = pts.map(p => p.t);
+  const uw = pts.map(p => isNum(p.uwLine) ? p.uwLine : null);
+  const px = pts.map(p => isNum(p.price) ? p.price : null);
+  const xd = [xs[0], xs[xs.length - 1]];
+  const prices = px.filter(v => v > 0);
+  const pLo = Math.min(...prices), pHi = Math.max(...prices);
+  const useLog = sth.range === 'all';
+  const y2range = useLog
+    ? [pLo / 1.25, pHi * 1.15]
+    : [pLo * 0.92, pHi * 1.08];
+  const evs = sthPastEvents().map(e => ({ ...e, t: isoToUnix(e.price_low_date) })).filter(e => e.t != null && e.t >= xd[0] && e.t <= xd[1]);
+  const marks = new Array(xs.length).fill(null);
+  evs.forEach(e => {
+    const i = nearestIdx(pts, e.t);
+    if (i >= 0) marks[i] = pts[i].uwLine;
+  });
+  const gR = gutterFor(['$000.0k', usd(pHi)]);
+  const gL = gutterFor(['100%']);
+  const xKey = sth.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.padding = [6, 0, 0, 4];
+  opts.scales.y = { range: () => [0, 100] };
+  opts.scales.y2 = { range: () => y2range, distr: useLog ? 3 : 1 };
+  opts.axes.push(
+    { scale: 'y', stroke: T.text2, font: AXIS_FONT, size: gL, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : Math.round(v) + '%') },
+    { scale: 'y2', side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { show: false }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : (useLog ? histCompact(v) : axisUSD(v))) },
+  );
+  opts.series = [
+    {},
+    { label: 'Underwater', scale: 'y', stroke: rgba(0.95, 0.45, 0.55), width: 1.8, spanGaps: true, points: { show: false } },
+    { label: 'BTC', scale: 'y2', stroke: T.accent, width: 1.3, spanGaps: true, points: { show: false } },
+    { label: 'Lows', scale: 'y', stroke: '#fff', width: 0, paths: () => null, points: { show: true, size: 7, fill: '#fff', stroke: 'rgba(0,0,0,0.55)', width: 1, space: 0 } },
+  ];
+  opts.hooks = {
+    setCursor: [sthCursorHook('uw')],
+    draw: [u => {
+      const ctx = u.ctx, dpr = devicePixelRatio;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      const y95 = u.valToPos(95, 'y', true);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1 * dpr;
+      ctx.setLineDash([5 * dpr, 4 * dpr]);
+      ctx.beginPath(); ctx.moveTo(u.bbox.left, y95); ctx.lineTo(u.bbox.left + u.bbox.width, y95); ctx.stroke();
+      ctx.setLineDash([2 * dpr, 3 * dpr]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      for (const e of evs) {
+        const x = Math.round(u.valToPos(e.t, 'x', true));
+        ctx.beginPath(); ctx.moveTo(x, u.bbox.top); ctx.lineTo(x, u.bbox.top + u.bbox.height); ctx.stroke();
+      }
+      ctx.restore();
+      placeSthEventLabels(u, evs, el);
+      const er = el.getBoundingClientRect(), or = u.over.getBoundingClientRect();
+      const lab95 = document.createElement('div');
+      lab95.className = 'lows-label';
+      lab95.textContent = '95%';
+      lab95.style.left = (or.left - er.left + 8) + 'px';
+      lab95.style.top = (or.top - er.top + u.valToPos(95, 'y') - 12) + 'px';
+      lab95.style.transform = 'none';
+      el.appendChild(lab95);
+    }],
+  };
+  sth.plots.uw = new uPlot(opts, [xs, uw, px, marks], el);
+  attachTouch(sth.plots.uw);
+  renderSthUwLegend();
+}
+
+function renderSthLossChart(force) {
+  const el = $('#sthLossPlot'); if (!el) return;
+  destroySthPlot('loss');
+  const pts = sth.points;
+  $('#sthLossUnit') && $('#sthLossUnit').querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.dataset.lossUnit === sth.lossUnit));
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No loss history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 200;
+  const xs = pts.map(p => p.t);
+  const ys = pts.map(p => sth.lossUnit === 'pct' ? (isNum(p.loss_pct) ? p.loss_pct : null) : (isNum(p.loss_m) ? p.loss_m : null));
+  const xd = [xs[0], xs[xs.length - 1]];
+  const ymax = Math.max(...ys.filter(v => v != null), 0) * 1.08 || 1;
+  const fmtY = v => {
+    if (v == null) return '';
+    if (sth.lossUnit === 'pct') return (v >= 10 ? fx(v, 0) : fx(v, 1)) + '%';
+    return Math.abs(v) >= 1000 ? fmtLossB(v / 1000) : fmtLossM(v);
+  };
+  const gR = gutterFor([fmtY(ymax), '$00.0B', '10.0%']);
+  const xKey = sth.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.scales.y = { range: () => [0, ymax] };
+  opts.axes.push({ side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(fmtY) });
+  opts.series = [{}, { stroke: 'transparent', width: 0, paths: () => null, points: { show: false } }];
+  opts.hooks = {
+    setCursor: [sthCursorHook('loss')],
+    draw: [u => {
+      const ctx = u.ctx, dpr = devicePixelRatio, dataX = u.data[0];
+      let spacing = Infinity;
+      for (let i = 1; i < dataX.length; i++) {
+        const d = u.valToPos(dataX[i], 'x', true) - u.valToPos(dataX[i - 1], 'x', true);
+        if (d > 0 && d < spacing) spacing = d;
+      }
+      if (!isFinite(spacing)) spacing = 6 * dpr;
+      const w = Math.max(1.4 * dpr, spacing * 0.72);
+      const y0 = u.valToPos(0, 'y', true);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      for (let i = 0; i < pts.length; i++) {
+        const v = ys[i]; if (v == null) continue;
+        const x = u.valToPos(pts[i].t, 'x', true), y = u.valToPos(v, 'y', true);
+        ctx.fillStyle = 'rgba(245, 140, 70, 0.92)';
+        ctx.fillRect(x - w / 2, y, w, Math.max(dpr, y0 - y));
+      }
+      ctx.restore();
+    }],
+  };
+  sth.plots.loss = new uPlot(opts, [xs, ys], el);
+  attachTouch(sth.plots.loss);
+  renderSthLossLegend();
+}
+
+function renderSthSoprChart() {
+  const el = $('#sthSoprPlot'); if (!el) return;
+  destroySthPlot('sopr');
+  const pts = sth.points;
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No profit-ratio history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 200;
+  const xs = pts.map(p => p.t);
+  const ys = pts.map(p => isNum(p.sopr) ? p.sopr : null);
+  const xd = [xs[0], xs[xs.length - 1]];
+  const vals = ys.filter(isNum);
+  let lo = Math.min(0.97, ...vals), hi = Math.max(1.03, ...vals);
+  const pad = (hi - lo) * 0.12;
+  lo -= pad; hi += pad;
+  const gR = gutterFor(['1.000', '0.000']);
+  const xKey = sth.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.scales.y = { range: () => [lo, hi] };
+  opts.axes.push({ side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals2) => vals2.map(v => v == null ? '' : fx(v, 3)) });
+  opts.series = [{}, { label: 'SOPR', stroke: 'rgba(220,220,230,0.95)', width: 1.6, spanGaps: true, points: { show: false } }];
+  opts.hooks = {
+    setCursor: [sthCursorHook('sopr')],
+    draw: [u => {
+      const ctx = u.ctx, dpr = devicePixelRatio;
+      const xs2 = u.data[0], ys2 = u.data[1];
+      const y1 = u.valToPos(1, 'y', true);
+      const xPos = t => u.valToPos(t, 'x', true);
+      const yPos = v => u.valToPos(v, 'y', true);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      const fillSeg = (t0, v0, t1, v1, above) => {
+        ctx.beginPath();
+        ctx.moveTo(xPos(t0), y1);
+        ctx.lineTo(xPos(t0), yPos(v0));
+        ctx.lineTo(xPos(t1), yPos(v1));
+        ctx.lineTo(xPos(t1), y1);
+        ctx.closePath();
+        ctx.fillStyle = above ? 'rgba(51,199,122,0.22)' : 'rgba(242,89,97,0.22)';
+        ctx.fill();
+      };
+      for (let i = 0; i < xs2.length - 1; i++) {
+        const v0 = ys2[i], v1 = ys2[i + 1];
+        if (v0 == null || v1 == null) continue;
+        const t0 = xs2[i], t1 = xs2[i + 1];
+        const a0 = v0 >= 1, a1 = v1 >= 1;
+        if (a0 === a1) fillSeg(t0, v0, t1, v1, a0);
+        else {
+          const f = (1 - v0) / (v1 - v0);
+          const tc = t0 + f * (t1 - t0);
+          fillSeg(t0, v0, tc, 1, a0);
+          fillSeg(tc, 1, t1, v1, a1);
+        }
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 1.2 * dpr;
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(u.bbox.left, y1); ctx.lineTo(u.bbox.left + u.bbox.width, y1); ctx.stroke();
+      ctx.restore();
+    }],
+  };
+  sth.plots.sopr = new uPlot(opts, [xs, ys], el);
+  attachTouch(sth.plots.sopr);
+  renderSthSoprLegend();
+}
+
+function renderSthCharts(force) {
+  const root = ensureSthShell();
+  if (!root) return;
+  root.querySelectorAll('#sthPills .pill').forEach(p => p.classList.toggle('on', p.dataset.sthRange === sth.range));
+  const el = $('#sthUwPlot');
+  const w = el ? el.clientWidth : 0;
+  if (!force && w && w === sth.width && sth.plots.uw && sth.plots.loss && sth.plots.sopr) {
+    renderSthUwLegend(); renderSthLossLegend(); renderSthSoprLegend();
+    return;
+  }
+  sth.points = sthPoints();
+  sth.width = w;
+  if (!sthFeed()) {
+    ['sthUwPlot', 'sthLossPlot', 'sthSoprPlot'].forEach(id => {
+      const n = $('#' + id); if (n) n.innerHTML = '<div class="chart-msg">Short-term sellers feed unavailable.</div>';
+    });
+    return;
+  }
+  renderSthUwChart();
+  renderSthLossChart();
+  renderSthSoprChart();
+}
+
+function renderSellers() {
+  ensureSthShell();
+  renderSthGauge();
+  renderSthCharts(true);
+}
+
+
 // ---------- app shell ----------
 function setSpinner() { const busy = state.loading || state.feedsLoading; $('#spinner').hidden = !busy; $('#refreshBtn').disabled = !!busy; }
 function setTab(tab) {
@@ -1264,15 +1871,19 @@ function setTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   $('#view-overview').hidden = tab !== 'overview';
   $('#view-chart').hidden = tab !== 'chart';
-  $('#topbarTitle').textContent = tab === 'chart' ? 'Chart' : 'BTC Thesis';
-  const slot = tab === 'chart' ? $('#chartSlotChart') : $('#chartSlotOverview');
-  if (chartCard.parentElement !== slot) slot.appendChild(chartCard);
-  state.sel = null; renderChart();
+  $('#view-sellers').hidden = tab !== 'sellers';
+  $('#topbarTitle').textContent = tab === 'chart' ? 'Chart' : tab === 'sellers' ? 'Short-term sellers' : 'BTC Thesis';
+  if (tab === 'chart' || tab === 'overview') {
+    const slot = tab === 'chart' ? $('#chartSlotChart') : $('#chartSlotOverview');
+    if (chartCard.parentElement !== slot) slot.appendChild(chartCard);
+    state.sel = null; renderChart();
+  }
+  if (tab === 'sellers') renderSellers();
   window.scrollTo(0, 0);
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();
@@ -1290,6 +1901,7 @@ async function refreshAll() {
   renderCards(); renderLive();
   await refreshChart();
   if (!$('#floorSheet').hidden) renderFloorSheet();
+  if (state.tab === 'sellers') renderSellers();
 }
 $('#refreshBtn').addEventListener('click', () => refreshAll());
 
@@ -1300,6 +1912,7 @@ window.addEventListener('resize', () => {
     placeDailyLevels();
     const w = chartCard.querySelector('#chartWrap').clientWidth;
     if (w !== lastW) { lastW = w; renderChart(); if (!$('#floorSheet').hidden) renderFloorSheet(); }
+    if (state.tab === 'sellers') renderSthCharts(true);
   }, 150);
 });
 // ---------- live price ----------
