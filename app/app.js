@@ -755,17 +755,117 @@ function toggleSeries(id) {
 function snapshot() {
   if (!state.master || !state.master.length || state.spot == null) return null;
   const closes = state.master.map(b => b.c);
-  if (closes.length < 350) return { spot: state.spot, wma50: null, source: 'mock', asOf: state.spotAt };
-  const last = closes.slice(-350); const wma50 = last.reduce((a, b) => a + b, 0) / 350;
-  return { spot: state.spot, wma50, source: 'live', asOf: state.spotAt };
+  if (closes.length < 350) return { spot: state.spot, wma50: null, wma200: null, source: 'mock', asOf: state.spotAt };
+  const wma50 = closes.slice(-350).reduce((a, b) => a + b, 0) / 350;
+  const wma200 = closes.length >= 1400 ? closes.slice(-1400).reduce((a, b) => a + b, 0) / 1400 : null;
+  return { spot: state.spot, wma50, wma200, source: 'live', asOf: state.spotAt };
 }
+
+/** Thousands label: 67906 → $67.9k, 60500 → $60.5k, 70000 → $70k */
+function fmtK(v) {
+  if (!isNum(v)) return 'n/a';
+  const k = v / 1000;
+  const body = Math.abs(k - Math.round(k)) < 0.05 ? String(Math.round(k)) : fx(k, 1);
+  return '$' + body + 'k';
+}
+
+function bannerRangeText(low, high) {
+  const a = fmtK(low), b = fmtK(high);
+  // "$60.5k" + "$62.5k" → "$60.5–62.5k"
+  if (a.endsWith('k') && b.endsWith('k') && a.charAt(0) === '$' && b.charAt(0) === '$') {
+    return a.slice(0, -1) + '–' + b.slice(1);
+  }
+  return a + '–' + b;
+}
+
+const DEFAULT_BANNER_LEVELS = [
+  { id: 'bears_last_stand', label: "Bears' Last Stand", price: 83000, kind: 'level' },
+  { id: '72k', label: '$72k', price: 72000, kind: 'level' },
+  { id: '70k', label: '$70k', price: 70000, kind: 'level' },
+  { id: 'liquidation_cluster', label: 'liquidation cluster', low: 60500, high: 62500, kind: 'zone' },
+  { id: 'june_30_low', label: 'June 30 low', price: 58367, kind: 'level', date: '2026-06-30' },
+];
+
+function bannerLevelDisplay(L) {
+  if (L.kind === 'average') return `the 200-week average (~${fmtK(L.low)})`;
+  if (L.kind === 'zone') return `the ${bannerRangeText(L.low, L.high)} liquidation cluster`;
+  if (L.id === 'june_30_low') return `the June 30 low at ${usd(L.low)}`;
+  if (L.id === 'bears_last_stand') return `Bears' Last Stand at ${usd(L.low)}`;
+  if (L.id === '70k' || L.id === '72k') return fmtK(L.low);
+  return L.label || usd(L.low);
+}
+
+function bannerLevelSet(snap) {
+  const file = state.feeds['banner_levels.json'] || {};
+  const raw = Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
+  const items = [];
+  if (snap && isNum(snap.wma200)) {
+    items.push({ id: 'wma200', kind: 'average', low: snap.wma200, high: snap.wma200, live: true });
+  }
+  for (const L of raw) {
+    if (L.kind === 'zone' && isNum(L.low) && isNum(L.high)) {
+      const lo = Math.min(L.low, L.high), hi = Math.max(L.low, L.high);
+      items.push({ id: L.id, kind: 'zone', low: lo, high: hi, label: L.label });
+    } else if (isNum(L.price)) {
+      items.push({ id: L.id, kind: 'level', low: L.price, high: L.price, label: L.label, date: L.date });
+    }
+  }
+  return items.map(x => ({ ...x, display: bannerLevelDisplay(x) }));
+}
+
+/**
+ * Banner support line is always from live price. Nearest listed level below
+ * price is support; nearest listed level above (a former support) is resistance
+ * to reclaim. A zone that contains the price is "testing."
+ */
 function soWhat() {
-  const snap = snapshot(); const bull = currentBull();
-  if (!snap || snap.source !== 'live') return { tone: 'muted', msg: 'Waiting on live 50 WMA…' };
-  const confirm = (bull.hasFeed && bull.value('first_support')) || CONFIG.weeklyConfirmRef;
-  if (snap.spot >= confirm) return { tone: 'accent', msg: `Quiet & Trending — early bull · dips will be bought · early innings. First support to defend is ${usd(confirm)}` };
-  if (snap.spot < snap.wma50) return { tone: 'warning', msg: `Below the live 50-week average. First support to defend is ${usd(confirm)} — not the average` };
-  return { tone: 'warning', msg: `Under ${usd(confirm)} — that cleared confirm is the first support to defend` };
+  const snap = snapshot();
+  if (!snap || snap.source !== 'live' || !isNum(snap.spot)) return { tone: 'muted', msg: 'Waiting on live price…' };
+  const px = snap.spot;
+  const levels = bannerLevelSet(snap);
+  if (!levels.length) return { tone: 'muted', msg: 'Support levels unavailable.' };
+
+  const testing = levels.filter(L => px >= L.low && px <= L.high);
+  const supports = levels.filter(L => L.high < px).sort((a, b) => b.high - a.high);
+  const resistance = levels.filter(L => L.low > px).sort((a, b) => a.low - b.low);
+  const nearestSup = supports[0] || null;
+  const nextSup = supports[1] || null;
+  const nearestRes = resistance[0] || null;
+
+  const thenSup = (first) => {
+    const rest = first ? supports.filter(s => s.id !== first.id) : supports;
+    return rest[0] || null;
+  };
+
+  if (testing.length) {
+    const z = testing[0];
+    let msg = `Testing ${z.display}.`;
+    if (nearestRes) msg += ` Nearest resistance to reclaim: ${nearestRes.display}.`;
+    const nxt = thenSup(null);
+    if (nxt) msg += ` Next support: ${nxt.display}.`;
+    else if (!nearestRes) msg += ' No listed support below, and no listed resistance above.';
+    const tone = z.kind === 'zone' || (nearestRes && nearestRes.id === 'wma200') ? 'warning' : 'accent';
+    return { tone, msg };
+  }
+
+  if (!supports.length && resistance.length) {
+    return { tone: 'warning', msg: `Below all listed levels. Nearest resistance to reclaim: ${nearestRes.display}.` };
+  }
+
+  if (supports.length && !resistance.length) {
+    let msg = `Holding above ${nearestSup.display}. Nearest support: ${nearestSup.display}`;
+    if (nextSup) msg += `, then ${nextSup.display}`;
+    msg += '.';
+    return { tone: 'accent', msg };
+  }
+
+  // Between levels: nearest former support above is resistance to reclaim;
+  // nearest level below is support, with the next one down if there is one.
+  let msg = `Below ${nearestRes.display}, now resistance to reclaim. Nearest support: ${nearestSup.display}`;
+  if (nextSup) msg += `, then ${nextSup.display}`;
+  msg += '.';
+  const tone = (nearestRes && (nearestRes.id === 'wma200' || nearestRes.kind === 'zone')) || (nearestSup && nearestSup.kind === 'zone') ? 'warning' : 'warning';
+  return { tone, msg };
 }
 const WAITING_BULL = { hasFeed: false, supports: [], overhead: [], signals: [], moveFragile: 80, moveStress: 100, moveRecession: 135, value: () => null, anyWarning: false };
 function currentBull() { return state.bull || WAITING_BULL; }
@@ -3084,7 +3184,7 @@ function setTab(tab) {
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json', 'banner_levels.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();
@@ -3208,5 +3308,6 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 window.__btc = state; // for debugging / verification
+window.__btcRedraw = () => { renderCards(); const el = chartCard.querySelector('#chartBanner'); if (el) el.innerHTML = bannerHTML(soWhat()); };
 window.__btcLive = { get uPrice() { return uPrice; }, get timer() { return !!liveTimer; }, tick: () => liveTick() };
 })();

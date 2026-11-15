@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "banner_levels",
+  "generated_at": "2026-11-15",
+  "notes": "Static support and resistance references for the Overview and Chart so-what banner. The 200-week average is computed live from price_history.json (1400 daily closes) and is never hardcoded here. The banner always names the nearest level below live price as support, and the nearest listed level above price as resistance to reclaim.",
+  "levels": [
+    {
+      "id": "bears_last_stand",
+      "label": "Bears' Last Stand",
+      "price": 83000,
+      "kind": "level",
+      "source": "Former first support to defend (cleared confirm). Static $83,000."
+    },
+    {
+      "id": "72k",
+      "label": "$72k",
+      "price": 72000,
+      "kind": "level",
+      "source": "Static round-number level."
+    },
+    {
+      "id": "70k",
+      "label": "$70k",
+      "price": 70000,
+      "kind": "level",
+      "source": "Static round-number level."
+    },
+    {
+      "id": "liquidation_cluster",
+      "label": "liquidation cluster",
+      "low": 60500,
+      "high": 62500,
+      "kind": "zone",
+      "source": "Glassnode liquidation cluster $60.5k–$62.5k."
+    },
+    {
+      "id": "june_30_low",
+      "label": "June 30 low",
+      "price": 58367,
+      "date": "2026-06-30",
+      "kind": "level",
+      "source": "June 30, 2026 low as recorded in the Sellers / Buyers event series (price_low 58367). price_history.json has daily closes only: the June 30 close is $58,558.86, which is also the lowest close in 2026. That file has no daily lows, so $58,367 cannot be verified as a low from price_history."
+    }
+  ]
+}
