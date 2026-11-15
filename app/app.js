@@ -2290,7 +2290,7 @@ const buy = {
   points: [],
   width: 0,
 };
-const BUY_RANGE_PILLS = [['all', 'Since 2011'], ['2y', '2Y']];
+const BUY_RANGE_PILLS = [['all', 'Since 2017'], ['2y', '2Y']];
 const BUY_SCORE_COLOR = { 0: T.negative, 1: T.warning, 2: T.accent, 3: T.positive, 4: T.positive };
 const BUY_STRIP_FILL = {
   0: 'rgba(242,89,97,0.85)',
