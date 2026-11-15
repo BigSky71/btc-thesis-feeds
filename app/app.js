@@ -77,7 +77,7 @@ const INTRADAY = {
 // ---------- thesis config ----------
 const CONFIG = {
   weeklyConfirmRef: 83000, weeklyConfirmVisibleFrom: Date.UTC(2026, 4, 10) / 1000,
-  mayHighRef: 82500, mock50WMA: 79000, reaccumShelfLow: 76000, reaccumShelfHigh: 82000,
+  mock50WMA: 79000, reaccumShelfLow: 76000, reaccumShelfHigh: 82000,
   deeperInvalidation: 70000, digestionLow: 87000, digestionHigh: 100000, sthQ75: 87000, sthQ90: 104000,
   regimeSummary: 'Quiet & Trending — early bull',
   regimeDetail: 'Dips will be bought · early innings. The bull-market card is the measurable set once price is above the live 50-week average: supports, overhead, and top signals. ~$83k is the first support to defend (cleared 2026-09-24), not a level still waiting to clear. The live 50-week average stays a separate line. Soft GLI and MOVE / liquidity caution still apply.',
@@ -175,7 +175,6 @@ const state = {
   sel: null,          // selected (inspected) unix time
   tab: 'overview',
   intradayCache: {},
-  mayHigh: null,      // { value, date, source: 'high'|'close' } computed from May 2026 candles
 };
 if (!RANGES.includes(state.range)) state.range = '1Y';
 
@@ -542,34 +541,6 @@ async function loadSpot() {
     if (p > 0) { state.spot = p; state.spotAt = Date.now() / 1000; state.liveAt = Date.now(); state.liveErr = null; applySpotToMaster(); return; }
   } catch (e) { /* fall through */ }
   if (state.master && state.master.length) { state.spot = state.master[state.master.length - 1].c; state.spotAt = Date.now() / 1000; state.spotFallback = true; }
-}
-
-async function loadMayHigh() {
-  const mayStart = Date.UTC(2026, 4, 1) / 1000;
-  const juneStart = Date.UTC(2026, 5, 1) / 1000;
-  const isoDay = t => new Date(t * 1000).toISOString().slice(0, 10);
-  try {
-    const url = `${CB}/candles?granularity=${DAY}&start=${new Date(mayStart * 1000).toISOString()}&end=${new Date(juneStart * 1000).toISOString()}`;
-    const rows = await fetchJSON(url, 10000);
-    let best = null;
-    for (const r of rows || []) {
-      if (!Array.isArray(r) || !(r[2] > 0)) continue;
-      const ts = r[0], high = r[2];
-      if (ts < mayStart || ts >= juneStart) continue;
-      if (!best || high > best.value) best = { value: high, date: isoDay(ts), source: 'high' };
-    }
-    if (best) { state.mayHigh = best; return; }
-  } catch (e) { /* fall through to daily closes */ }
-  let best = null;
-  const ph = state.feeds['price_history.json'];
-  if (ph && ph.t && ph.c) {
-    for (let i = 0; i < ph.t.length; i++) {
-      const ts = ph.t[i], c = ph.c[i];
-      if (!(c > 0) || ts < mayStart || ts >= juneStart) continue;
-      if (!best || c > best.value) best = { value: c, date: isoDay(ts), source: 'close' };
-    }
-  }
-  state.mayHigh = best;
 }
 
 async function fetchDisplayBars(range) {
@@ -987,16 +958,6 @@ function dailyLevels() {
     { support: 'STH Q90 (profit-taking)', overhead: 'STH Q90 (profit-taking, overhead)', testing: 'STH Q90 (testing)' },
     liveValue(w.sth_q90),
     'Live: short-term holder cost basis times the point-in-time Q90 of STH-MVRV. Updates daily.');
-  const may = state.mayHigh;
-  if (may && isNum(may.value)) {
-    const rel = levelRelation(may.value, may.value, spot);
-    const title = rel === 'overhead' ? 'May 2026 high, overhead' : (rel === 'testing' ? 'May 2026 high (testing)' : 'May 2026 high');
-    const when = may.date ? shortDateISO(may.date) || may.date : 'May 2026';
-    const note = may.source === 'high'
-      ? `Highest Coinbase daily high in May 2026, on ${when}. Recomputed from the candle history.`
-      : `Highest daily close in May 2026, on ${when}. Intraday high was not in this feed.`;
-    rows.push(L('mayHigh', 'level', title, may.value, null, 'history', note));
-  }
   rows.sort((a, b) => ((b.priceHigh != null ? b.priceHigh : b.price) - (a.priceHigh != null ? a.priceHigh : a.price)));
   rows.push(L('liveSupports', 'note', 'Other live levels', null, null, 'note', 'True Market Mean, short-term holder cost basis, and the 200-day average are live on the bull-market card and on the chart.'));
   rows.push(L('mayer', 'note', 'Mayer Multiple ~1.5×', null, null, 'note', 'Dollar level is on the bull card: the multiple times the live 200-day average. It is not a fixed price.'));
@@ -1510,7 +1471,7 @@ function renderDailyLevels() {
   }).join('');
   const spotBox = spot != null ? `<div class="spot-box"><div class="caption2">Spot</div><div class="v">${usd(spot)}</div><div class="live-slot">${liveTagHTML()}</div></div>` : '';
   const asOf = snap && snap.asOf ? `<div class="caption2">As of ${new Date(snap.asOf * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>` : '';
-  const mock = snap && snap.source === 'mock' ? '<div class="banner tone-warning">Using mock market data — 50-week average labeled mock ≈ 79k (not the first support to defend, not May high).</div>' : '';
+  const mock = snap && snap.source === 'mock' ? '<div class="banner tone-warning">Using mock market data — 50-week average labeled mock ≈ 79k (not the first support to defend).</div>' : '';
   dailyLevelsEl.innerHTML = card(`<div class="row-between"><h2>Daily Levels</h2>${spotBox}</div>${bannerHTML(soWhat())}${mock}${asOf}<div>${rows}</div>`);
 }
 function renderRegime() {
@@ -3314,7 +3275,6 @@ async function refreshAll() {
   }));
   state.feedErrors = errors;
   try { await loadMaster(); } catch (e) { state.feedErrors.push(e.message || String(e)); }
-  try { await loadMayHigh(); } catch (e) { state.mayHigh = null; }
   state.spotFallback = false;
   await loadSpot();
   state.bull = bullSnapshot(state.feeds['bull_levels.json'], state.feeds['bull_watch.json']);
