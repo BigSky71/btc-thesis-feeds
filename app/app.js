@@ -87,7 +87,7 @@ const CONFIG = {
   liquidityFlags: [
     { id: 'gli', title: 'GLI momentum', detail: 'Soft / watch', severity: 'soft' },
     { id: 'move', title: 'MOVE', detail: 'Waiting on funding watch', severity: 'neutral' },
-    { id: 'sofr_minus_2y', title: 'SOFR − 2y', detail: 'Waiting on funding watch', severity: 'neutral' },
+    { id: 'sofr_minus_2y', title: '2y − SOFR', detail: 'Waiting on funding watch', severity: 'neutral' },
     { id: 'bills_share', title: 'Bills / debt', detail: 'Waiting on funding watch', severity: 'neutral' },
     { id: 'reserves', title: 'Reserves', detail: 'Waiting on funding watch', severity: 'neutral' },
   ],
@@ -1341,34 +1341,194 @@ function renderETF() {
     <div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:12px;font-weight:500;color:${has ? T.text : T.text2}">${esc(line)}</div>${j.as_of ? `<div class="caption2">as of ${esc(j.as_of)}</div>` : ''}</div></div>
     <div class="caption2">CheckOnChain weekly ETF flows / volume — not a trade signal.</div>`);
 }
+function fmtTrillions(t) {
+  if (!isNum(t)) return 'n/a';
+  return '$' + fx(t, 2) + 'T';
+}
+function fmtSpreadBp(bp) {
+  if (!isNum(bp)) return '—';
+  return (bp >= 0 ? '+' : '') + fx(bp, 1) + 'bp';
+}
+function twoYearSofrFromFeeds() {
+  const liq = state.feeds['liquidity_history.json'];
+  const snap = liq && liq.ust2y_sofr;
+  if (snap && isNum(snap.ust2y_pct) && isNum(snap.sofr_pct)) {
+    const bp = isNum(snap.spread_bp) ? snap.spread_bp : (snap.ust2y_pct - snap.sofr_pct) * 100;
+    return { twoY: snap.ust2y_pct, sofr: snap.sofr_pct, bp, twoYDate: snap.ust2y_date, sofrDate: snap.sofr_date, reading: snap.reading || null, source: 'liquidity' };
+  }
+  const j = state.feeds['funding_watch.json'];
+  if (j && isNum(j.ust_2y_pct) && isNum(j.sofr_pct)) {
+    return { twoY: j.ust_2y_pct, sofr: j.sofr_pct, bp: (j.ust_2y_pct - j.sofr_pct) * 100, twoYDate: j.sofr_as_of, sofrDate: j.sofr_as_of, reading: null, source: 'funding' };
+  }
+  return null;
+}
+function spreadSeverity(bp) {
+  if (!isNum(bp)) return 'neutral';
+  if (bp >= 50) return 'elevated';
+  if (bp > -50) return 'soft';
+  return 'neutral';
+}
+function spreadDetail(s) {
+  const side = s.bp >= 0 ? '2y above SOFR (market expects higher rates / tighter)' : '2y below SOFR (market expects cuts / easier)';
+  const dates = [];
+  if (s.twoYDate) dates.push(shortDateISO(s.twoYDate) || s.twoYDate);
+  if (s.sofrDate && s.sofrDate !== s.twoYDate) dates.push(shortDateISO(s.sofrDate) || s.sofrDate);
+  const asOf = dates.length ? ' · as of ' + dates.join(' / ') : '';
+  return `${fmtSpreadBp(s.bp)} · ${side}${asOf}`;
+}
+function billsFlagFromLiq(liq) {
+  const latest = liq && liq.bills && liq.bills.latest;
+  if (!latest || !isNum(latest.share_pct)) return null;
+  const target = isNum(latest.target_pct) ? latest.target_pct : (liq.bills.target_pct || 30);
+  const asOf = latest.date ? ` · as of ${shortDateISO(latest.date) || latest.date}` : '';
+  const sev = latest.share_pct >= target - 2 ? 'soft' : 'neutral';
+  return {
+    id: 'bills_share',
+    title: 'Bills / debt',
+    detail: `${fx(latest.share_pct, 1)}% of marketable debt · climbing toward the ${fx(target, 0)}% target${asOf}`,
+    severity: sev,
+  };
+}
+function drawReservesSpark() {
+  const canvas = $('#liqReservesSpark');
+  const liq = state.feeds['liquidity_history.json'];
+  if (!canvas || !liq || !Array.isArray(liq.t) || !Array.isArray(liq.reserves_v_mil)) return;
+  const wrap = canvas.parentElement;
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const w = Math.max(120, Math.floor((wrap && wrap.clientWidth) || canvas.clientWidth || 280));
+  const h = Math.max(36, Math.floor((wrap && wrap.clientHeight) || 48));
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const cutoff = (liq.t[liq.t.length - 1] || 0) - 3 * 365 * DAY;
+  const pts = [];
+  for (let i = 0; i < liq.t.length; i++) {
+    const t = liq.t[i], v = liq.reserves_v_mil[i];
+    if (!isNum(t) || !isNum(v) || t < cutoff) continue;
+    pts.push([t, v / 1e6]);
+  }
+  if (pts.length < 2) return;
+  const ys = pts.map(p => p[1]);
+  let lo = Math.min(...ys), hi = Math.max(...ys);
+  // Keep 2.7T / 3.0T in view when nearby so the sparkline has a fixed reference.
+  lo = Math.min(lo, 2.7);
+  hi = Math.max(hi, 3.0);
+  const pad = Math.max(0.02, (hi - lo) * 0.12);
+  lo -= pad; hi += pad;
+  const yOf = v => h - 4 - ((v - lo) / (hi - lo)) * (h - 8);
+  const xOf = (t) => {
+    const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+    return t1 === t0 ? 0 : (t - t0) / (t1 - t0) * (w - 2) + 1;
+  };
+  const guide = (v, color) => {
+    if (v < lo || v > hi) return;
+    const y = yOf(v);
+    ctx.beginPath();
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    ctx.setLineDash([]);
+  };
+  guide(2.7, 'rgba(255,255,255,0.18)');
+  guide(3.0, 'rgba(245,158,31,0.35)');
+  ctx.beginPath();
+  pts.forEach((p, i) => { const x = xOf(p[0]), y = yOf(p[1]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+  ctx.strokeStyle = 'rgba(96, 190, 160, 0.95)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  const last = pts[pts.length - 1];
+  ctx.beginPath();
+  ctx.arc(xOf(last[0]), yOf(last[1]), 2.4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(96, 190, 160, 1)';
+  ctx.fill();
+}
+function reservesPanel(liq) {
+  const r = liq && liq.reserves;
+  const latest = r && r.latest;
+  if (!latest || !isNum(latest.value_t)) {
+    return `<div class="liq-reserves"><div class="chip-t">Reserves</div><div class="caption2">Waiting on the reserve-balance feed.</div></div>`;
+  }
+  const ch = latest.change_13w_t;
+  let chLine = '13-week change unavailable';
+  if (isNum(ch)) {
+    const from = latest.weeks_ago_13_date ? ` from ${shortDateISO(latest.weeks_ago_13_date) || latest.weeks_ago_13_date}` : '';
+    const amt = (ch >= 0 ? '+' : '−') + '$' + fx(Math.abs(ch), 3) + 'T';
+    const word = Math.abs(ch) < 0.05 ? 'flat' : ch > 0 ? 'up' : 'down';
+    chLine = `13 weeks: ${word} ${amt}${from}`;
+  }
+  const asOf = latest.date ? `As of ${shortDateISO(latest.date) || latest.date}` : '';
+  const reading = latest.reading || '';
+  const purch = r.purchases || {};
+  let status;
+  if (purch.status === 'on' || purch.status === 'off') {
+    const word = purch.status === 'on' ? 'on' : 'off';
+    const since = purch.since ? ` since ${shortDateISO(purch.since) || purch.since}` : '';
+    status = `Fed reserve purchases ${word}${since}.`;
+  } else {
+    status = 'Fed reserve-purchase status unconfirmed.';
+  }
+  return `<div class="liq-reserves">
+    <div class="liq-reserves-top"><div><div class="chip-t">Reserves</div><div class="liq-reserves-val">${esc(fmtTrillions(latest.value_t))}</div></div><div class="liq-reserves-meta">${esc(chLine)}${asOf ? `<br>${esc(asOf)}` : ''}</div></div>
+    <div class="liq-spark" title="Weekly reserve balances, last 3 years. Dotted lines at $2.7T and $3.0T."><canvas id="liqReservesSpark"></canvas></div>
+    <div class="caption2">${esc(reading)}</div>
+    <div class="caption2">${esc(status)}</div>
+  </div>`;
+}
 function renderLiquidity() {
   const j = state.feeds['funding_watch.json'];
+  const liq = state.feeds['liquidity_history.json'];
   const bull = currentBull();
   const sev = s => ['soft', 'elevated', 'neutral'].includes((s || '').trim().toLowerCase()) ? s.trim().toLowerCase() : 'neutral';
-  let flags = CONFIG.liquidityFlags, overallDetail = null, overallSev = null, move = null, tmS = null;
+  let flags = CONFIG.liquidityFlags, overallDetail = null, overallSev = null, move = null;
   if (j) {
     const ids = (j.app_mapping && j.app_mapping.chip_ids) || ['move', 'sofr_minus_2y', 'bills_share', 'reserves'];
     const byId = {}; for (const f of j.flags || []) if (f.id) byId[f.id] = { id: f.id, title: f.title || f.id, detail: f.detail || '—', severity: sev(f.severity) };
     const ordered = ids.map(i => byId[i]).filter(Boolean);
     if (ordered.length) { flags = ordered; overallDetail = j.overall_detail; overallSev = j.overall_severity ? sev(j.overall_severity) : null; }
     move = isNum(j.move) ? j.move : null;
-    if (isNum(j.sofr_pct) && isNum(j.ust_2y_pct)) tmS = (j.ust_2y_pct - j.sofr_pct) * 100; else if (isNum(j.sofr_minus_2y_bp)) tmS = -j.sofr_minus_2y_bp;
   }
+  const spread = twoYearSofrFromFeeds();
+  const tmS = spread ? spread.bp : null;
   const fr = bull.moveFragile, stz = bull.moveStress, rec = bull.moveRecession;
   const refs = `Reference lines: ${fx(fr, 0)} fragile, ${fx(stz, 0)} stress, ${fx(rec, 0)} Howell recession.`;
   let moveS;
   if (move == null) moveS = `MOVE print waiting. ${refs}`;
   else { const status = move >= rec ? 'at or above the Howell recession line' : move >= stz ? 'through the stress line, under the recession line' : move >= fr ? 'through the fragile line, under the stress line' : 'under the fragile line'; moveS = `MOVE ${fx(move, 1)} — ${status}. ${refs}`; }
-  const tight = tmS == null ? '2y − SOFR — waiting on the funding feed. This is the Fed tightening pace.' : `2y − SOFR ${(tmS >= 0 ? '+' : '') + fx(tmS, 1)}bp — Fed tightening pace.`;
+  let tight;
+  if (tmS == null) tight = '2y − SOFR — waiting on the 2-year yield and SOFR prints.';
+  else {
+    const side = spread.reading || (tmS >= 0 ? '2y is above SOFR; the market expects higher rates (tighter).' : '2y is below SOFR; the market expects cuts (easier).');
+    tight = `2y − SOFR ${fmtSpreadBp(tmS)} — ${side}`;
+  }
+  // Override 2y−SOFR and bills chip text so the summary and the tile always share one sign convention.
+  // Reserves moves out of the chip row into a panel with the sparkline.
+  flags = flags.filter(f => f.id !== 'reserves').map(f => {
+    if (f.id === 'sofr_minus_2y' && spread) {
+      return { ...f, title: '2y − SOFR', detail: spreadDetail(spread), severity: spreadSeverity(spread.bp) };
+    }
+    if (f.id === 'bills_share') {
+      const live = billsFlagFromLiq(liq);
+      return live || f;
+    }
+    return f;
+  });
   let top;
   if (overallDetail) {
     const s = overallSev || 'neutral';
     const c = s === 'elevated' ? ['242,184,64', T.warning, '▲'] : s === 'soft' ? ['245,158,31', T.accent, '◉'] : ['255,255,255', T.text2, '●'];
     top = `<div class="banner" style="background:rgba(${c[0]},0.18);border-color:rgba(${c[0]},0.45);color:${T.text}"><span class="ico" style="color:${c[1]}">${c[2]}</span><span>${esc(overallDetail)}</span></div>`;
-  } else top = '<div class="caption">Soft GLI momentum + MOVE / SOFR−2y / bills / reserves (funding watch).</div>';
+  } else top = '<div class="caption">Soft GLI momentum + MOVE / 2y−SOFR / bills / reserves (funding watch).</div>';
   $('#liquidityCard').innerHTML = card(`<h2>Liquidity Stress</h2>${top}
     <div><div style="font-size:12px;font-weight:600">Macro lines</div><div class="caption2" style="margin-top:4px">${esc(moveS)}</div><div class="caption2" style="margin-top:4px">${esc(tight)}</div></div>
-    <div class="chips">${flags.map(f => `<div class="chip ${f.severity}"><div class="chip-t">${esc(f.title)}</div><div class="chip-d">${esc(f.detail)}</div></div>`).join('')}</div>`);
+    <div class="chips">${flags.map(f => `<div class="chip ${f.severity}"><div class="chip-t">${esc(f.title)}</div><div class="chip-d">${esc(f.detail)}</div></div>`).join('')}</div>
+    ${reservesPanel(liq)}`);
+  drawReservesSpark();
 }
 function renderFooter() {
   const errs = state.feedErrors.slice();
@@ -2115,7 +2275,7 @@ function setTab(tab) {
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();
@@ -2145,6 +2305,7 @@ window.addEventListener('resize', () => {
     const w = chartCard.querySelector('#chartWrap').clientWidth;
     if (w !== lastW) { lastW = w; renderChart(); if (!$('#floorSheet').hidden) renderFloorSheet(); }
     if (state.tab === 'sellers') renderSthCharts(true);
+    if (state.tab === 'overview') drawReservesSpark();
   }, 150);
 });
 // ---------- live price ----------

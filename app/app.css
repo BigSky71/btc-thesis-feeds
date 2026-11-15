@@ -151,6 +151,12 @@ details.signals[open] summary::after { transform: rotate(90deg); }
 .chip { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); }
 .chip.soft { background: var(--chip-quiet); } .chip.elevated { background: var(--chip-stress); }
 .chip-t { font-size: 12px; font-weight: 600; } .chip-d { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.liq-reserves { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); }
+.liq-reserves-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.liq-reserves-val { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 20px; margin-top: 2px; }
+.liq-reserves-meta { font-size: 11px; color: var(--text2); text-align: right; line-height: 1.35; padding-top: 2px; }
+.liq-spark { height: 48px; border-radius: 8px; background: rgba(255,255,255,0.04); overflow: hidden; border: 1px solid var(--border); }
+.liq-spark canvas { width: 100%; height: 100%; display: block; }
 
 .footer { font-size: 11px; color: var(--text2); display: flex; flex-direction: column; gap: 4px; }
 .footer .err { color: var(--warning); }
