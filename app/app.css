@@ -133,6 +133,8 @@ details.signals[open] summary::after { transform: rotate(90deg); }
 .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--border); color: var(--text2); white-space: nowrap; }
 .badge.live { background: rgba(51,199,122,0.2); color: var(--positive); }
 .badge.mock { background: rgba(242,184,64,0.2); color: var(--warning); }
+.badge.thesis { background: rgba(90, 150, 230, 0.18); color: var(--accent, #6aa8ff); }
+.badge.history { background: rgba(180, 150, 90, 0.22); color: #c4b089; }
 .dist { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 .spot-box { text-align: right; }
 .spot-box .v { font-family: var(--mono); font-weight: 600; color: var(--accent); font-size: 17px; }

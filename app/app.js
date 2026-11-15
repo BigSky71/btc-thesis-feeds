@@ -25,14 +25,14 @@ const MA_DASH = [5, 4], BULL_DASH = [2, 4], FLOOR_DASH = [8, 3];
 const SERIES = [
   ['spot', 'BTC', 'BTC', T.accent, 2.0, null],
   ['wma50', '50 WMA (live)', '50 WMA', rgba(0.95, 0.45, 0.35), 1.4, MA_DASH],
-  ['weeklyConfirm', 'First support to defend', 'First support', rgba(0.92, 0.68, 0.18), 1.4, null],
+  ['weeklyConfirm', "Bears' Last Stand / first support", 'Bears\' Last Stand', rgba(0.92, 0.68, 0.18), 1.4, null],
   ['wma200', '200 WMA', '200 WMA', rgba(0.55, 0.75, 0.95), 1.4, MA_DASH],
   ['dma200', '200 DMA', '200 DMA', rgba(0.45, 0.85, 0.65), 1.4, MA_DASH],
   ['sthCostBasis', 'STH Cost Basis', 'STH CB', rgba(0.75, 0.55, 0.95), 1.4, null],
   ['trueMean', 'True Mean Price', 'True Mean', rgba(0.95, 0.80, 0.35), 1.4, null],
   ['bullInvalidation', 'Weekly invalidation', 'Weekly inv.', rgba(0.90, 0.55, 0.50, 0.85), 1.0, BULL_DASH],
-  ['checkQ50', 'Check Q50 (dated)', 'Check Q50', rgba(0.30, 0.80, 0.95), 1.6, null],
-  ['checkQ75', 'Check Q75 (dated, provisional)', 'Check Q75', rgba(0.95, 0.45, 0.70), 1.6, null],
+  ['checkQ50', 'Check Q50 (dated, unused)', 'Check Q50', rgba(0.30, 0.80, 0.95), 1.6, null],
+  ['checkQ75', 'Check Q75 (dated, unused)', 'Check Q75', rgba(0.95, 0.45, 0.70), 1.6, null],
   ['checkQ50Proxy', 'Check Q50 proxy (STH CB p75)', 'Q50 proxy', rgba(0.30, 0.80, 0.95, 0.75), 1.3, [6, 3]],
   ['sthQ75', 'STH Q75 (profit-taking)', 'STH Q75', rgba(0.72, 0.62, 0.90, 0.8), 1.0, BULL_DASH],
   ['sthQ90', 'STH Q90 (profit-taking)', 'STH Q90', rgba(0.62, 0.55, 0.82, 0.8), 1.0, BULL_DASH],
@@ -53,7 +53,7 @@ const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
 const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'realizedPrice', 'lthCostBasis'].includes(id);
 const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', realized: 'realizedPrice', lth: 'lthCostBasis' };
-const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50', 'checkQ75', 'checkQ50Proxy']);
+const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy']);
 
 const MACRO_SERIES = [
   { id: 'ust10y', title: 'US 10-year yield', short: '10-year', color: rgba(0.92, 0.78, 0.35), width: 1.6 },
@@ -175,6 +175,7 @@ const state = {
   sel: null,          // selected (inspected) unix time
   tab: 'overview',
   intradayCache: {},
+  mayHigh: null,      // { value, date, source: 'high'|'close' } computed from May 2026 candles
 };
 if (!RANGES.includes(state.range)) state.range = '1Y';
 
@@ -347,28 +348,47 @@ function bullSnapshot(levels, watch) {
     return row('mayer_1_5', `Mayer ${ml}`, null, 'unavailable', 'Not computed — the live 200-day average is unavailable.', 'overhead');
   };
 
+  const thesisRow = (id, level, titles, notes) => {
+    const value = level && isNum(level.value) && level.value > 0 ? level.value : null;
+    if (value == null) return row(id, titles.support || titles.overhead, null, 'unavailable', 'Thesis line missing from bull levels.', 'overhead');
+    const rel = levelRelation(value, value, state.spot);
+    const title = rel === 'overhead' ? (titles.overhead || titles.support) : (rel === 'testing' ? (titles.testing || titles.support) : titles.support);
+    const note = rel === 'overhead' ? (notes.overhead || notes.support) : (notes.support);
+    const role = rel === 'support' ? 'support' : 'overhead';
+    return row(id, title, value, 'thesis line', note, role);
+  };
   const supports = [
     livePriceRow('true_market_mean', 'True Market Mean', W.true_market_mean, 'Holding above this is a very strong bullish sign.', 'support'),
-    livePriceRow('sth_cost_basis', 'Short-term holder cost basis', W.sth_cost_basis, 'Real buy-the-dip zone. The dip flag fires only when STH-MVRV and STH-SOPR are both under 1.', 'support'),
+    livePriceRow('sth_cost_basis', 'Short-term holder cost basis', W.sth_cost_basis, 'The dip flag fires only when STH-MVRV and STH-SOPR are both under 1.', 'support'),
     dmaRow(W.dma_200),
-    staticRow('weekly_invalidation', 'Weekly invalidation', lvl(levels, 'weekly_invalidation'), 'A weekly close under this level invalidates the bull read.', 'support'),
-    staticRow('first_support', 'First support to defend (cleared confirm)', lvl(levels, 'first_support_defend'), 'Cleared confirm. First support to defend. The live 50-week average is a separate line.', 'support'),
   ];
   const overhead = [
-    datedCheckRow('check_q50', 'Check Q50', lvl(levels, 'check_q50')),
-    proxyRow('check_q50_proxy', 'Check Q50 proxy (STH CB p75)', liveValue(W.check_q50_proxy), "Daily Bitview STH cost-basis 75th percentile. About 1% under Check's $84.1k on Oct 13. Not Check's published number."),
+    proxyRow('check_q50_proxy', 'Check Q50 proxy (STH CB p75)', liveValue(W.check_q50_proxy), "Daily Bitview STH cost-basis 75th percentile. Live proxy, not Check's published number."),
     proxyRow('urpd_poc_proxy', 'Q50 pivot · live proxy (URPD POC)', liveValue(W.urpd_poc), urpdNote(W.urpd_poc)),
-    datedCheckRow('check_q75', 'Check Q75', lvl(levels, 'check_q75')),
-    bandRow('sth_q75', 'Q75 sell side · live proxy (STH band)', W.sth_q75, lvl(levels, 'sth_q75_fallback'), profitBandNote('Q75', W.sth_q75 && W.sth_q75.multiple, 'About 25% of days were hotter')),
-    bandRow('sth_q90', 'STH Q90 (profit-taking band)', W.sth_q90, lvl(levels, 'sth_q90_fallback'), profitBandNote('Q90', W.sth_q90 && W.sth_q90.multiple, 'Q90 means only about 10% of days were hotter')),
+    bandRow('sth_q75', 'Q75 profit-taking · live proxy (STH band)', W.sth_q75, null, profitBandNote('Q75', W.sth_q75 && W.sth_q75.multiple, 'About 25% of days were hotter')),
+    bandRow('sth_q90', 'STH Q90 (profit-taking band)', W.sth_q90, null, profitBandNote('Q90', W.sth_q90 && W.sth_q90.multiple, 'Q90 means only about 10% of days were hotter')),
   ];
+  const placeThesis = (r) => { if (r.role === 'support') supports.push(r); else overhead.push(r); };
+  placeThesis(thesisRow('weekly_invalidation', lvl(levels, 'weekly_invalidation'),
+    { support: 'Weekly invalidation ($72k)', overhead: '$72k, resistance to reclaim', testing: 'Weekly invalidation (testing)' },
+    { support: 'Thesis line: a weekly close under this level is the soft invalidation.', overhead: 'Thesis line: weekly invalidation, now overhead. Resistance to reclaim.' }));
+  placeThesis(thesisRow('first_support', lvl(levels, 'first_support_defend'),
+    { support: 'First support to defend (cleared confirm)', overhead: "Bears' Last Stand, reclaim", testing: "Bears' Last Stand (testing)" },
+    { support: 'Thesis line: cleared confirm. First support to defend on a pullback. The live 50-week average is a separate line.', overhead: "Thesis line: former first support to defend, now overhead. Resistance to reclaim." }));
   const mri = liveValue(W.mri_q50);
   if (mri != null) overhead.push(row('mri_midpoint', 'MRI midpoint (Check Q50)', mri, 'live', 'CheckOnChain Mean Reversion Index bands, Q50, daily' + (W.mri_q50.as_of ? ` (as of ${W.mri_q50.as_of})` : '') + '.', 'overhead'));
-  else overhead.push(staticRow('mri_midpoint', 'Check MRI midpoint', lvl(levels, 'mri_midpoint'), 'Static fallback. The live Check MRI Q50 feed is unavailable.', 'overhead'));
-  overhead.push(staticRow('recovery_gate', '$100k recovery to excitement', lvl(levels, 'recovery_excitement_gate'), 'Recovery-to-excitement gate. Expect failed tries before a hold.', 'overhead'));
+  // No static MRI fallback — if the live series is missing, omit the row rather than show a stale $90k.
+  placeThesis(thesisRow('recovery_gate', lvl(levels, 'recovery_excitement_gate'),
+    { support: '$100k recovery gate', overhead: '$100k recovery gate, overhead', testing: '$100k recovery gate (testing)' },
+    { support: 'Thesis line: recovery-to-excitement gate.', overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' }));
   overhead.push(mayerRow());
-  overhead.push(staticRow('valuation_top', 'Valuation-range top', lvl(levels, 'valuation_range_top'), 'Check valuation-range top. First big long-term-holder sell zone.', 'overhead'));
+  placeThesis(thesisRow('valuation_top', lvl(levels, 'valuation_range_top'),
+    { support: 'Valuation-range top', overhead: 'Valuation-range top, overhead', testing: 'Valuation-range top (testing)' },
+    { support: 'Thesis line: Check valuation-range top. First large long-term-holder distribution zone.', overhead: 'Thesis line: Check valuation-range top, now overhead.' }));
 
+  const byPx = (a, b) => ((b.value || 0) - (a.value || 0));
+  supports.sort(byPx);
+  overhead.sort(byPx);
   const signals = [mvrvSignal(levels, W.sth_mvrv), lthSignal(levels, W.lth_supply_share), clusterSignal(W.sth_cost_basis_cluster), ...leverageSignals(levels, W.leverage)];
   return {
     hasFeed: true, asOf: W.as_of, levelsAsOf: levels && levels.as_of, supports, overhead, signals,
@@ -523,6 +543,35 @@ async function loadSpot() {
   } catch (e) { /* fall through */ }
   if (state.master && state.master.length) { state.spot = state.master[state.master.length - 1].c; state.spotAt = Date.now() / 1000; state.spotFallback = true; }
 }
+
+async function loadMayHigh() {
+  const mayStart = Date.UTC(2026, 4, 1) / 1000;
+  const juneStart = Date.UTC(2026, 5, 1) / 1000;
+  const isoDay = t => new Date(t * 1000).toISOString().slice(0, 10);
+  try {
+    const url = `${CB}/candles?granularity=${DAY}&start=${new Date(mayStart * 1000).toISOString()}&end=${new Date(juneStart * 1000).toISOString()}`;
+    const rows = await fetchJSON(url, 10000);
+    let best = null;
+    for (const r of rows || []) {
+      if (!Array.isArray(r) || !(r[2] > 0)) continue;
+      const ts = r[0], high = r[2];
+      if (ts < mayStart || ts >= juneStart) continue;
+      if (!best || high > best.value) best = { value: high, date: isoDay(ts), source: 'high' };
+    }
+    if (best) { state.mayHigh = best; return; }
+  } catch (e) { /* fall through to daily closes */ }
+  let best = null;
+  const ph = state.feeds['price_history.json'];
+  if (ph && ph.t && ph.c) {
+    for (let i = 0; i < ph.t.length; i++) {
+      const ts = ph.t[i], c = ph.c[i];
+      if (!(c > 0) || ts < mayStart || ts >= juneStart) continue;
+      if (!best || c > best.value) best = { value: c, date: isoDay(ts), source: 'close' };
+    }
+  }
+  state.mayHigh = best;
+}
+
 async function fetchDisplayBars(range) {
   const cfg = INTRADAY[range];
   const now = Math.floor(Date.now() / 1000);
@@ -575,7 +624,7 @@ function buildBundle(range, displayBars) {
   const confirmLevel = bull.firstSupport ?? CONFIG.weeklyConfirmRef;
   const lineDates = spotPts.map(p => p.t).filter(t => t >= CONFIG.weeklyConfirmVisibleFrom);
   put('weeklyConfirm', lineDates.map(t => ({ t, v: confirmLevel })));
-  if (lineDates.length) notes.push('First support to defend starts at the May peak (2026-05-10). It is the cleared confirm, not the live 50-week average.');
+  if (lineDates.length) notes.push("Bears' Last Stand / first support (thesis line at $83k) starts at the May 2026 peak. It is not the live 50-week average.");
   if (!series.wma200.available) notes.push('200 WMA unavailable — need ~1400 daily closes.');
 
   const oc = state.feeds['checkonchain_overlays.json'];
@@ -593,9 +642,9 @@ function buildBundle(range, displayBars) {
     const visible = asOf >= localStartOfDay(first) && asOf <= last + DAY;
     put(id, !tooOld && visible ? [{ t: asOf, v: value }] : []);
   };
-  datedLabels.checkQ50 = bull.checkQ50Label; datedLabels.checkQ75 = bull.checkQ75Label;
-  put('checkQ50', []); // Check Q50 is not drawn (David, Oct 21). The Q50 proxy line carries it.
-  marker('checkQ75', bull.checkQ75, bull.checkQ75AsOf, 7);
+  datedLabels.checkQ50 = null; datedLabels.checkQ75 = null;
+  put('checkQ50', []); // Dated Check Q50 is not drawn. The live Q50 proxy line carries it.
+  put('checkQ75', []); // Dated Check Q75 (Oct 13 provisional $100k) is not drawn. The live STH Q75 band carries the sell-side level.
   curve('checkQ50Proxy', bull.checkQ50ProxyHistory, bull.checkQ50Proxy);
   flat('bullInvalidation', bull.weeklyInvalidation);
   curve('sthQ75', bull.sthQ75History, bull.sthQ75);
@@ -604,9 +653,7 @@ function buildBundle(range, displayBars) {
   flat('recoveryGate', bull.recoveryGate);
   flat('valuationTop', bull.valuationTop);
   put('mayer15', series.dma200.points.map(p => ({ t: p.t, v: p.v * bull.mayerMultiple })));
-  const dated = [bull.checkQ50Label, bull.checkQ75Label].filter(Boolean);
-  if (dated.length) notes.push(dated.join('; ') + '. Dated Check values, shown as a marker on their date (Q75 hides 7 days after). Check Q50 proxy (STH CB p75) is the daily Q50 line; the STH Q75 band is the live sell-side curve.');
-  notes.push('STH Q75/Q90, the Q50 proxy and the MRI midpoint (Check Q50) update daily. The other bull lines stay flat. All of them stay off until you turn them on.');
+  notes.push('STH Q75/Q90, the Q50 proxy, URPD point of control, and the MRI midpoint update daily. Thesis lines ($83k, $72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
 
   // Support floors
   const floors = floorsSnapshot(state.feeds['support_floors.json']);
@@ -779,18 +826,14 @@ function bannerRangeText(low, high) {
 }
 
 const DEFAULT_BANNER_LEVELS = [
-  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', in_banner: true, in_daily: true, note_support: 'Cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 10 2026 peak. Not the live 50-week average.', note_overhead: 'Former first support to defend, now overhead. Resistance to reclaim.' },
-  { id: 'mayHigh', label: 'May high', support_label: 'May high (static ref)', overhead_label: 'May high, overhead', price: 82500, kind: 'level', in_banner: false, in_daily: true, note_support: 'Static May high (~$82.5k). Distinct from Bears\' Last Stand and from the live averages.', note_overhead: 'Static May high (~$82.5k), now overhead.' },
-  { id: 'reaccum', label: 'Re-accumulation shelf', support_label: 'Re-accumulation shelf', overhead_label: 'Re-accumulation shelf, overhead', testing_label: 'Re-accumulation shelf (testing)', low: 76000, high: 82000, kind: 'zone', in_banner: false, in_daily: true, note_support: 'Shelf ~$76–82k.', note_overhead: 'The $76–82k shelf is overhead. Resistance to reclaim.' },
-  { id: '72k', label: '$72k', support_label: '$72k', overhead_label: '$72k, overhead', price: 72000, kind: 'level', in_banner: true, in_daily: true, note_support: 'Static $72k level.', note_overhead: '$72k is overhead. Resistance to reclaim.' },
-  { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', in_banner: true, in_daily: true, note_support: 'Confluence near $70k. The bull card carries the weekly-close line.', note_overhead: '$70k is overhead. Resistance to reclaim.' },
-  { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', live: 'wma200', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
-  { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', live: 'wma50', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
-  { id: 'liquidation_cluster', label: 'liquidation cluster', support_label: 'Liquidation cluster', overhead_label: 'Liquidation cluster, resistance to reclaim', testing_label: 'Liquidation cluster (testing)', low: 60500, high: 62500, kind: 'zone', in_banner: true, in_daily: true, note_support: 'Glassnode liquidation cluster $60.5k–$62.5k.', note_overhead: 'The $60.5–62.5k liquidation cluster is overhead. Resistance to reclaim.', note_testing: 'Price is inside the $60.5–62.5k Glassnode liquidation cluster.' },
-  { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', date: '2026-06-30', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
-  { id: 'digestion', label: 'Digestion / next magnet', support_label: 'Digestion zone', overhead_label: 'Digestion / next magnet, overhead', testing_label: 'Digestion / next magnet (testing)', low: 87000, high: 100000, kind: 'zone', in_banner: false, in_daily: true, note_support: 'Former $87–100k digestion zone, now below price.', note_overhead: 'Next zone $87–100k, now overhead.' },
-  { id: 'sthQ75', label: 'STH Q75 (profit-taking)', support_label: 'STH Q75', overhead_label: 'STH Q75 (profit-taking, overhead)', price: 87000, kind: 'level', in_banner: false, in_daily: true, note_support: 'Static $87k fallback for the STH Q75 band. The bull card shows the live band.', note_overhead: 'Static $87k fallback for the STH Q75 profit-taking band, now overhead. The bull card shows the live band.' },
-  { id: 'sthQ90', label: 'STH Q90 (profit-taking)', support_label: 'STH Q90', overhead_label: 'STH Q90 (profit-taking, overhead)', price: 104000, kind: 'level', in_banner: false, in_daily: true, note_support: 'Static $104k fallback for the STH Q90 band. The bull card shows the live band.', note_overhead: 'Static $104k fallback for the STH Q90 profit-taking band, now overhead. The bull card shows the live band.' },
+  { id: 'recovery_gate', label: '$100k recovery to excitement', support_label: '$100k recovery gate', overhead_label: '$100k recovery gate, overhead', testing_label: '$100k recovery gate (testing)', price: 100000, kind: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: recovery-to-excitement gate.', note_overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' },
+  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.', note_overhead: 'Thesis line: former first support to defend, now overhead. Resistance to reclaim.' },
+  { id: '72k', label: '$72k', support_label: 'Weekly invalidation ($72k)', overhead_label: '$72k, resistance to reclaim', price: 72000, kind: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: a weekly close under $72k is the soft invalidation.', note_overhead: 'Thesis line: $72k weekly invalidation, now overhead. Resistance to reclaim.' },
+  { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: confluence near $70k. The bull card carries the weekly-close line at $72k.', note_overhead: 'Thesis line: $70k is overhead. Resistance to reclaim.' },
+  { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
+  { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
+  { id: 'liquidation_cluster', label: 'liquidation cluster', support_label: 'Liquidation cluster', overhead_label: 'Liquidation cluster, resistance to reclaim', testing_label: 'Liquidation cluster (testing)', low: 60500, high: 62500, kind: 'zone', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis / research zone: Glassnode liquidation cluster $60.5k–$62.5k.', note_overhead: 'The $60.5–62.5k liquidation cluster is overhead. Resistance to reclaim.', note_testing: 'Price is inside the $60.5–62.5k Glassnode liquidation cluster.' },
+  { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
 ];
 
 function bannerLevelDisplay(L) {
@@ -911,7 +954,7 @@ function dailyLevels() {
   const rows = [];
   for (const item of catalog) {
     if (item.in_daily === false) continue;
-    let lo = null, hi = null, source = 'config';
+    let lo = null, hi = null, source = item.badge || 'thesis line';
     if (item.live === 'wma200' || (item.id === 'wma200' && item.kind === 'average')) {
       lo = snap && isNum(snap.wma200) ? snap.wma200 : null;
       if (!isNum(lo)) continue;
@@ -927,6 +970,31 @@ function dailyLevels() {
     } else continue;
     const rel = levelRelation(lo, hi, spot);
     rows.push(L(item.id, 'level', dailyTitleFor(item, rel), lo, hi, source, dailyNoteFor(item, rel)));
+  }
+  const w = state.feeds['bull_watch.json'] || {};
+  const addLiveBand = (id, labels, value, note) => {
+    if (!isNum(value)) return;
+    const rel = levelRelation(value, value, spot);
+    const title = rel === 'overhead' ? labels.overhead : (rel === 'testing' ? labels.testing : labels.support);
+    rows.push(L(id, 'level', title, value, null, 'live', note));
+  };
+  addLiveBand('sth_q75',
+    { support: 'STH Q75 (profit-taking)', overhead: 'STH Q75 (profit-taking, overhead)', testing: 'STH Q75 (testing)' },
+    liveValue(w.sth_q75),
+    'Live: short-term holder cost basis times the point-in-time Q75 of STH-MVRV. Updates daily.');
+  addLiveBand('sth_q90',
+    { support: 'STH Q90 (profit-taking)', overhead: 'STH Q90 (profit-taking, overhead)', testing: 'STH Q90 (testing)' },
+    liveValue(w.sth_q90),
+    'Live: short-term holder cost basis times the point-in-time Q90 of STH-MVRV. Updates daily.');
+  const may = state.mayHigh;
+  if (may && isNum(may.value)) {
+    const rel = levelRelation(may.value, may.value, spot);
+    const title = rel === 'overhead' ? 'May 2026 high, overhead' : (rel === 'testing' ? 'May 2026 high (testing)' : 'May 2026 high');
+    const when = may.date ? shortDateISO(may.date) || may.date : 'May 2026';
+    const note = may.source === 'high'
+      ? `Highest Coinbase daily high in May 2026, on ${when}. Recomputed from the candle history.`
+      : `Highest daily close in May 2026, on ${when}. Intraday high was not in this feed.`;
+    rows.push(L('mayHigh', 'level', title, may.value, null, 'history', note));
   }
   rows.sort((a, b) => ((b.priceHigh != null ? b.priceHigh : b.price) - (a.priceHigh != null ? a.priceHigh : a.price)));
   rows.push(L('liveSupports', 'note', 'Other live levels', null, null, 'note', 'True Market Mean, short-term holder cost basis, and the 200-day average are live on the bull-market card and on the chart.'));
@@ -1402,7 +1470,7 @@ async function refreshChart() {
 // ---------- cards ----------
 function renderBull() {
   const s = currentBull(); const spot = state.spot;
-  const srcCls = l => l === 'live' ? 'c-pos' : l === 'unavailable' ? 'c-warn' : 'c-2';
+  const srcCls = l => l === 'live' ? 'c-pos' : l === 'unavailable' ? 'c-warn' : l === 'thesis line' ? 'c-acc' : 'c-2';
   const line = r => {
     let phrase = '', pc = 'c-2';
     if (spot != null && r.value > 0) {
@@ -1425,15 +1493,14 @@ function renderBull() {
   } else body = '<div class="caption">Bull-market levels are waiting on the feed.</div>';
   const parts = [];
   if (s.asOf) parts.push(`Live prints as of ${s.asOf}`);
-  if (s.levelsAsOf) parts.push(`static levels ${s.levelsAsOf}`);
-  const foot = parts.length ? parts.join(' · ') + '. Bitview for live prints.' : 'Live prints from Bitview. Static levels from the bull levels file.';
-  $('#bullCard').innerHTML = card(`<div><h2>Bull market</h2><div class="caption" style="margin-top:4px">Measurable set once price is above the live 50-week average. That average stays its own line.</div></div>${body}<div class="caption2">${esc(foot)}</div>`);
+  const foot = parts.length ? parts.join(' · ') + '. Bitview for live prints. Thesis lines are fixed levels, not a live print.' : 'Live prints from Bitview. Thesis lines are fixed levels, not a live print.';
+  $('#bullCard').innerHTML = card(`<div><h2>Bull market</h2><div class="caption" style="margin-top:4px">Live supports, overhead, and top signals. The 50-week average stays its own line.</div></div>${body}<div class="caption2">${esc(foot)}</div>`);
 }
 function renderDailyLevels() {
   const snap = snapshot(); const spot = state.spot;
   const rows = dailyLevels().map(l => {
-    const badgeCls = l.source === 'live' ? 'live' : l.source === 'mock' ? 'mock' : '';
-    const badge = `<span class="badge ${badgeCls}">${l.source === 'mock' ? 'mock fallback' : l.source}</span>`;
+    const badgeCls = l.source === 'live' ? 'live' : l.source === 'mock' ? 'mock' : l.source === 'thesis line' ? 'thesis' : l.source === 'history' ? 'history' : '';
+    const badge = `<span class="badge ${badgeCls}">${l.source === 'mock' ? 'mock fallback' : esc(l.source)}</span>`;
     if (l.kind === 'note') return `<div class="lv"><div class="lv-top"><span class="brow-title">${esc(l.title)}</span>${badge}</div><div class="foot">${esc(l.note)}</div></div>`;
     const price = l.priceHigh != null ? `${usd(l.price)}–${usd(l.priceHigh)}` : usd(l.price);
     let dist = '';
@@ -1446,9 +1513,16 @@ function renderDailyLevels() {
   dailyLevelsEl.innerHTML = card(`<div class="row-between"><h2>Daily Levels</h2>${spotBox}</div>${bannerHTML(soWhat())}${mock}${asOf}<div>${rows}</div>`);
 }
 function renderRegime() {
+  const snap = snapshot();
+  const banner = soWhat();
+  const belowWma = snap && isNum(snap.spot) && isNum(snap.wma50) && snap.spot < snap.wma50;
+  const summary = belowWma ? 'Below the live 50-week average' : (snap && isNum(snap.spot) && isNum(snap.wma50) ? 'Holding the live 50-week average' : 'Waiting on live price');
+  const bg = belowWma ? 'rgba(242,184,64,0.14)' : 'rgba(51,199,122,0.12)';
+  const dot = belowWma ? T.warning : T.positive;
+  const detail = (banner && banner.msg ? banner.msg + ' ' : '') + 'The bull-market card lists live supports, overhead, and top signals. Soft GLI and MOVE / liquidity caution still apply.';
   $('#regimeCard').innerHTML = card(`<h2>Regime</h2>
-    <div class="regime-box" style="background:rgba(51,199,122,0.12)"><span class="regime-dot" style="background:${T.positive}"></span>${esc(CONFIG.regimeSummary)}</div>
-    <div class="foot">${esc(CONFIG.regimeDetail)}</div><div class="foot">${esc(CONFIG.invalidationNote)}</div>`);
+    <div class="regime-box" style="background:${bg}"><span class="regime-dot" style="background:${dot}"></span>${esc(summary)}</div>
+    <div class="foot">${esc(detail)}</div>`);
 }
 function renderBTD() {
   const j = state.feeds['btd_watch.json'];
@@ -3238,10 +3312,11 @@ async function refreshAll() {
     try { state.feeds[name] = await fetchFeed(name); } catch (e) { errors.push(e.message || String(e)); }
   }));
   state.feedErrors = errors;
-  state.bull = bullSnapshot(state.feeds['bull_levels.json'], state.feeds['bull_watch.json']);
   try { await loadMaster(); } catch (e) { state.feedErrors.push(e.message || String(e)); }
+  try { await loadMayHigh(); } catch (e) { state.mayHigh = null; }
   state.spotFallback = false;
   await loadSpot();
+  state.bull = bullSnapshot(state.feeds['bull_levels.json'], state.feeds['bull_watch.json']);
   state.lastRefresh = Date.now();
   state.feedsLoading = false;
   renderCards(); renderLive();
@@ -3353,6 +3428,6 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 window.__btc = state; // for debugging / verification
-window.__btcRedraw = () => { renderCards(); const el = chartCard.querySelector('#chartBanner'); if (el) el.innerHTML = bannerHTML(soWhat()); };
+window.__btcRedraw = () => { state.bull = bullSnapshot(state.feeds['bull_levels.json'], state.feeds['bull_watch.json']); renderCards(); const el = chartCard.querySelector('#chartBanner'); if (el) el.innerHTML = bannerHTML(soWhat()); };
 window.__btcLive = { get uPrice() { return uPrice; }, get timer() { return !!liveTimer; }, tick: () => liveTick() };
 })();
