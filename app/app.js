@@ -779,11 +779,18 @@ function bannerRangeText(low, high) {
 }
 
 const DEFAULT_BANNER_LEVELS = [
-  { id: 'bears_last_stand', label: "Bears' Last Stand", price: 83000, kind: 'level' },
-  { id: '72k', label: '$72k', price: 72000, kind: 'level' },
-  { id: '70k', label: '$70k', price: 70000, kind: 'level' },
-  { id: 'liquidation_cluster', label: 'liquidation cluster', low: 60500, high: 62500, kind: 'zone' },
-  { id: 'june_30_low', label: 'June 30 low', price: 58367, kind: 'level', date: '2026-06-30' },
+  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', in_banner: true, in_daily: true, note_support: 'Cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 10 2026 peak. Not the live 50-week average.', note_overhead: 'Former first support to defend, now overhead. Resistance to reclaim.' },
+  { id: 'mayHigh', label: 'May high', support_label: 'May high (static ref)', overhead_label: 'May high, overhead', price: 82500, kind: 'level', in_banner: false, in_daily: true, note_support: 'Static May high (~$82.5k). Distinct from Bears\' Last Stand and from the live averages.', note_overhead: 'Static May high (~$82.5k), now overhead.' },
+  { id: 'reaccum', label: 'Re-accumulation shelf', support_label: 'Re-accumulation shelf', overhead_label: 'Re-accumulation shelf, overhead', testing_label: 'Re-accumulation shelf (testing)', low: 76000, high: 82000, kind: 'zone', in_banner: false, in_daily: true, note_support: 'Shelf ~$76–82k.', note_overhead: 'The $76–82k shelf is overhead. Resistance to reclaim.' },
+  { id: '72k', label: '$72k', support_label: '$72k', overhead_label: '$72k, overhead', price: 72000, kind: 'level', in_banner: true, in_daily: true, note_support: 'Static $72k level.', note_overhead: '$72k is overhead. Resistance to reclaim.' },
+  { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', in_banner: true, in_daily: true, note_support: 'Confluence near $70k. The bull card carries the weekly-close line.', note_overhead: '$70k is overhead. Resistance to reclaim.' },
+  { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', live: 'wma200', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
+  { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', live: 'wma50', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
+  { id: 'liquidation_cluster', label: 'liquidation cluster', support_label: 'Liquidation cluster', overhead_label: 'Liquidation cluster, resistance to reclaim', testing_label: 'Liquidation cluster (testing)', low: 60500, high: 62500, kind: 'zone', in_banner: true, in_daily: true, note_support: 'Glassnode liquidation cluster $60.5k–$62.5k.', note_overhead: 'The $60.5–62.5k liquidation cluster is overhead. Resistance to reclaim.', note_testing: 'Price is inside the $60.5–62.5k Glassnode liquidation cluster.' },
+  { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', date: '2026-06-30', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
+  { id: 'digestion', label: 'Digestion / next magnet', support_label: 'Digestion zone', overhead_label: 'Digestion / next magnet, overhead', testing_label: 'Digestion / next magnet (testing)', low: 87000, high: 100000, kind: 'zone', in_banner: false, in_daily: true, note_support: 'Former $87–100k digestion zone, now below price.', note_overhead: 'Next zone $87–100k, now overhead.' },
+  { id: 'sthQ75', label: 'STH Q75 (profit-taking)', support_label: 'STH Q75', overhead_label: 'STH Q75 (profit-taking, overhead)', price: 87000, kind: 'level', in_banner: false, in_daily: true, note_support: 'Static $87k fallback for the STH Q75 band. The bull card shows the live band.', note_overhead: 'Static $87k fallback for the STH Q75 profit-taking band, now overhead. The bull card shows the live band.' },
+  { id: 'sthQ90', label: 'STH Q90 (profit-taking)', support_label: 'STH Q90', overhead_label: 'STH Q90 (profit-taking, overhead)', price: 104000, kind: 'level', in_banner: false, in_daily: true, note_support: 'Static $104k fallback for the STH Q90 band. The bull card shows the live band.', note_overhead: 'Static $104k fallback for the STH Q90 profit-taking band, now overhead. The bull card shows the live band.' },
 ];
 
 function bannerLevelDisplay(L) {
@@ -803,6 +810,7 @@ function bannerLevelSet(snap) {
     items.push({ id: 'wma200', kind: 'average', low: snap.wma200, high: snap.wma200, live: true });
   }
   for (const L of raw) {
+    if (L.in_banner === false || L.live) continue;
     if (L.kind === 'zone' && isNum(L.low) && isNum(L.high)) {
       const lo = Math.min(L.low, L.high), hi = Math.max(L.low, L.high);
       items.push({ id: L.id, kind: 'zone', low: lo, high: hi, label: L.label });
@@ -869,25 +877,62 @@ function soWhat() {
 }
 const WAITING_BULL = { hasFeed: false, supports: [], overhead: [], signals: [], moveFragile: 80, moveStress: 100, moveRecession: 135, value: () => null, anyWarning: false };
 function currentBull() { return state.bull || WAITING_BULL; }
+function levelRelation(lo, hi, spot) {
+  if (!isNum(spot) || !isNum(lo)) return 'unknown';
+  const a = lo, b = isNum(hi) ? hi : lo;
+  const low = Math.min(a, b), high = Math.max(a, b);
+  if (spot < low) return 'overhead';
+  if (spot > high) return 'support';
+  return 'testing';
+}
+
+function dailyTitleFor(L, relation) {
+  if (relation === 'overhead') return L.overhead_label || ((L.support_label || L.label) + ', overhead');
+  if (relation === 'testing') return L.testing_label || ((L.support_label || L.label) + ' (testing)');
+  return L.support_label || L.label;
+}
+
+function dailyNoteFor(L, relation) {
+  if (relation === 'overhead') return L.note_overhead || L.note_support || L.source || '';
+  if (relation === 'testing') return L.note_testing || L.note_support || L.source || '';
+  return L.note_support || L.source || '';
+}
+
+function dailyLevelsCatalog() {
+  const file = state.feeds['banner_levels.json'] || {};
+  return Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
+}
+
 function dailyLevels() {
-  const snap = snapshot(); const bull = currentBull();
-  const wma = snap && snap.wma50 != null ? snap.wma50 : CONFIG.mock50WMA;
-  const src = snap && snap.wma50 != null ? 'live' : 'mock';
-  const confirm = (bull.hasFeed && bull.value('first_support')) || CONFIG.weeklyConfirmRef;
+  const snap = snapshot();
+  const spot = isNum(state.spot) ? state.spot : (snap && snap.spot);
+  const catalog = dailyLevelsCatalog();
   const L = (id, kind, title, price, priceHigh, source, note) => ({ id, kind, title, price, priceHigh, source, note });
-  return [
-    L('wma50', 'level', '50 WMA (live)', wma, null, src, src === 'mock' ? `Mock ≈ ${CONFIG.mock50WMA} — live average only, not the first support to defend. Live history unavailable.` : "Live average from ~350 daily closes. Historical name: Bears' Last Stand. Not the first-support line."),
-    L('weeklyConfirm', 'level', 'First support to defend (cleared confirm)', confirm, null, 'config', 'Cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 10 2026 peak. Not the live 50-week average.'),
-    L('mayHigh', 'level', 'May high (static ref)', CONFIG.mayHighRef, null, 'config', 'Static May high (~82.5k) — distinct from the first support to defend and from the live 50-week average.'),
-    L('liveSupports', 'note', 'Live supports', null, null, 'note', CONFIG.liveSupportsNote),
-    L('reaccum', 'level', 'Re-accumulation shelf', CONFIG.reaccumShelfLow, CONFIG.reaccumShelfHigh, 'config', 'New shelf ~$76–82k.'),
-    L('invalidation', 'level', 'Deeper invalidation ~$70k', CONFIG.deeperInvalidation, null, 'config', 'Older hard challenge if a weekly close holds below. The bull card carries the weekly-close invalidation.'),
-    L('digestion', 'level', 'Digestion / next magnet', CONFIG.digestionLow, CONFIG.digestionHigh, 'config', 'Next zone $87–100k after the $83k clearance.'),
-    L('sthQ75', 'level', 'STH Q75 (profit-taking)', CONFIG.sthQ75, null, 'config', 'Static $87k fallback for the profit-taking band. The bull card shows the live band: cost basis times the point-in-time Q75 of STH-MVRV.'),
-    L('sthQ90', 'level', 'STH Q90 (profit-taking)', CONFIG.sthQ90, null, 'config', 'Static $104k fallback for the profit-taking band. The bull card shows the live band: cost basis times the point-in-time Q90 of STH-MVRV.'),
-    L('mayer', 'note', 'Mayer Multiple ~1.5×', null, null, 'note', 'Dollar level is on the bull card: the multiple times the live 200-day average. It is not a fixed price.'),
-    L('hinge2027', 'note', '2027 hinge', null, null, 'note', CONFIG.hinge2027Note),
-  ];
+  const rows = [];
+  for (const item of catalog) {
+    if (item.in_daily === false) continue;
+    let lo = null, hi = null, source = 'config';
+    if (item.live === 'wma200' || (item.id === 'wma200' && item.kind === 'average')) {
+      lo = snap && isNum(snap.wma200) ? snap.wma200 : null;
+      if (!isNum(lo)) continue;
+      source = snap && snap.source === 'live' ? 'live' : 'mock';
+    } else if (item.live === 'wma50' || (item.id === 'wma50' && item.kind === 'average')) {
+      if (snap && isNum(snap.wma50)) { lo = snap.wma50; source = snap.source === 'live' ? 'live' : 'mock'; }
+      else { lo = CONFIG.mock50WMA; source = 'mock'; }
+    } else if (item.kind === 'zone' && isNum(item.low) && isNum(item.high)) {
+      lo = Math.min(item.low, item.high);
+      hi = Math.max(item.low, item.high);
+    } else if (isNum(item.price)) {
+      lo = item.price;
+    } else continue;
+    const rel = levelRelation(lo, hi, spot);
+    rows.push(L(item.id, 'level', dailyTitleFor(item, rel), lo, hi, source, dailyNoteFor(item, rel)));
+  }
+  rows.sort((a, b) => ((b.priceHigh != null ? b.priceHigh : b.price) - (a.priceHigh != null ? a.priceHigh : a.price)));
+  rows.push(L('liveSupports', 'note', 'Other live levels', null, null, 'note', 'True Market Mean, short-term holder cost basis, and the 200-day average are live on the bull-market card and on the chart.'));
+  rows.push(L('mayer', 'note', 'Mayer Multiple ~1.5×', null, null, 'note', 'Dollar level is on the bull card: the multiple times the live 200-day average. It is not a fixed price.'));
+  rows.push(L('hinge2027', 'note', '2027 hinge', null, null, 'note', CONFIG.hinge2027Note));
+  return rows;
 }
 
 // ---------- DOM helpers ----------
