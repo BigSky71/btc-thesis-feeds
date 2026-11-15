@@ -1672,6 +1672,28 @@ const sthCross = color => `<svg class="sth-mark" viewBox="0 0 18 18" aria-hidden
 
 function sthFeed() { return state.feeds[STH_FEED] || null; }
 
+function sthAsOfISO(f) {
+  const s = (f && (f.as_of || (f.today && f.today.date))) || '';
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(s);
+  return m ? m[1] : null;
+}
+/** Stale when as_of is more than one finished UTC day behind: as_of < today_UTC − 2 days. One day behind is normal. */
+function sthFeedIsStale(f) {
+  const asOf = sthAsOfISO(f);
+  if (!asOf) return false;
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 1000;
+  const t = isoToUnix(asOf);
+  return t != null && t < todayUtc - 2 * DAY;
+}
+function sthStaleBanner(f) {
+  if (!sthFeedIsStale(f)) return '';
+  const asOf = sthAsOfISO(f);
+  const label = shortDateISO(asOf) || asOf;
+  return `<div class="banner sth-stale" role="status"><span class="ico">▲</span><span>Data is stale: last update ${esc(label)}.</span></div>`;
+}
+
+
 function persistSth(key, val) {
   try { localStorage.setItem('sth.' + key, val); } catch (e) { /* private mode */ }
 }
@@ -1876,6 +1898,7 @@ function renderSthGauge() {
     </div>`).join('');
   const asOf = t.date ? fmtUTCDate(isoToUnix(t.date)) : '';
   el.innerHTML = `
+    ${sthStaleBanner(f)}
     <div class="sth-score-row">
       <div>
         <div class="sth-score" style="color:${color}">Seller exhaustion: ${score} of 3</div>
