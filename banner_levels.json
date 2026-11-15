@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "banner_levels",
   "generated_at": "2026-11-15",
-  "notes": "Thesis lines and historical facts for the Overview banner and Daily Levels. Labels follow live spot: a level entirely above price uses overhead_label; a level entirely below uses support_label. A zone that contains price is labeled testing. 50-week and 200-week averages are computed live from price_history.json (never hardcoded). May 2026 high is computed at runtime from Coinbase daily highs (fallback: price_history closes). STH Q75/Q90 in Daily Levels come from the live bull_watch.json bands, not static fallbacks. Digestion $87–100k, the $76–82k re-accumulation shelf, and static STH $87k/$104k fallbacks were removed (stale or they duplicate live values). Dated Check Q50/Q75 prints are not listed here; the card uses the live Q50 proxy, URPD POC, live STH bands, and live MRI.",
+  "notes": "Thesis lines and historical facts for the Overview banner and Daily Levels. Labels follow live spot: a level entirely above price uses overhead_label; a level entirely below uses support_label. A zone that contains price is labeled testing. 50-week and 200-week averages are computed live from price_history.json (never hardcoded). May 2026 high is computed at runtime from Coinbase daily highs (fallback: price_history closes). STH Q75/Q90 in Daily Levels come from the live bull_watch.json bands, not static fallbacks. Digestion $87\u2013100k, the $76\u201382k re-accumulation shelf, and static STH $87k/$104k fallbacks were removed (stale or they duplicate live values). Dated Check Q50/Q75 prints are not listed here; the card uses the live Q50 proxy, URPD POC, live STH bands, and live MRI. The $100k recovery-to-excitement gate and the $150k valuation-range top are kept as fixed thesis lines.",
   "levels": [
     {
       "id": "recovery_gate",
@@ -20,6 +20,21 @@
       "note_overhead": "Thesis line: $100k recovery-to-excitement gate, now overhead."
     },
     {
+      "id": "valuation_top",
+      "label": "Valuation-range top",
+      "support_label": "Valuation-range top",
+      "overhead_label": "Valuation-range top, overhead",
+      "testing_label": "Valuation-range top (testing)",
+      "price": 150000,
+      "kind": "level",
+      "badge": "thesis line",
+      "in_banner": false,
+      "in_daily": true,
+      "source": "Thesis: Check valuation-range top.",
+      "note_support": "Thesis line: Check valuation-range top. First large long-term-holder distribution zone.",
+      "note_overhead": "Thesis line: Check valuation-range top, now overhead."
+    },
+    {
       "id": "bears_last_stand",
       "label": "Bears' Last Stand",
       "support_label": "First support to defend (cleared confirm)",
@@ -31,7 +46,7 @@
       "in_banner": true,
       "in_daily": true,
       "source": "Thesis: former first support to defend (cleared confirm). Static $83,000.",
-      "note_support": "Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.",
+      "note_support": "Thesis line: cleared confirm \u2014 first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.",
       "note_overhead": "Thesis line: former first support to defend, now overhead. Resistance to reclaim."
     },
     {
@@ -104,10 +119,10 @@
       "badge": "thesis line",
       "in_banner": true,
       "in_daily": true,
-      "source": "Glassnode liquidation cluster $60.5k–$62.5k (research zone, not recomputed daily).",
-      "note_support": "Thesis / research zone: Glassnode liquidation cluster $60.5k–$62.5k.",
-      "note_overhead": "The $60.5–62.5k liquidation cluster is overhead. Resistance to reclaim.",
-      "note_testing": "Price is inside the $60.5–62.5k Glassnode liquidation cluster."
+      "source": "Glassnode liquidation cluster $60.5k\u2013$62.5k (research zone, not recomputed daily).",
+      "note_support": "Thesis / research zone: Glassnode liquidation cluster $60.5k\u2013$62.5k.",
+      "note_overhead": "The $60.5\u201362.5k liquidation cluster is overhead. Resistance to reclaim.",
+      "note_testing": "Price is inside the $60.5\u201362.5k Glassnode liquidation cluster."
     },
     {
       "id": "june_30_low",
