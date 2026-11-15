@@ -1536,7 +1536,7 @@ function renderFooter() {
   const html = `<div>${esc(`${WEB_VERSION} · ${CHART_VERSION} · feed v2.3 · Coinbase/Yahoo/CheckOnChain/Bitview/FRED`)}</div>` +
     (state.lastRefresh ? `<div>Updated ${new Date(state.lastRefresh).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${navigator.onLine === false ? ' · offline (cached data)' : ''}</div>` : '') +
     errs.map(e => `<div class="err">Live fetch note: ${esc(e)}</div>`).join('');
-  $('#footerOverview').innerHTML = html; $('#footerChart').innerHTML = html; const fs = $('#footerSellers'); if (fs) fs.innerHTML = html;
+  $('#footerOverview').innerHTML = html; $('#footerChart').innerHTML = html; const fs = $('#footerSellers'); if (fs) fs.innerHTML = html; const fb = $('#footerBuyers'); if (fb) fb.innerHTML = html;
 }
 const dailyLevelsEl = document.createElement('div');
 function placeDailyLevels() {
@@ -1904,6 +1904,7 @@ function renderSthGauge() {
         <div class="sth-score" style="color:${color}">Seller exhaustion: ${score} of 3</div>
         <div class="sth-verdict" style="color:${color}">${esc(sthVerdict(score))}</div>
         <div class="sth-asof">${asOf ? `As of ${esc(asOf)} · last finished UTC day` : ''}</div>
+        ${buyComboHTML()}
       </div>
     </div>
     ${rows}
@@ -2279,6 +2280,789 @@ function renderSellers() {
 }
 
 
+
+// ---------- buyers returning tab ----------
+const BUY_FEED = 'buyer_exhaustion.json';
+const buy = {
+  range: (localStorage.getItem('buy.range') === '2y' ? '2y' : 'all'),
+  sel: { prem: null, etf: null, cvd: null, stable: null },
+  plots: { prem: null, etf: null, cvd: null, stable: null },
+  points: [],
+  width: 0,
+};
+const BUY_RANGE_PILLS = [['all', 'Since 2017'], ['2y', '2Y']];
+const BUY_SCORE_COLOR = { 0: T.negative, 1: T.warning, 2: T.accent, 3: T.positive, 4: T.positive };
+const BUY_STRIP_FILL = {
+  0: 'rgba(242,89,97,0.85)',
+  1: 'rgba(242,184,64,0.85)',
+  2: 'rgba(245,158,31,0.9)',
+  3: 'rgba(130,200,90,0.9)',
+  4: 'rgba(51,199,122,0.9)',
+};
+const buyHalf = color => `<svg class="sth-mark" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="none" stroke="${color}" stroke-width="1.5"/><path d="M9 1.5A7.5 7.5 0 0 1 9 16.5Z" fill="${color}"/></svg>`;
+const buyHollow = color => `<svg class="sth-mark" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
+
+function buyFeed() { return state.feeds[BUY_FEED] || null; }
+
+function buyComboText() {
+  const f = buyFeed();
+  return (f && f.today && f.today.combo) || '';
+}
+
+function buyComboHTML() {
+  const t = buyComboText();
+  return t ? `<div class="buy-combo">${esc(t)}</div>` : '';
+}
+
+function persistBuy(key, val) {
+  try { localStorage.setItem('buy.' + key, val); } catch (e) { /* private mode */ }
+}
+
+function numOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  return isFinite(n) ? n : null;
+}
+
+function parseBuyChart(block) {
+  if (!block || !Array.isArray(block.columns) || !Array.isArray(block.rows)) return [];
+  const idx = Object.fromEntries(block.columns.map((c, i) => [c, i]));
+  if (idx.date == null) return [];
+  const out = [];
+  for (const r of block.rows) {
+    const t = isoToUnix(r[idx.date]);
+    if (t == null) continue;
+    const get = k => idx[k] != null ? numOrNull(r[idx[k]]) : null;
+    out.push({
+      t, date: r[idx.date],
+      price: get('price'),
+      prem7: get('prem7_pct'),
+      prem30: get('prem30_pct'),
+      etf14: get('etf14_usd_m'),
+      etf28: get('etf28_usd_m'),
+      bn14: get('bn_cvd14_usd_m'),
+      cb14: get('cb_cvd14_usd_m'),
+      stable: get('stable_usd_b'),
+      stable30: get('stable30_pct'),
+      P: get('P'), E: get('E'), C: get('C'), S: get('S'),
+      buyer_score: get('buyer_score'),
+      seller_score: get('seller_score'),
+      bn_cum: get('bn_cvd_cum_usd_b'),
+    });
+  }
+  return out;
+}
+
+function buyPoints() {
+  const f = buyFeed();
+  if (!f) return [];
+  const block = buy.range === '2y' ? f.chart_daily_2y : f.chart_weekly;
+  return parseBuyChart(block);
+}
+
+function buyEventLabel(name) {
+  const m = /(\w{3})\s+(?:\d+\s+)?(\d{4})/.exec(name || '');
+  return m ? `${m[1]} '${m[2].slice(2)}` : (name || '');
+}
+
+function buyPastEvents() {
+  const f = buyFeed();
+  if (!f || !Array.isArray(f.events)) return [];
+  return f.events.filter(e => e && e.kind !== 'current' && (e.low_date || e.price_low_date));
+}
+
+function buyEventUnix(e) {
+  return isoToUnix(e.low_date || e.price_low_date);
+}
+
+/** More than one US weekday behind the last finished weekday (weekends are normal; holidays are not calendared). */
+function buyEtfCutoffUtc(todayUtc) {
+  const day = 86400;
+  let t = todayUtc - day; // last finished UTC day
+  const weekday = d => {
+    const wd = new Date(d * 1000).getUTCDay(); // 0 Sun .. 6 Sat
+    return wd !== 0 && wd !== 6;
+  };
+  while (!weekday(t)) t -= day;
+  // one trading day behind that last expected print is still normal
+  t -= day;
+  while (!weekday(t)) t -= day;
+  return t;
+}
+
+function buyPartAsOf(part, fallback) {
+  if (!part) return fallback || null;
+  const s = part.as_of || (part.snapshot_utc || '').slice(0, 10) || fallback || null;
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(s || '');
+  return m ? m[1] : null;
+}
+
+function buyPartIsStale(key, asOf) {
+  if (!asOf) return false;
+  const t = isoToUnix(asOf);
+  if (t == null) return false;
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 1000;
+  if (key === 'E') return t < buyEtfCutoffUtc(todayUtc);
+  // P, C, S: more than one finished UTC day behind. B: no snapshot in 2 days. Same cutoff.
+  return t < todayUtc - 2 * DAY;
+}
+
+function buyStaleNote(key, asOf) {
+  if (!buyPartIsStale(key, asOf)) return '';
+  const label = shortDateISO(asOf) || asOf;
+  return `<div class="buy-part-stale">Data is stale: last update ${esc(label)}.</div>`;
+}
+
+function fmtSignedPct(v, d) {
+  if (!isNum(v)) return 'n/a';
+  const n = Number(v).toFixed(d);
+  return (v > 0 ? '+' : '') + n + '%';
+}
+
+function fmtUsdB1(v) {
+  if (!isNum(v)) return 'n/a';
+  return '$' + Number(v).toFixed(1) + 'B';
+}
+
+/** ETF / flow sums stored in USD millions. Billions at |v| >= 1000, else millions. */
+function fmtFlowM(v, preferBillions) {
+  if (!isNum(v)) return 'n/a';
+  if (preferBillions || Math.abs(v) >= 1000) {
+    const b = v / 1000;
+    const sign = b > 0 ? '+' : (b < 0 ? '-' : '');
+    return sign + '$' + Math.abs(b).toFixed(2) + 'B';
+  }
+  const sign = v > 0 ? '+' : (v < 0 ? '-' : '');
+  const a = Math.abs(v);
+  const body = a >= 100 || Math.abs(a - Math.round(a)) < 0.05 ? String(Math.round(a)) : a.toFixed(1);
+  return sign + '$' + body + 'M';
+}
+
+function buySincePhrase(stateName, since) {
+  const st = (stateName || 'off').toLowerCase();
+  const when = since ? shortDateISO(since) : null;
+  if (st.startsWith('logging') || st === 'collecting') return '';
+  const word = st === 'on' ? 'On' : st === 'turning' ? 'Turning' : 'Off';
+  return when ? `${word} since ${when}.` : word + '.';
+}
+
+function buyPartMark(stateName) {
+  const st = (stateName || 'off').toLowerCase();
+  if (st === 'on') return sthCheck(T.positive);
+  if (st === 'turning') return buyHalf(T.warning);
+  if (st.startsWith('logging') || st === 'collecting') return buyHollow(T.text2);
+  return sthCross(T.text2);
+}
+
+function buyPartDetails(f) {
+  const parts = (f.today && f.today.parts) || {};
+  const labels = f.labels || {};
+  const asOfFeed = (f.today && f.today.date) || f.as_of;
+
+  const P = parts.P || {};
+  const pState = P.state || 'off';
+  const pDetail = `Coinbase premium 30d ${fmtSignedPct(P.prem30_pct, 3)}, 7d ${fmtSignedPct(P.prem7_pct, 3)}. ${buySincePhrase(pState, P.since)}`.trim();
+
+  const E = parts.E || {};
+  const eState = E.state || 'off';
+  const eDetail = `14d ${fmtFlowM(E.sum14_usd_m, true)}, 28d ${fmtFlowM(E.sum28_usd_m, true)}. ${buySincePhrase(eState, E.since)}`.trim();
+
+  const C = parts.C || {};
+  const cState = C.state || 'off';
+  let cTail = buySincePhrase(cState, C.since);
+  if ((cState || '') === 'turning') {
+    const bn = C.binance_cvd14_usd_m, cb = C.coinbase_cvd14_usd_m;
+    const bnPos = isNum(bn) && bn > 0, cbPos = isNum(cb) && cb > 0;
+    if (bnPos && !cbPos) cTail = 'Turning (Binance only).';
+    else if (cbPos && !bnPos) cTail = 'Turning (Coinbase only).';
+  }
+  const cDetail = `Binance 14d ${fmtFlowM(C.binance_cvd14_usd_m)}, Coinbase 14d ${fmtFlowM(C.coinbase_cvd14_usd_m)}. ${cTail}`.trim();
+
+  const S = parts.S || {};
+  const sState = S.state || 'off';
+  const sChg = isNum(S.chg30_pct) ? fmtSignedPct(S.chg30_pct, 1) + ' in 30 days' : '30-day change n/a';
+  const sDetail = `${fmtUsdB1(S.supply_usd_b)}, ${sChg}. ${buySincePhrase(sState, S.since)}`.trim();
+
+  const B = parts.B || {};
+  const days = isNum(B.days_logged) ? B.days_logged : 0;
+  const logging = days < 30 || (B.state && String(B.state).startsWith('logging'));
+  let bDetail;
+  const depth = isNum(B.coinbase_bid_1_5pct_usd_m) ? fmtFlowM(B.coinbase_bid_1_5pct_usd_m).replace(/^\+/, '') : 'n/a';
+  if (logging) {
+    const since = B.logging_since ? fmtUTCDate(isoToUnix(B.logging_since)) : 'Nov 15, 2026';
+    bDetail = `Coinbase ${depth} within 1-5% below. Collecting data — logging since ${since} (${days} of 30 days).`;
+  } else {
+    bDetail = `Coinbase ${depth} within 1-5% below. ${buySincePhrase(B.state, B.since)}`.trim();
+  }
+
+  return [
+    { key: 'P', label: 'US buyers paying up (key)', state: pState, detail: pDetail, asOf: buyPartAsOf(P, asOfFeed), scored: true },
+    { key: 'E', label: labels.E || 'ETF money coming in', state: eState, detail: eDetail, asOf: buyPartAsOf(E, asOfFeed), scored: true },
+    { key: 'C', label: labels.C || 'Spot buyers hitting the ask', state: cState, detail: cDetail, asOf: buyPartAsOf(C, asOfFeed), scored: true },
+    { key: 'S', label: labels.S || 'Stablecoin cash growing', state: sState, detail: sDetail, asOf: buyPartAsOf(S, asOfFeed), scored: true },
+    { key: 'B', label: labels.B || 'Bids refilling below price', state: logging ? 'logging' : (B.state || 'logging'), detail: bDetail, asOf: buyPartAsOf(B, asOfFeed), scored: false },
+  ];
+}
+
+function ensureBuyShell() {
+  const root = $('#buyRoot');
+  if (!root || root.dataset.ready) return root;
+  root.innerHTML = `
+    <div class="card" id="buyGaugeCard"></div>
+    <div class="card" id="buyPremCard">
+      <div class="sth-head"><div><h3>Coinbase premium</h3><div class="caption">USDT-adjusted, 7-day and 30-day averages. The 30-day average is the part that matters.</div></div></div>
+      <div class="pills" id="buyPills">${BUY_RANGE_PILLS.map(([id, label]) => `<button class="pill" data-buy-range="${id}">${label}</button>`).join('')}</div>
+      <div class="sth-chart-plot" id="buyPremPlot"></div>
+      <div class="legend" id="buyPremLegend"></div>
+    </div>
+    <div class="card" id="buyEtfCard">
+      <div class="sth-head"><div><h3>ETF money coming in</h3><div class="caption">14-day and 28-day sums of US spot ETF net flows</div></div></div>
+      <div class="sth-chart-plot" id="buyEtfPlot"></div>
+      <div class="legend" id="buyEtfLegend"></div>
+    </div>
+    <div class="card" id="buyCvdCard">
+      <div class="sth-head"><div><h3>Spot buyers hitting the ask</h3><div class="caption">14-day net taker buying on Binance and Coinbase, plus Binance cumulative</div></div></div>
+      <div class="sth-chart-plot" id="buyCvdPlot"></div>
+      <div class="legend" id="buyCvdLegend"></div>
+    </div>
+    <div class="card" id="buyStableCard">
+      <div class="sth-head"><div><h3>Stablecoin cash growing</h3><div class="caption">Total stablecoin supply and 30-day change</div></div></div>
+      <div class="sth-chart-plot" id="buyStablePlot"></div>
+      <div class="legend" id="buyStableLegend"></div>
+    </div>
+    <div class="card" id="buyStripCard">
+      <div class="sth-head"><div><h3>Score history</h3><div class="caption">Buyers score (of 4) and Sellers gauge (of 3), colored by day</div></div></div>
+      <div>
+        <div class="sth-strip-label">Buyers score</div>
+        <div class="sth-strip" id="buyBuyerStrip"><canvas id="buyBuyerStripCanvas"></canvas></div>
+      </div>
+      <div>
+        <div class="sth-strip-label">Sellers gauge</div>
+        <div class="sth-strip" id="buySellerStrip"><canvas id="buySellerStripCanvas"></canvas></div>
+      </div>
+    </div>`;
+  root.addEventListener('click', e => {
+    const rb = e.target.closest('[data-buy-range]');
+    if (rb && rb.dataset.buyRange !== buy.range) {
+      buy.range = rb.dataset.buyRange;
+      persistBuy('range', buy.range);
+      buy.sel = { prem: null, etf: null, cvd: null, stable: null };
+      renderBuyCharts(true);
+      renderBuyGaugeStrips();
+    }
+  });
+  root.dataset.ready = '1';
+  return root;
+}
+
+function renderBuyGauge() {
+  const el = $('#buyGaugeCard');
+  if (!el) return;
+  const f = buyFeed();
+  if (!f || !f.today) {
+    el.innerHTML = `<h3>Buyers returning</h3><div class="chart-msg">Buyers feed unavailable.</div>`;
+    return;
+  }
+  const t = f.today;
+  const score = t.score || 0;
+  const color = BUY_SCORE_COLOR[score] || T.text;
+  const rows = buyPartDetails(f).map(row => {
+    const on = row.state === 'on';
+    const turning = row.state === 'turning';
+    const labelColor = on ? T.positive : turning ? T.warning : T.text;
+    return `
+    <div class="sth-part" data-part="${row.key}">
+      ${buyPartMark(row.state)}
+      <div class="sth-part-body">
+        <div class="sth-part-label" style="color:${labelColor}">${esc(row.label)}</div>
+        <div class="sth-part-detail">${esc(row.detail)}</div>
+        ${buyStaleNote(row.key, row.asOf)}
+      </div>
+    </div>`;
+  }).join('');
+  const asOf = t.date ? fmtUTCDate(isoToUnix(t.date)) : '';
+  el.innerHTML = `
+    ${sthStaleBanner(f)}
+    <div class="sth-score-row">
+      <div>
+        <div class="sth-score" style="color:${color}">Buyers returning: ${score} of 4</div>
+        <div class="sth-verdict" style="color:${color}">${esc(t.state || '')}</div>
+        <div class="sth-asof">${asOf ? `As of ${esc(asOf)} · last finished UTC day` : ''}</div>
+        ${buyComboHTML()}
+      </div>
+    </div>
+    ${rows}
+    <div class="sth-caption">${esc(f.gauge_caption || '')}</div>`;
+}
+
+function drawScoreStrip(canvas, values, palette, fallback) {
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  const w = Math.max(1, wrap.clientWidth);
+  const h = Math.max(1, wrap.clientHeight);
+  const dpr = devicePixelRatio || 1;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!values.length) return;
+  const n = values.length;
+  const bw = w / n;
+  const maxS = Math.max(1, ...values.map(v => (v == null ? 0 : v)), 1);
+  for (let i = 0; i < n; i++) {
+    const s = values[i];
+    if (s == null) continue;
+    const key = Math.round(s);
+    ctx.fillStyle = palette[key] || fallback;
+    const bh = ((s + 1) / (maxS + 1)) * (h - 2);
+    ctx.fillRect(Math.floor(i * bw), h - bh, Math.max(1, Math.ceil(bw)), bh);
+  }
+}
+
+function renderBuyGaugeStrips() {
+  const pts = buy.points.length ? buy.points : buyPoints();
+  drawScoreStrip($('#buyBuyerStripCanvas'), pts.map(p => p.buyer_score), BUY_STRIP_FILL, BUY_STRIP_FILL[0]);
+  drawScoreStrip($('#buySellerStripCanvas'), pts.map(p => p.seller_score), STH_STRIP_FILL, STH_STRIP_FILL[0]);
+}
+
+function buyLegendCap(key, pts) {
+  const t = buy.sel[key];
+  if (t != null) return `Inspecting · ${fmtUTCDate(t)}`;
+  const last = pts.length ? pts[pts.length - 1].t : null;
+  return last ? `Latest · ${fmtUTCDate(last)} · touch the chart to inspect` : '';
+}
+
+function buyAt(pts, t) {
+  if (!pts.length) return null;
+  const i = t == null ? pts.length - 1 : nearestIdx(pts, t);
+  return i >= 0 ? pts[i] : null;
+}
+
+function renderBuyPremLegend() {
+  const el = $('#buyPremLegend'); if (!el) return;
+  const pts = buy.points;
+  const p = buyAt(pts, buy.sel.prem);
+  el.innerHTML = `<div class="legend-cap">${esc(buyLegendCap('prem', pts))}</div>` +
+    rowHTML('30-day premium', rgba(0.30, 0.85, 0.62), p && isNum(p.prem30) ? fmtSignedPct(p.prem30, 3) : null) +
+    rowHTML('7-day premium', rgba(0.40, 0.78, 0.85), p && isNum(p.prem7) ? fmtSignedPct(p.prem7, 3) : null) +
+    rowHTML('BTC price', T.accent, p && isNum(p.price) ? usd(p.price) : null);
+}
+
+function renderBuyEtfLegend() {
+  const el = $('#buyEtfLegend'); if (!el) return;
+  const pts = buy.points;
+  const p = buyAt(pts, buy.sel.etf);
+  el.innerHTML = `<div class="legend-cap">${esc(buyLegendCap('etf', pts))}</div>` +
+    rowHTML('14-day ETF flows', rgba(0.35, 0.72, 0.95), p && isNum(p.etf14) ? fmtFlowM(p.etf14, true) : null) +
+    rowHTML('28-day ETF flows', rgba(0.72, 0.55, 0.95), p && isNum(p.etf28) ? fmtFlowM(p.etf28, true) : null);
+}
+
+function renderBuyCvdLegend() {
+  const el = $('#buyCvdLegend'); if (!el) return;
+  const pts = buy.points;
+  const p = buyAt(pts, buy.sel.cvd);
+  el.innerHTML = `<div class="legend-cap">${esc(buyLegendCap('cvd', pts))}</div>` +
+    rowHTML('Binance 14d', rgba(0.30, 0.82, 0.78), p && isNum(p.bn14) ? fmtFlowM(p.bn14) : null) +
+    rowHTML('Coinbase 14d', rgba(0.95, 0.62, 0.30), p && isNum(p.cb14) ? fmtFlowM(p.cb14) : null) +
+    rowHTML('Binance cumulative', rgba(0.85, 0.85, 0.90), p && isNum(p.bn_cum) ? (p.bn_cum > 0 ? '+' : '') + fx(p.bn_cum, 1) + 'B' : null);
+}
+
+function renderBuyStableLegend() {
+  const el = $('#buyStableLegend'); if (!el) return;
+  const pts = buy.points;
+  const p = buyAt(pts, buy.sel.stable);
+  el.innerHTML = `<div class="legend-cap">${esc(buyLegendCap('stable', pts))}</div>` +
+    rowHTML('Stablecoin supply', rgba(0.40, 0.78, 0.95), p && isNum(p.stable) ? fmtUsdB1(p.stable) : null) +
+    rowHTML('30-day change', p && isNum(p.stable30) && p.stable30 >= 0 ? T.positive : T.negative, p && isNum(p.stable30) ? fmtSignedPct(p.stable30, 1) : null);
+}
+
+function destroyBuyPlot(key) {
+  if (buy.plots[key]) { buy.plots[key].destroy(); buy.plots[key] = null; }
+}
+
+function buyCursorHook(key) {
+  return u => {
+    const left = u.cursor.left;
+    let t = null;
+    if (left != null && left >= 0 && u.cursor.idx != null) t = u.posToVal(left, 'x');
+    if (t !== buy.sel[key]) {
+      buy.sel[key] = t;
+      if (key === 'prem') renderBuyPremLegend();
+      else if (key === 'etf') renderBuyEtfLegend();
+      else if (key === 'cvd') renderBuyCvdLegend();
+      else renderBuyStableLegend();
+    }
+  };
+}
+
+function buyEventsInRange(xd) {
+  return buyPastEvents().map(e => ({ ...e, t: buyEventUnix(e) })).filter(e => e.t != null && e.t >= xd[0] && e.t <= xd[1]);
+}
+
+function drawEventGuides(u, evs, dashed) {
+  const ctx = u.ctx, dpr = devicePixelRatio;
+  ctx.setLineDash(dashed ? [2 * dpr, 3 * dpr] : [2 * dpr, 3 * dpr]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1 * dpr;
+  for (const e of evs) {
+    const x = Math.round(u.valToPos(e.t, 'x', true));
+    ctx.beginPath(); ctx.moveTo(x, u.bbox.top); ctx.lineTo(x, u.bbox.top + u.bbox.height); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawZeroLine(u) {
+  const ctx = u.ctx, dpr = devicePixelRatio;
+  const y0 = u.valToPos(0, 'y', true);
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.2 * dpr;
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(u.bbox.left, y0); ctx.lineTo(u.bbox.left + u.bbox.width, y0); ctx.stroke();
+}
+
+function fillAroundZero(u, xs, ys) {
+  const ctx = u.ctx;
+  const xPos = t => u.valToPos(t, 'x', true);
+  const yPos = v => u.valToPos(v, 'y', true);
+  const y0 = u.valToPos(0, 'y', true);
+  const fillSeg = (t0, v0, t1, v1, above) => {
+    ctx.beginPath();
+    ctx.moveTo(xPos(t0), y0);
+    ctx.lineTo(xPos(t0), yPos(v0));
+    ctx.lineTo(xPos(t1), yPos(v1));
+    ctx.lineTo(xPos(t1), y0);
+    ctx.closePath();
+    ctx.fillStyle = above ? 'rgba(51,199,122,0.22)' : 'rgba(242,89,97,0.22)';
+    ctx.fill();
+  };
+  for (let i = 0; i < xs.length - 1; i++) {
+    const v0 = ys[i], v1 = ys[i + 1];
+    if (v0 == null || v1 == null) continue;
+    const t0 = xs[i], t1 = xs[i + 1];
+    const a0 = v0 >= 0, a1 = v1 >= 0;
+    if (a0 === a1) fillSeg(t0, v0, t1, v1, a0);
+    else {
+      const f = (0 - v0) / (v1 - v0);
+      const tc = t0 + f * (t1 - t0);
+      fillSeg(t0, v0, tc, 0, a0);
+      fillSeg(tc, 0, t1, v1, a1);
+    }
+  }
+}
+
+function drawSignedBars(u, pts, values, colorFor, offsetFrac, widthFrac) {
+  const ctx = u.ctx, dpr = devicePixelRatio, dataX = u.data[0];
+  let spacing = Infinity;
+  for (let i = 1; i < dataX.length; i++) {
+    const d = u.valToPos(dataX[i], 'x', true) - u.valToPos(dataX[i - 1], 'x', true);
+    if (d > 0 && d < spacing) spacing = d;
+  }
+  if (!isFinite(spacing)) spacing = 6 * dpr;
+  const w = Math.max(1.2 * dpr, spacing * widthFrac);
+  const y0 = u.valToPos(0, 'y', true);
+  for (let i = 0; i < pts.length; i++) {
+    const v = values[i]; if (v == null) continue;
+    const x = u.valToPos(pts[i].t, 'x', true) + offsetFrac * spacing;
+    const y = u.valToPos(v, 'y', true);
+    ctx.fillStyle = colorFor(v);
+    ctx.fillRect(x - w / 2, Math.min(y, y0), w, Math.max(dpr, Math.abs(y0 - y)));
+  }
+}
+
+function renderBuyPremChart() {
+  const el = $('#buyPremPlot'); if (!el) return;
+  destroyBuyPlot('prem');
+  const pts = buy.points;
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No premium history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 210;
+  const xs = pts.map(p => p.t);
+  const p30 = pts.map(p => isNum(p.prem30) ? p.prem30 : null);
+  const p7 = pts.map(p => isNum(p.prem7) ? p.prem7 : null);
+  const px = pts.map(p => isNum(p.price) ? p.price : null);
+  const xd = [xs[0], xs[xs.length - 1]];
+  const prices = px.filter(v => v > 0);
+  const pLo = prices.length ? Math.min(...prices) : 1, pHi = prices.length ? Math.max(...prices) : 1;
+  const useLog = buy.range === 'all';
+  const y2range = useLog ? [pLo / 1.25, pHi * 1.15] : [pLo * 0.92, pHi * 1.08];
+  const evs = buyEventsInRange(xd);
+  const marks = new Array(xs.length).fill(null);
+  evs.forEach(e => {
+    const i = nearestIdx(pts, e.t);
+    if (i >= 0) marks[i] = pts[i].prem30;
+  });
+  const premVals = p30.concat(p7).filter(isNum);
+  let lo = Math.min(-0.05, ...premVals, 0), hi = Math.max(0.05, ...premVals, 0);
+  const pad = (hi - lo) * 0.12;
+  lo -= pad; hi += pad;
+  const gR = gutterFor(['$000.0k', usd(pHi)]);
+  const gL = gutterFor(['-0.000%', '0.000%']);
+  const xKey = buy.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.padding = [6, 0, 0, 4];
+  opts.scales.y = { range: () => [lo, hi] };
+  opts.scales.y2 = { range: () => y2range, distr: useLog ? 3 : 1 };
+  opts.axes.push(
+    { scale: 'y', stroke: T.text2, font: AXIS_FONT, size: gL, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : fmtSignedPct(v, 3).replace('+', '')) },
+    { scale: 'y2', side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { show: false }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : (useLog ? histCompact(v) : axisUSD(v))) },
+  );
+  opts.series = [
+    {},
+    { label: '30d', scale: 'y', stroke: rgba(0.30, 0.85, 0.62), width: 1.8, spanGaps: true, points: { show: false } },
+    { label: '7d', scale: 'y', stroke: rgba(0.40, 0.78, 0.85), width: 1.3, spanGaps: true, points: { show: false } },
+    { label: 'BTC', scale: 'y2', stroke: T.accent, width: 1.3, spanGaps: true, points: { show: false } },
+    { label: 'Lows', scale: 'y', stroke: '#fff', width: 0, paths: () => null, points: { show: true, size: 7, fill: '#fff', stroke: 'rgba(0,0,0,0.55)', width: 1, space: 0 } },
+  ];
+  opts.hooks = {
+    setCursor: [buyCursorHook('prem')],
+    draw: [u => {
+      const ctx = u.ctx;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      fillAroundZero(u, u.data[0], u.data[1]);
+      drawZeroLine(u);
+      drawEventGuides(u, evs, true);
+      ctx.restore();
+      placeSthEventLabels(u, evs.map(e => ({ ...e, name: buyEventLabel(e.name) })), el);
+    }],
+  };
+  buy.plots.prem = new uPlot(opts, [xs, p30, p7, px, marks], el);
+  attachTouch(buy.plots.prem);
+  renderBuyPremLegend();
+}
+
+function fmtAxisFlow(v) {
+  if (v == null) return '';
+  if (Math.abs(v) >= 1000) {
+    const b = v / 1000;
+    const sign = b < 0 ? '-' : '';
+    return sign + '$' + Math.abs(b).toFixed(Math.abs(b) >= 10 ? 0 : 1) + 'B';
+  }
+  const sign = v < 0 ? '-' : '';
+  return sign + '$' + Math.abs(v).toFixed(0) + 'M';
+}
+
+function renderBuyEtfChart() {
+  const el = $('#buyEtfPlot'); if (!el) return;
+  destroyBuyPlot('etf');
+  const pts = buy.points;
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No ETF-flow history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 200;
+  const xs = pts.map(p => p.t);
+  const y14 = pts.map(p => isNum(p.etf14) ? p.etf14 : null);
+  const y28 = pts.map(p => isNum(p.etf28) ? p.etf28 : null);
+  const xd = [xs[0], xs[xs.length - 1]];
+  const evs = buyEventsInRange(xd);
+  const vals = y14.concat(y28).filter(isNum);
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  if (lo === 0 && hi === 0) { lo = -1; hi = 1; }
+  const pad = Math.max(hi, -lo) * 0.08;
+  lo -= pad; hi += pad;
+  const gR = gutterFor([fmtAxisFlow(lo), fmtAxisFlow(hi), '-$00.0B']);
+  const xKey = buy.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.scales.y = { range: () => [lo, hi] };
+  opts.axes.push({ side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals2) => vals2.map(fmtAxisFlow) });
+  opts.series = [{}, { stroke: 'transparent', width: 0, paths: () => null, points: { show: false } }];
+  opts.hooks = {
+    setCursor: [buyCursorHook('etf')],
+    draw: [u => {
+      const ctx = u.ctx;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      const pos14 = v => v >= 0 ? 'rgba(90, 190, 245, 0.95)' : 'rgba(80, 140, 190, 0.85)';
+      const pos28 = v => v >= 0 ? 'rgba(180, 140, 245, 0.85)' : 'rgba(140, 110, 190, 0.8)';
+      drawSignedBars(u, pts, y28, pos28, 0.16, 0.42);
+      drawSignedBars(u, pts, y14, pos14, -0.16, 0.42);
+      drawZeroLine(u);
+      drawEventGuides(u, evs, true);
+      ctx.restore();
+    }],
+  };
+  buy.plots.etf = new uPlot(opts, [xs, y14], el);
+  attachTouch(buy.plots.etf);
+  renderBuyEtfLegend();
+}
+
+function renderBuyCvdChart() {
+  const el = $('#buyCvdPlot'); if (!el) return;
+  destroyBuyPlot('cvd');
+  const pts = buy.points;
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No spot-buying history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 210;
+  const xs = pts.map(p => p.t);
+  const bn = pts.map(p => isNum(p.bn14) ? p.bn14 : null);
+  const cb = pts.map(p => isNum(p.cb14) ? p.cb14 : null);
+  const cum = pts.map(p => isNum(p.bn_cum) ? p.bn_cum : null);
+  const xd = [xs[0], xs[xs.length - 1]];
+  const evs = buyEventsInRange(xd);
+  const barVals = bn.concat(cb).filter(isNum);
+  let lo = Math.min(0, ...barVals), hi = Math.max(0, ...barVals);
+  if (lo === 0 && hi === 0) { lo = -1; hi = 1; }
+  const pad = Math.max(hi, -lo) * 0.08;
+  lo -= pad; hi += pad;
+  const cums = cum.filter(isNum);
+  let cLo = cums.length ? Math.min(...cums) : 0, cHi = cums.length ? Math.max(...cums) : 1;
+  if (cLo === cHi) { cLo -= 1; cHi += 1; }
+  const cPad = (cHi - cLo) * 0.12;
+  cLo -= cPad; cHi += cPad;
+  const gR = gutterFor([fx(cLo, 0) + 'B', fx(cHi, 0) + 'B']);
+  const gL = gutterFor([fmtAxisFlow(lo), fmtAxisFlow(hi), '-$00.0B']);
+  const xKey = buy.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.padding = [6, 0, 0, 4];
+  opts.scales.y = { range: () => [lo, hi] };
+  opts.scales.y2 = { range: () => [cLo, cHi] };
+  opts.axes.push(
+    { scale: 'y', stroke: T.text2, font: AXIS_FONT, size: gL, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(fmtAxisFlow) },
+    { scale: 'y2', side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { show: false }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : fx(v, 0) + 'B') },
+  );
+  opts.series = [
+    {},
+    { stroke: 'transparent', width: 0, paths: () => null, points: { show: false } },
+    { label: 'Cumulative', scale: 'y2', stroke: 'rgba(220,220,230,0.9)', width: 1.4, spanGaps: true, points: { show: false } },
+  ];
+  opts.hooks = {
+    setCursor: [buyCursorHook('cvd')],
+    draw: [u => {
+      const ctx = u.ctx;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      const colBn = v => v >= 0 ? 'rgba(70, 210, 195, 0.95)' : 'rgba(50, 140, 135, 0.85)';
+      const colCb = v => v >= 0 ? 'rgba(245, 170, 70, 0.9)' : 'rgba(190, 120, 50, 0.85)';
+      drawSignedBars(u, pts, bn, colBn, -0.16, 0.42);
+      drawSignedBars(u, pts, cb, colCb, 0.16, 0.42);
+      drawZeroLine(u);
+      drawEventGuides(u, evs, true);
+      ctx.restore();
+    }],
+  };
+  buy.plots.cvd = new uPlot(opts, [xs, bn, cum], el);
+  attachTouch(buy.plots.cvd);
+  renderBuyCvdLegend();
+}
+
+function robustRange(vals, padFrac, includeZero) {
+  const v = vals.filter(isNum).slice().sort((a, b) => a - b);
+  if (!v.length) return includeZero ? [-1, 1] : [0, 1];
+  const loI = Math.floor(v.length * 0.05);
+  const hiI = Math.max(loI, Math.ceil(v.length * 0.95) - 1);
+  let lo = v[loI], hi = v[hiI];
+  if (includeZero) { lo = Math.min(0, lo); hi = Math.max(0, hi); }
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * (padFrac || 0.12) || 1;
+  return [lo - pad, hi + pad];
+}
+
+function renderBuyStableChart() {
+  const el = $('#buyStablePlot'); if (!el) return;
+  destroyBuyPlot('stable');
+  const pts = buy.points;
+  if (!pts.length) { el.innerHTML = '<div class="chart-msg">No stablecoin history in this range.</div>'; return; }
+  el.innerHTML = '';
+  const width = Math.max(200, el.clientWidth);
+  const height = 210;
+  const xs = pts.map(p => p.t);
+  const sup = pts.map(p => isNum(p.stable) ? p.stable : null);
+  const chg = pts.map(p => isNum(p.stable30) ? p.stable30 : null);
+  const xd = [xs[0], xs[xs.length - 1]];
+  const evs = buyEventsInRange(xd);
+  const svals = sup.filter(isNum);
+  let sLo = svals.length ? Math.min(...svals) : 0, sHi = svals.length ? Math.max(...svals) : 1;
+  const sPad = (sHi - sLo) * 0.12 || 1;
+  sLo -= sPad; sHi += sPad;
+  const [cLo, cHi] = robustRange(chg, 0.12, true);
+  const gL = gutterFor(['$000.0B', fmtUsdB1(sHi)]);
+  const gR = gutterFor(['-00.0%', '00.0%']);
+  const xKey = buy.range === '2y' ? '2Y' : '10Y';
+  const opts = sthCommonOpts(width, height, xd, xKey, gR, 4);
+  opts.padding = [6, 0, 0, 4];
+  opts.scales.y = { range: () => [sLo, sHi] };
+  opts.scales.y2 = { range: () => [cLo, cHi] };
+  opts.axes.push(
+    { scale: 'y', stroke: T.text2, font: AXIS_FONT, size: gL, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : fmtUsdB1(v)) },
+    { scale: 'y2', side: 1, stroke: T.text2, font: AXIS_FONT, size: gR, gap: 4, grid: { show: false }, ticks: { show: false }, space: 36, values: (u, vals) => vals.map(v => v == null ? '' : fx(v, 1) + '%') },
+  );
+  opts.series = [
+    {},
+    { label: 'Supply', scale: 'y', stroke: rgba(0.40, 0.78, 0.95), width: 1.8, spanGaps: true, points: { show: false } },
+    { label: '30d', scale: 'y2', stroke: 'transparent', width: 0, paths: () => null, points: { show: false } },
+  ];
+  opts.hooks = {
+    setCursor: [buyCursorHook('stable')],
+    draw: [u => {
+      const ctx = u.ctx, dpr = devicePixelRatio;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+      // 30d % bars on y2
+      const dataX = u.data[0];
+      let spacing = Infinity;
+      for (let i = 1; i < dataX.length; i++) {
+        const d = u.valToPos(dataX[i], 'x', true) - u.valToPos(dataX[i - 1], 'x', true);
+        if (d > 0 && d < spacing) spacing = d;
+      }
+      if (!isFinite(spacing)) spacing = 6 * dpr;
+      const w = Math.max(1.2 * dpr, spacing * 0.62);
+      const y0 = u.valToPos(0, 'y2', true);
+      for (let i = 0; i < pts.length; i++) {
+        const v = chg[i]; if (v == null) continue;
+        const x = u.valToPos(pts[i].t, 'x', true);
+        const y = u.valToPos(v, 'y2', true);
+        ctx.fillStyle = v >= 0 ? 'rgba(51,199,122,0.35)' : 'rgba(242,89,97,0.35)';
+        ctx.fillRect(x - w / 2, Math.min(y, y0), w, Math.max(dpr, Math.abs(y0 - y)));
+      }
+      const yZero = u.valToPos(0, 'y2', true);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1 * dpr;
+      ctx.beginPath(); ctx.moveTo(u.bbox.left, yZero); ctx.lineTo(u.bbox.left + u.bbox.width, yZero); ctx.stroke();
+      drawEventGuides(u, evs, true);
+      ctx.restore();
+    }],
+  };
+  buy.plots.stable = new uPlot(opts, [xs, sup, chg], el);
+  attachTouch(buy.plots.stable);
+  renderBuyStableLegend();
+}
+
+function renderBuyCharts(force) {
+  const root = ensureBuyShell();
+  if (!root) return;
+  root.querySelectorAll('#buyPills .pill').forEach(p => p.classList.toggle('on', p.dataset.buyRange === buy.range));
+  const el = $('#buyPremPlot');
+  const w = el ? el.clientWidth : 0;
+  if (!force && w && w === buy.width && buy.plots.prem && buy.plots.etf && buy.plots.cvd && buy.plots.stable) {
+    renderBuyPremLegend(); renderBuyEtfLegend(); renderBuyCvdLegend(); renderBuyStableLegend();
+    return;
+  }
+  buy.points = buyPoints();
+  buy.width = w;
+  if (!buyFeed()) {
+    ['buyPremPlot', 'buyEtfPlot', 'buyCvdPlot', 'buyStablePlot'].forEach(id => {
+      const n = $('#' + id); if (n) n.innerHTML = '<div class="chart-msg">Buyers feed unavailable.</div>';
+    });
+    return;
+  }
+  renderBuyPremChart();
+  renderBuyEtfChart();
+  renderBuyCvdChart();
+  renderBuyStableChart();
+  renderBuyGaugeStrips();
+}
+
+function renderBuyers() {
+  ensureBuyShell();
+  renderBuyGauge();
+  renderBuyCharts(true);
+}
+
+
 // ---------- app shell ----------
 function setSpinner() { const busy = state.loading || state.feedsLoading; $('#spinner').hidden = !busy; $('#refreshBtn').disabled = !!busy; }
 function setTab(tab) {
@@ -2287,18 +3071,20 @@ function setTab(tab) {
   $('#view-overview').hidden = tab !== 'overview';
   $('#view-chart').hidden = tab !== 'chart';
   $('#view-sellers').hidden = tab !== 'sellers';
-  $('#topbarTitle').textContent = tab === 'chart' ? 'Chart' : tab === 'sellers' ? 'Short-term sellers' : 'BTC Thesis';
+  const vb = $('#view-buyers'); if (vb) vb.hidden = tab !== 'buyers';
+  $('#topbarTitle').textContent = tab === 'chart' ? 'Chart' : tab === 'sellers' ? 'Short-term sellers' : tab === 'buyers' ? 'Buyers returning' : 'BTC Thesis';
   if (tab === 'chart' || tab === 'overview') {
     const slot = tab === 'chart' ? $('#chartSlotChart') : $('#chartSlotOverview');
     if (chartCard.parentElement !== slot) slot.appendChild(chartCard);
     state.sel = null; renderChart();
   }
   if (tab === 'sellers') renderSellers();
+  if (tab === 'buyers') renderBuyers();
   window.scrollTo(0, 0);
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();
@@ -2317,6 +3103,7 @@ async function refreshAll() {
   await refreshChart();
   if (!$('#floorSheet').hidden) renderFloorSheet();
   if (state.tab === 'sellers') renderSellers();
+  if (state.tab === 'buyers') renderBuyers();
 }
 $('#refreshBtn').addEventListener('click', () => refreshAll());
 
@@ -2328,6 +3115,7 @@ window.addEventListener('resize', () => {
     const w = chartCard.querySelector('#chartWrap').clientWidth;
     if (w !== lastW) { lastW = w; renderChart(); if (!$('#floorSheet').hidden) renderFloorSheet(); }
     if (state.tab === 'sellers') renderSthCharts(true);
+    if (state.tab === 'buyers') renderBuyCharts(true);
     if (state.tab === 'overview') drawReservesSpark();
   }, 150);
 });

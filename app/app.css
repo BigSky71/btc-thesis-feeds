@@ -237,3 +237,14 @@ table.lows td:first-child { font-family: inherit; }
 .macro-cell .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 20px; }
 .macro-cell .w { font-size: 11px; color: var(--text2); margin-top: 2px; line-height: 1.35; }
 #macroLegend { padding-top: 0; }
+
+
+/* Buyers returning tab (mirrors Sellers) */
+.buy-page { display: flex; flex-direction: column; gap: var(--gap); }
+#view-buyers { display: flex; flex-direction: column; gap: var(--gap); }
+#view-buyers .card { scroll-margin-top: 8px; scroll-margin-bottom: 100px; }
+#buyPremPlot { padding-top: 38px; }
+.buy-combo { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 8px; line-height: 1.35; }
+.buy-part-stale { font-size: 11px; color: var(--warning); margin-top: 2px; line-height: 1.35; }
+.buy-logging { color: var(--text2); font-weight: 600; }
+
