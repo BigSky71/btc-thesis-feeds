@@ -797,21 +797,57 @@ function bannerRangeText(low, high) {
 }
 
 const DEFAULT_BANNER_LEVELS = [
-  { id: 'recovery_gate', label: '$100k recovery to excitement', support_label: '$100k recovery gate', overhead_label: '$100k recovery gate, overhead', testing_label: '$100k recovery gate (testing)', price: 100000, kind: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: recovery-to-excitement gate.', note_overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' },
-  { id: 'valuation_top', label: 'Valuation-range top', support_label: 'Valuation-range top', overhead_label: 'Valuation-range top, overhead', testing_label: 'Valuation-range top (testing)', price: 150000, kind: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: Check valuation-range top. First large long-term-holder distribution zone.', note_overhead: 'Thesis line: Check valuation-range top, now overhead.' },
-  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.', note_overhead: 'Thesis line: former first support to defend, now overhead. Resistance to reclaim.' },
-  { id: '72k', label: '$72k', support_label: 'Weekly invalidation ($72k)', overhead_label: '$72k, resistance to reclaim', price: 72000, kind: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: a weekly close under $72k is the soft invalidation.', note_overhead: 'Thesis line: $72k weekly invalidation, now overhead. Resistance to reclaim.' },
-  { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: confluence near $70k. The bull card carries the weekly-close line at $72k.', note_overhead: 'Thesis line: $70k is overhead. Resistance to reclaim.' },
-  { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
-  { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
-  { id: 'liquidation_cluster', label: 'liquidation cluster', support_label: 'Liquidation cluster', overhead_label: 'Liquidation cluster, resistance to reclaim', testing_label: 'Liquidation cluster (testing)', low: 60500, high: 62500, kind: 'zone', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis / research zone: Glassnode liquidation cluster $60.5k–$62.5k.', note_overhead: 'The $60.5–62.5k liquidation cluster is overhead. Resistance to reclaim.', note_testing: 'Price is inside the $60.5–62.5k Glassnode liquidation cluster.' },
-  { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
+  { id: 'recovery_gate', label: '$100k recovery to excitement', support_label: '$100k recovery gate', overhead_label: '$100k recovery gate, overhead', testing_label: '$100k recovery gate (testing)', price: 100000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: recovery-to-excitement gate.', note_overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' },
+  { id: 'valuation_top', label: 'Valuation-range top', support_label: 'Valuation-range top', overhead_label: 'Valuation-range top, overhead', testing_label: 'Valuation-range top (testing)', price: 150000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: Check valuation-range top. First large long-term-holder distribution zone.', note_overhead: 'Thesis line: Check valuation-range top, now overhead.' },
+  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.', note_overhead: 'Thesis line: former first support to defend, now overhead. Resistance to reclaim.' },
+  { id: '72k', label: '$72k', support_label: 'Weekly invalidation ($72k)', overhead_label: '$72k, resistance to reclaim', price: 72000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: a weekly close under $72k is the soft invalidation.', note_overhead: 'Thesis line: $72k weekly invalidation, now overhead. Resistance to reclaim.' },
+  { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: confluence near $70k. The bull card carries the weekly-close line at $72k.', note_overhead: 'Thesis line: $70k is overhead. Resistance to reclaim.' },
+  { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', type: 'level', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
+  { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', type: 'level', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
+  { id: 'q15', label: 'Q15 band', support_label: 'Q15 band (soft support)', overhead_label: 'Q15 band, overhead', testing_label: 'Q15 band (testing)', kind: 'level', type: 'level', live: 'q15', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.', note_overhead: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead.' },
+  { id: 'liquidation_cluster', label: 'Liquidation magnet $60.5–62.5k', low: 60500, high: 62500, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, note: 'Glassnode liquidation cluster. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone.' },
+  { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', type: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
+  { id: 'realized', label: 'Realized price', support_label: 'Realized price', overhead_label: 'Realized price, overhead', testing_label: 'Realized price (testing)', kind: 'level', type: 'level', live: 'realized', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live realized price from the same Bitview / Check overlays as the chart: the average cost of every coin.', note_overhead: 'Live realized price from the same Bitview / Check overlays as the chart. Now overhead.' },
 ];
 
+const MAGNET_NEAR_PCT = 0.15; // mention a cluster below spot when its top edge is within 15% of price
+
+const isMagnetLevel = L => L && (L.type === 'liquidation_cluster' || L.id === 'liquidation_cluster');
+
+function floorLivePrint(id) {
+  const snap = floorsSnapshot(state.feeds['support_floors.json']);
+  const f = snap.floor ? snap.floor(id) : null;
+  if (f && isNum(f.value)) return { value: f.value, asOf: snap.asOfLabel || null, stale: false };
+  const last = f && f.history && f.history.length ? f.history[f.history.length - 1] : null;
+  if (last && isNum(last.v)) {
+    const when = last.t ? new Date(last.t * 1000).toISOString().slice(0, 10) : (snap.asOfLabel || null);
+    return { value: last.v, asOf: when, stale: true };
+  }
+  return null;
+}
+
+function resolveLevelPrice(item, snap) {
+  if (item.live === 'wma200') return snap && isNum(snap.wma200) ? { value: snap.wma200, source: snap.source === 'live' ? 'live' : 'mock', stale: false } : null;
+  if (item.live === 'wma50') {
+    if (snap && isNum(snap.wma50)) return { value: snap.wma50, source: snap.source === 'live' ? 'live' : 'mock', stale: false };
+    if (isNum(CONFIG.mock50WMA)) return { value: CONFIG.mock50WMA, source: 'mock', stale: false };
+    return null;
+  }
+  if (item.live === 'q15' || item.live === 'realized') {
+    const p = floorLivePrint(item.live);
+    if (!p) return null;
+    return { value: p.value, source: p.stale ? 'latest' : 'live', stale: p.stale, asOf: p.asOf };
+  }
+  if (isNum(item.price)) return { value: item.price, source: item.badge || 'thesis line', stale: false };
+  return null;
+}
+
 function bannerLevelDisplay(L) {
-  if (L.kind === 'average') return `the 200-week average (~${fmtK(L.low)})`;
-  if (L.kind === 'zone') return `the ${bannerRangeText(L.low, L.high)} liquidation cluster`;
-  if (L.id === 'june_30_low') return `the June 30 low at ${usd(L.low)}`;
+  if (isMagnetLevel(L)) return `liquidation magnet ${bannerRangeText(L.low, L.high)}`;
+  if (L.id === 'wma200') return `the 200-week average (~${fmtK(L.low)})`;
+  if (L.id === 'q15') return `Q15 band ~${fmtK(L.low)}`;
+  if (L.id === 'realized') return `realized price (~${fmtK(L.low)})`;
+  if (L.id === 'june_30_low') return `the June 30 low ${usd(L.low)}`;
   if (L.id === 'bears_last_stand') return `Bears' Last Stand at ${usd(L.low)}`;
   if (L.id === '70k' || L.id === '72k') return fmtK(L.low);
   return L.label || usd(L.low);
@@ -821,25 +857,41 @@ function bannerLevelSet(snap) {
   const file = state.feeds['banner_levels.json'] || {};
   const raw = Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
   const items = [];
-  if (snap && isNum(snap.wma200)) {
-    items.push({ id: 'wma200', kind: 'average', low: snap.wma200, high: snap.wma200, live: true });
-  }
   for (const L of raw) {
-    if (L.in_banner === false || L.live) continue;
-    if (L.kind === 'zone' && isNum(L.low) && isNum(L.high)) {
+    if (L.in_banner === false) continue;
+    const type = L.type || (isMagnetLevel(L) ? 'liquidation_cluster' : 'level');
+    if (isMagnetLevel(L) && isNum(L.low) && isNum(L.high)) {
       const lo = Math.min(L.low, L.high), hi = Math.max(L.low, L.high);
-      items.push({ id: L.id, kind: 'zone', low: lo, high: hi, label: L.label });
-    } else if (isNum(L.price)) {
-      items.push({ id: L.id, kind: 'level', low: L.price, high: L.price, label: L.label, date: L.date });
+      items.push({ id: L.id, kind: 'zone', type, low: lo, high: hi, label: L.label });
+      continue;
     }
+    const resolved = resolveLevelPrice(L, snap);
+    if (!resolved) continue;
+    const kind = L.kind === 'average' ? 'average' : 'level';
+    items.push({ id: L.id, kind, type, low: resolved.value, high: resolved.value, label: L.label, date: L.date, live: !!L.live });
   }
   return items.map(x => ({ ...x, display: bannerLevelDisplay(x) }));
 }
 
+function magnetClause(px, magnets) {
+  if (!isNum(px) || !magnets.length) return null;
+  const inside = magnets.find(M => px >= M.low && px <= M.high);
+  if (inside) return { kind: 'inside', text: `Inside the liquidation magnet zone ${bannerRangeText(inside.low, inside.high)}.` };
+  const below = magnets.filter(M => M.high < px).sort((a, b) => b.high - a.high)[0];
+  if (below && (px - below.high) / px <= MAGNET_NEAR_PCT) {
+    return { kind: 'below', text: `Liquidation magnet at ${bannerRangeText(below.low, below.high)} could pull price lower if it nears ${fmtK(below.high)}.` };
+  }
+  const above = magnets.filter(M => M.low > px).sort((a, b) => a.low - b.low)[0];
+  if (above) return { kind: 'above', text: `Liquidation magnet ${bannerRangeText(above.low, above.high)} is overhead.` };
+  return null;
+}
+
+const withMagnet = (msg, clause) => clause ? msg.replace(/\s*$/, '') + ' ' + clause.text : msg;
+
 /**
- * Banner support line is always from live price. Nearest listed level below
- * price is support; nearest listed level above (a former support) is resistance
- * to reclaim. A zone that contains the price is "testing."
+ * Banner support line is always from live price. Nearest real level below
+ * price is support; nearest real level above (a former support) is resistance
+ * to reclaim. Liquidation clusters are magnets, never support or resistance.
  */
 function soWhat() {
   const snap = snapshot();
@@ -848,47 +900,57 @@ function soWhat() {
   const levels = bannerLevelSet(snap);
   if (!levels.length) return { tone: 'muted', msg: 'Support levels unavailable.' };
 
-  const testing = levels.filter(L => px >= L.low && px <= L.high);
-  const supports = levels.filter(L => L.high < px).sort((a, b) => b.high - a.high);
-  const resistance = levels.filter(L => L.low > px).sort((a, b) => a.low - b.low);
+  const magnets = levels.filter(isMagnetLevel);
+  const real = levels.filter(L => !isMagnetLevel(L));
+  const clause = magnetClause(px, magnets);
+
+  const testing = real.filter(L => px >= L.low && px <= L.high);
+  const supports = real.filter(L => L.high < px).sort((a, b) => b.high - a.high);
+  const resistance = real.filter(L => L.low > px).sort((a, b) => a.low - b.low);
   const nearestSup = supports[0] || null;
   const nextSup = supports[1] || null;
   const nearestRes = resistance[0] || null;
+  const tone = (clause && clause.kind !== 'above') || (nearestRes && nearestRes.id === 'wma200') ? 'warning' : (supports.length && !resistance.length ? 'accent' : 'warning');
 
-  const thenSup = (first) => {
-    const rest = first ? supports.filter(s => s.id !== first.id) : supports;
-    return rest[0] || null;
-  };
+  if (clause && clause.kind === 'inside' && !testing.length) {
+    let msg = clause.text;
+    if (nearestSup) {
+      msg += ` Nearest support: ${nearestSup.display}`;
+      if (nextSup) msg += `, then ${nextSup.display}`;
+      msg += '.';
+    }
+    if (nearestRes) msg += ` Nearest resistance to reclaim: ${nearestRes.display}.`;
+    if (!nearestSup && !nearestRes) msg += ' No listed support below, and no listed resistance above.';
+    return { tone: 'warning', msg };
+  }
 
   if (testing.length) {
     const z = testing[0];
     let msg = `Testing ${z.display}.`;
     if (nearestRes) msg += ` Nearest resistance to reclaim: ${nearestRes.display}.`;
-    const nxt = thenSup(null);
-    if (nxt) msg += ` Next support: ${nxt.display}.`;
-    else if (!nearestRes) msg += ' No listed support below, and no listed resistance above.';
-    const tone = z.kind === 'zone' || (nearestRes && nearestRes.id === 'wma200') ? 'warning' : 'accent';
-    return { tone, msg };
+    if (nearestSup) {
+      msg += ` Next support: ${nearestSup.display}.`;
+    } else if (!nearestRes) {
+      msg += ' No listed support below, and no listed resistance above.';
+    }
+    return { tone, msg: withMagnet(msg, clause) };
   }
 
   if (!supports.length && resistance.length) {
-    return { tone: 'warning', msg: `Below all listed levels. Nearest resistance to reclaim: ${nearestRes.display}.` };
+    return { tone: 'warning', msg: withMagnet(`Below all listed levels. Nearest resistance to reclaim: ${nearestRes.display}.`, clause) };
   }
 
   if (supports.length && !resistance.length) {
     let msg = `Holding above ${nearestSup.display}. Nearest support: ${nearestSup.display}`;
     if (nextSup) msg += `, then ${nextSup.display}`;
     msg += '.';
-    return { tone: 'accent', msg };
+    return { tone: 'accent', msg: withMagnet(msg, clause) };
   }
 
-  // Between levels: nearest former support above is resistance to reclaim;
-  // nearest level below is support, with the next one down if there is one.
   let msg = `Below ${nearestRes.display}, now resistance to reclaim. Nearest support: ${nearestSup.display}`;
   if (nextSup) msg += `, then ${nextSup.display}`;
   msg += '.';
-  const tone = (nearestRes && (nearestRes.id === 'wma200' || nearestRes.kind === 'zone')) || (nearestSup && nearestSup.kind === 'zone') ? 'warning' : 'warning';
-  return { tone, msg };
+  return { tone, msg: withMagnet(msg, clause) };
 }
 const WAITING_BULL = { hasFeed: false, supports: [], overhead: [], signals: [], moveFragile: 80, moveStress: 100, moveRecession: 135, value: () => null, anyWarning: false };
 function currentBull() { return state.bull || WAITING_BULL; }
@@ -902,12 +964,14 @@ function levelRelation(lo, hi, spot) {
 }
 
 function dailyTitleFor(L, relation) {
+  if (isMagnetLevel(L)) return L.label || `Liquidation magnet ${isNum(L.low) && isNum(L.high) ? bannerRangeText(L.low, L.high) : ''}`.trim();
   if (relation === 'overhead') return L.overhead_label || ((L.support_label || L.label) + ', overhead');
   if (relation === 'testing') return L.testing_label || ((L.support_label || L.label) + ' (testing)');
   return L.support_label || L.label;
 }
 
 function dailyNoteFor(L, relation) {
+  if (isMagnetLevel(L)) return L.note || L.source || '';
   if (relation === 'overhead') return L.note_overhead || L.note_support || L.source || '';
   if (relation === 'testing') return L.note_testing || L.note_support || L.source || '';
   return L.note_support || L.source || '';
@@ -926,14 +990,23 @@ function dailyLevels() {
   const rows = [];
   for (const item of catalog) {
     if (item.in_daily === false) continue;
-    let lo = null, hi = null, source = item.badge || 'thesis line';
-    if (item.live === 'wma200' || (item.id === 'wma200' && item.kind === 'average')) {
-      lo = snap && isNum(snap.wma200) ? snap.wma200 : null;
-      if (!isNum(lo)) continue;
-      source = snap && snap.source === 'live' ? 'live' : 'mock';
-    } else if (item.live === 'wma50' || (item.id === 'wma50' && item.kind === 'average')) {
-      if (snap && isNum(snap.wma50)) { lo = snap.wma50; source = snap.source === 'live' ? 'live' : 'mock'; }
-      else { lo = CONFIG.mock50WMA; source = 'mock'; }
+    if (isMagnetLevel(item) && isNum(item.low) && isNum(item.high)) {
+      const lo = Math.min(item.low, item.high), hi = Math.max(item.low, item.high);
+      const title = item.label || `Liquidation magnet ${bannerRangeText(lo, hi)}`;
+      rows.push(L(item.id, 'magnet', title, lo, hi, item.badge || 'zone', dailyNoteFor(item)));
+      continue;
+    }
+    let lo = null, hi = null, source = item.badge || 'thesis line', extraNote = null;
+    if (item.live) {
+      const resolved = resolveLevelPrice(item, snap);
+      if (!resolved) continue;
+      lo = resolved.value;
+      source = resolved.source === 'latest' ? 'live' : resolved.source;
+      if (resolved.stale) {
+        extraNote = `Latest available value${resolved.asOf ? ` (as of ${resolved.asOf})` : ''}; the live print was unavailable.`;
+      } else if (resolved.asOf && (item.live === 'q15' || item.live === 'realized')) {
+        extraNote = null; // keep the catalog note; date is in the feed
+      }
     } else if (item.kind === 'zone' && isNum(item.low) && isNum(item.high)) {
       lo = Math.min(item.low, item.high);
       hi = Math.max(item.low, item.high);
@@ -941,7 +1014,8 @@ function dailyLevels() {
       lo = item.price;
     } else continue;
     const rel = levelRelation(lo, hi, spot);
-    rows.push(L(item.id, 'level', dailyTitleFor(item, rel), lo, hi, source, dailyNoteFor(item, rel)));
+    const note = extraNote || dailyNoteFor(item, rel);
+    rows.push(L(item.id, 'level', dailyTitleFor(item, rel), lo, hi, source, note));
   }
   const w = state.feeds['bull_watch.json'] || {};
   const addLiveBand = (id, labels, value, note) => {
@@ -1461,7 +1535,7 @@ function renderBull() {
 function renderDailyLevels() {
   const snap = snapshot(); const spot = state.spot;
   const rows = dailyLevels().map(l => {
-    const badgeCls = l.source === 'live' ? 'live' : l.source === 'mock' ? 'mock' : l.source === 'thesis line' ? 'thesis' : l.source === 'history' ? 'history' : '';
+    const badgeCls = l.source === 'live' ? 'live' : l.source === 'mock' ? 'mock' : l.source === 'thesis line' ? 'thesis' : l.source === 'history' ? 'history' : l.source === 'zone' ? 'zone' : '';
     const badge = `<span class="badge ${badgeCls}">${l.source === 'mock' ? 'mock fallback' : esc(l.source)}</span>`;
     if (l.kind === 'note') return `<div class="lv"><div class="lv-top"><span class="brow-title">${esc(l.title)}</span>${badge}</div><div class="foot">${esc(l.note)}</div></div>`;
     const price = l.priceHigh != null ? `${usd(l.price)}–${usd(l.priceHigh)}` : usd(l.price);

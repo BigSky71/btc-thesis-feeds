@@ -135,6 +135,7 @@ details.signals[open] summary::after { transform: rotate(90deg); }
 .badge.mock { background: rgba(242,184,64,0.2); color: var(--warning); }
 .badge.thesis { background: rgba(90, 150, 230, 0.18); color: var(--accent, #6aa8ff); }
 .badge.history { background: rgba(180, 150, 90, 0.22); color: #c4b089; }
+.badge.zone { background: rgba(170, 130, 200, 0.22); color: #c4a6d8; }
 .dist { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 .spot-box { text-align: right; }
 .spot-box .v { font-family: var(--mono); font-weight: 600; color: var(--accent); font-size: 17px; }
