@@ -1,6 +1,6 @@
 {
  "schema": "rotation_watch/v1",
- "refreshed_at_utc": "2026-11-13T13:28:07Z",
+ "refreshed_at_utc": "2026-11-16T12:52:32Z",
  "trigger": {
   "T_tech_outflow": "XLK creations/redemptions summed over 28 calendar days < 0",
   "E_btc_etf_inflow": "US spot BTC ETF net flows summed over 28 calendar days > 0",
@@ -8,48 +8,48 @@
   "score": "T + E + P; 3 ON, 2 Building, 1 Early, 0 Off; evaluated weekly (Fri) and on the latest day"
  },
  "current": {
-  "as_of": "2026-11-12",
-  "btc": 71370.0,
+  "as_of": "2026-11-15",
+  "btc": 65315.0,
   "score": 0,
   "state": "Off (0/3)",
   "premium": {
    "on": 0,
-   "as_of": "2026-11-12",
-   "daily_pct": -0.126,
-   "avg7_pct": -0.136,
-   "avg30_raw_pct": -0.146,
-   "avg30_adj_usdt_pct": -0.0155,
+   "as_of": "2026-11-15",
+   "daily_pct": -0.055,
+   "avg7_pct": -0.106,
+   "avg30_raw_pct": -0.14,
+   "avg30_adj_usdt_pct": -0.0147,
    "signal_uses": "USDT-adjusted 30d avg",
-   "month_to_date_avg_pct": -0.141,
+   "month_to_date_avg_pct": -0.127,
    "state_since": "2026-10-17",
-   "raw30_last_lower": "2019-05-28",
-   "adj30_last_lower": "2025-12-07"
+   "raw30_last_lower": "2026-11-14",
+   "adj30_last_lower": "2026-11-13"
   },
   "btc_etf": {
    "on": 0,
-   "as_of": "2026-11-11",
-   "last_day_usd": -308800000.0,
-   "last_day_date": "2026-11-11",
-   "sum_7d_usd": -1489000000.0,
-   "sum_28d_usd": -1921100000.0,
-   "month_to_date_usd": -1931900000.0,
-   "provisional_excluded": "2026-11-12",
+   "as_of": "2026-11-13",
+   "last_day_usd": -185400000.0,
+   "last_day_date": "2026-11-13",
+   "sum_7d_usd": -883300000.0,
+   "sum_28d_usd": -2080200000.0,
+   "month_to_date_usd": -2168300000.0,
+   "provisional_excluded": null,
    "state_since": "2026-10-29"
   },
   "tech_proxy": {
    "on": 0,
-   "as_of": "2026-11-12",
+   "as_of": "2026-11-13",
    "ticker": "XLK",
-   "last_day_usd": 720983496.0,
-   "last_day_date": "2026-11-12",
-   "sum_7d_usd": 1470598396.0,
-   "sum_28d_usd": 2241648269.0,
-   "month_to_date_usd": 1926831918.0,
+   "last_day_usd": -76606018.0,
+   "last_day_date": "2026-11-13",
+   "sum_7d_usd": 1245646936.0,
+   "sum_28d_usd": 2431044606.0,
+   "month_to_date_usd": 1850225900.0,
    "state_since": "2026-10-01"
   },
   "tech_crosscheck_qqq": {
-   "as_of": "2026-11-13",
-   "sum_28d_usd": 9331744211.0,
+   "as_of": "2026-11-16",
+   "sum_28d_usd": 14383659146.0,
    "agrees_with_xlk_sign": true,
    "source": "github.com/isaergun/etf-flows-data (issuer shares x price), Mar 2026+"
   }
@@ -84,21 +84,21 @@
     "pct_up": 40.0
    },
    "fwd_6m": {
-    "n": 9,
-    "median": 23.6,
-    "pct_up": 56.0
+    "n": 10,
+    "median": 5.0,
+    "pct_up": 50.0
    }
   },
   "score_up": {
    "fwd_1m": {
-    "n": 20,
-    "median": 2.6,
-    "pct_up": 70.0
+    "n": 21,
+    "median": 1.9,
+    "pct_up": 67.0
    },
    "fwd_3m": {
-    "n": 19,
-    "median": 8.0,
-    "pct_up": 53.0
+    "n": 20,
+    "median": 8.1,
+    "pct_up": 55.0
    },
    "fwd_6m": {
     "n": 16,
@@ -118,9 +118,9 @@
     "pct_up": 47.0
    },
    "fwd_6m": {
-    "n": 16,
-    "median": 4.6,
-    "pct_up": 56.0
+    "n": 17,
+    "median": 0.3,
+    "pct_up": 53.0
    }
   },
   "rallies_total": 6,
@@ -152,20 +152,20 @@
    },
    "3": {
     "weeks": 21,
-    "n": 16,
+    "n": 17,
     "median": 8.1,
-    "pct_up": 56.0
+    "pct_up": 59.0
    }
   },
   "fwd_3m_by_premium": {
    "psig30>0": {
     "weeks": 314,
-    "n": 308,
-    "median": 9.6,
+    "n": 309,
+    "median": 9.5,
     "pct_up": 61.0
    },
    "psig30<=0": {
-    "weeks": 94,
+    "weeks": 95,
     "n": 86,
     "median": -10.1,
     "pct_up": 42.0
@@ -177,10 +177,10 @@
     "pct_up": 56.0
    },
    "raw30<=0": {
-    "weeks": 154,
-    "n": 140,
-    "median": 12.8,
-    "pct_up": 59.0
+    "weeks": 155,
+    "n": 141,
+    "median": 12.0,
+    "pct_up": 60.0
    }
   }
  },
@@ -579,7 +579,7 @@
    "btc": 79059.0,
    "fwd_1m": -16.9,
    "fwd_3m": -20.3,
-   "fwd_6m": null
+   "fwd_6m": -13.7
   },
   {
    "date": "2026-05-29",
@@ -650,7 +650,7 @@
    "parts_on": "TEP",
    "btc": 62975.0,
    "fwd_1m": 22.0,
-   "fwd_3m": null,
+   "fwd_3m": 8.4,
    "fwd_6m": null
   },
   {
@@ -685,7 +685,7 @@
    "direction": "up",
    "parts_on": "EP",
    "btc": 81500.0,
-   "fwd_1m": null,
+   "fwd_1m": -19.9,
    "fwd_3m": null,
    "fwd_6m": null
   },
@@ -872,7 +872,7 @@
    "btc": 79059.0,
    "fwd_1m": -16.9,
    "fwd_3m": -20.3,
-   "fwd_6m": null
+   "fwd_6m": -13.7
   },
   {
    "date": "2026-07-24",
@@ -962,42 +962,6 @@
   }
  ],
  "daily": [
-  {
-   "d": "2025-10-08",
-   "btc": 123343.0,
-   "psig": -0.0028,
-   "prem": 0.03,
-   "prem30": 0.043,
-   "prem_adj30": -0.003,
-   "etf": 440700000.0,
-   "xlk": 101730189.0,
-   "etf28": 6926400000.0,
-   "xlk28": 370206863.0
-  },
-  {
-   "d": "2025-10-09",
-   "btc": 121715.0,
-   "psig": -0.0152,
-   "prem": 0.043,
-   "prem30": 0.044,
-   "prem_adj30": -0.0032,
-   "etf": 197800000.0,
-   "xlk": -275697229.0,
-   "etf28": 6571500000.0,
-   "xlk28": 94509634.0
-  },
-  {
-   "d": "2025-10-10",
-   "btc": 112980.0,
-   "psig": 0.0015,
-   "prem": 0.182,
-   "prem30": 0.049,
-   "prem_adj30": -0.0033,
-   "etf": -4500000.0,
-   "xlk": 97450383.0,
-   "etf28": 5924600000.0,
-   "xlk28": 259683036.0
-  },
   {
    "d": "2025-10-11",
    "btc": 110769.0,
@@ -5769,10 +5733,46 @@
    "prem": -0.126,
    "prem30": -0.146,
    "prem_adj30": -0.0155,
-   "etf": null,
+   "etf": -51000000.0,
    "xlk": 720983496.0,
-   "etf28": null,
+   "etf28": -1977200000.0,
    "xlk28": 2241648269.0
+  },
+  {
+   "d": "2026-11-13",
+   "btc": 68237.0,
+   "psig": -0.0114,
+   "prem": -0.113,
+   "prem30": -0.145,
+   "prem_adj30": -0.0156,
+   "etf": -185400000.0,
+   "xlk": -76606018.0,
+   "etf28": -2080200000.0,
+   "xlk28": 2431044606.0
+  },
+  {
+   "d": "2026-11-14",
+   "btc": 64119.0,
+   "psig": 0.0094,
+   "prem": -0.049,
+   "prem30": -0.142,
+   "prem_adj30": -0.0146,
+   "etf": null,
+   "xlk": null,
+   "etf28": null,
+   "xlk28": null
+  },
+  {
+   "d": "2026-11-15",
+   "btc": 65315.0,
+   "psig": -0.0016,
+   "prem": -0.055,
+   "prem30": -0.14,
+   "prem_adj30": -0.0147,
+   "etf": null,
+   "xlk": null,
+   "etf28": null,
+   "xlk28": null
   }
  ],
  "weekly": [
@@ -10698,15 +10698,27 @@
   },
   {
    "d": "2026-11-13",
-   "btc": 71370.0,
-   "psig": -0.0077,
-   "prem": -0.134,
-   "prem30": -0.146,
-   "prem_adj30": -0.0155,
-   "psig30": -0.0155,
-   "etf": -646900000.0,
-   "xlk": 1322252955.0,
+   "btc": 68237.0,
+   "psig": -0.0082,
+   "prem": -0.131,
+   "prem30": -0.145,
+   "prem_adj30": -0.0156,
+   "psig30": -0.0156,
+   "etf": -883300000.0,
+   "xlk": 1245646936.0,
    "score": 0.0
+  },
+  {
+   "d": "2026-11-20",
+   "btc": 65315.0,
+   "psig": 0.0039,
+   "prem": -0.052,
+   "prem30": -0.14,
+   "prem_adj30": -0.0147,
+   "psig30": -0.0147,
+   "etf": null,
+   "xlk": null,
+   "score": null
   }
  ],
  "monthly": [
@@ -11558,12 +11570,12 @@
   },
   {
    "d": "2026-11-30",
-   "btc": 71370.0,
-   "psig": -0.0105,
-   "prem": -0.141,
-   "prem_adj": -0.0105,
-   "etf": -1931900000.0,
-   "xlk": 1926831918.0
+   "btc": 65315.0,
+   "psig": -0.0086,
+   "prem": -0.127,
+   "prem_adj": -0.0086,
+   "etf": -2168300000.0,
+   "xlk": 1850225900.0
   }
  ],
  "sources": {
