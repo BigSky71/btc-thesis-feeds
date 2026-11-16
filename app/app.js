@@ -5,8 +5,8 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.5.4';
-const CHART_VERSION = 'chart v2.32';
+const WEB_VERSION = 'web 1.5.5';
+const CHART_VERSION = 'chart v2.33';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
 const CB = 'https://api.exchange.coinbase.com/products/BTC-USD';
@@ -786,11 +786,12 @@ function legendRows() {
   const ids = SERIES.map(s => s.id).filter(id => id !== 'checkQ50');
   const rows = ids.map(id => ({ id, value: valueFor(id), available: !!(b && b.series[id] && b.series[id].available) }));
   const cmp = (a, b2) => legendTitle(a.id).localeCompare(legendTitle(b2.id), undefined, { numeric: true });
-  rows.sort((a, b2) => {
+  const byPrice = (a, b2) => {
     if (a.value != null && b2.value != null) return a.value !== b2.value ? b2.value - a.value : cmp(a, b2);
     if (a.value != null) return -1; if (b2.value != null) return 1; return cmp(a, b2);
-  });
-  return rows;
+  };
+  const isOn = r => state.enabled.has(r.id) && r.available;
+  return { on: rows.filter(isOn).sort(byPrice), off: rows.filter(r => !isOn(r)).sort(byPrice) };
 }
 function toggleSeries(id) {
   if (state.enabled.has(id)) { if (id === 'spot') return; state.enabled.delete(id); }
@@ -1492,7 +1493,7 @@ function renderLegend() {
     const last = b && b.series.spot.points.length ? b.series.spot.points[b.series.spot.points.length - 1].t : null;
     cap = last ? `Latest · ${isIntraday(state.range) ? fmtDate(last, true) : fmtUTCDate(last)} · touch the chart to inspect` : '';
   }
-  const rows = legendRows().map(r => {
+  const rowHTML = r => {
     const def = SID[r.id];
     const on = state.enabled.has(r.id) && r.available;
     const dot = r.available ? def.color : 'rgba(255,255,255,0.19)';
@@ -1505,8 +1506,12 @@ function renderLegend() {
     return `<button class="lrow" data-sid="${r.id}" ${r.available ? '' : 'disabled'} aria-pressed="${on}">
       <span class="ldot" style="background:${dot};opacity:${on ? 1 : 0.35}"></span>
       <span class="ltitle" style="color:${r.available ? T.text : T.text2}">${esc(legendTitle(r.id))}</span>${val}${on ? ICON.check(def.color) : ICON.circle(T.text2)}</button>`;
-  }).join('');
-  el.innerHTML = `<div class="legend-cap">${esc(cap)}</div>${rows}`;
+  };
+  const groups = legendRows();
+  const onRows = groups.on.map(rowHTML).join('');
+  const offRows = groups.off.map(rowHTML).join('');
+  const split = groups.on.length && groups.off.length ? '<div class="legend-split">Hidden</div>' : '';
+  el.innerHTML = `<div class="legend-cap">${esc(cap)}</div>${onRows}${split}${offRows}`;
 }
 function renderNotes() {
   const b = state.bundle;
