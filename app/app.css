@@ -136,6 +136,10 @@ details.signals[open] summary::after { transform: rotate(90deg); }
 .badge.thesis { background: rgba(90, 150, 230, 0.18); color: var(--accent, #6aa8ff); }
 .badge.history { background: rgba(180, 150, 90, 0.22); color: #c4b089; }
 .badge.zone { background: rgba(170, 130, 200, 0.22); color: #c4a6d8; }
+.badge.costbasis { background: rgba(51,199,122,0.2); color: var(--positive); }
+.cushion-status { font-size: 15px; font-weight: 650; letter-spacing: 0.01em; }
+.cushion-detail, .cushion-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.cushion-sub { color: rgba(255,255,255,0.72); }
 .dist { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 .spot-box { text-align: right; }
 .spot-box .v { font-family: var(--mono); font-weight: 600; color: var(--accent); font-size: 17px; }

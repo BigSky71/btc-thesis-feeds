@@ -5,8 +5,8 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.5.3';
-const CHART_VERSION = 'chart v2.31';
+const WEB_VERSION = 'web 1.5.4';
+const CHART_VERSION = 'chart v2.32';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
 const CB = 'https://api.exchange.coinbase.com/products/BTC-USD';
@@ -40,6 +40,8 @@ const SERIES = [
   ['recoveryGate', 'Recovery to excitement', '$100k gate', rgba(0.78, 0.74, 0.48, 0.85), 1.0, BULL_DASH],
   ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', rgba(0.86, 0.62, 0.38, 0.85), 1.0, BULL_DASH],
   ['valuationTop', 'Valuation-range top', '$150k top', rgba(0.72, 0.50, 0.48, 0.8), 1.0, BULL_DASH],
+  ['buyerCushion', 'Buyer cushion $62.3–64.2k', 'Cushion $62.3–64.2k', rgba(0.25, 0.78, 0.48, 0.95), 0, null],
+  ['liquidationMagnet', 'Liquidation magnet $60.5–62.5k', 'Magnet $60.5–62.5k', rgba(0.90, 0.40, 0.28, 0.95), 0, null],
   ['floorQ25', 'Q25: 75% of BTC dollars underwater', 'Q25', rgba(0.55, 0.85, 0.55), 1.2, FLOOR_DASH],
   ['floorQ20', 'Q20: 80% of BTC dollars underwater', 'Q20', rgba(0.35, 0.75, 0.50), 1.2, FLOOR_DASH],
   ['floorQ15', 'Q15: 85% of BTC dollars underwater', 'Q15', rgba(0.25, 0.62, 0.48), 1.2, FLOOR_DASH],
@@ -52,8 +54,11 @@ const legendTitle = id => (datedLabels[id] || SID[id].title);
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
 const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'realizedPrice', 'lthCostBasis'].includes(id);
+const isZoneSeries = id => id === 'buyerCushion' || id === 'liquidationMagnet';
+const CUSHION_LO = 62300, CUSHION_HI = 64200;
+const MAGNET_LO = 60500, MAGNET_HI = 62500;
 const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', realized: 'realizedPrice', lth: 'lthCostBasis' };
-const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy']);
+const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy', 'buyerCushion', 'liquidationMagnet']);
 
 const MACRO_SERIES = [
   { id: 'ust10y', title: 'US 10-year yield', short: '10-year', color: rgba(0.92, 0.78, 0.35), width: 1.6 },
@@ -564,6 +569,17 @@ function dailyDisplayStart(range) {
   return Math.floor(d.getTime() / 1000);
 }
 
+function zoneExtents(id) {
+  if (id === 'buyerCushion') {
+    const b = (cushionFeed() || {}).band || {};
+    const lo = isNum(b.low) ? b.low : CUSHION_LO;
+    const hi = isNum(b.high) ? b.high : CUSHION_HI;
+    return [Math.min(lo, hi), Math.max(lo, hi)];
+  }
+  if (id === 'liquidationMagnet') return [MAGNET_LO, MAGNET_HI];
+  return null;
+}
+
 function buildBundle(range, displayBars) {
   const notes = [];
   const master = state.master || [];
@@ -634,6 +650,17 @@ function buildBundle(range, displayBars) {
     put(id, clip(f.history));
   }
   if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: Q25/Q20/Q15, realized price and LTH cost basis are cost-based zones from Bitview, updated daily. Off until you turn them on in the legend. Not sell triggers.`);
+  for (const id of ['buyerCushion', 'liquidationMagnet']) {
+    const ext = zoneExtents(id);
+    if (!ext || !spotPts.length) { put(id, []); continue; }
+    put(id, [{ t: spotPts[0].t, v: ext[0] }, { t: spotPts[spotPts.length - 1].t, v: ext[1] }]);
+  }
+  const cush = cushionFeed();
+  if (cush && cush.today && isNum(cush.today.band_btc)) {
+    const asOf = cushionAsOfISO(cush);
+    notes.push(`Buyer cushion $62.3–64.2k is a shaded band (on by default). Count from $62–64k cost-basis buckets${asOf ? `, as of ${asOf}` : ''}. The $60.5–62.5k liquidation magnet is a separate hatched zone, not support.`);
+  }
+
 
   const hasOnChain = sth.length > 0 && tm.length > 0;
   notes.push(hasOnChain ? `STH / True Mean: CheckOnChain via the public feed${oc.as_of ? ` (as of ${oc.as_of})` : ''}.` : 'STH / True Mean: connect CheckOnChain series (see DATA-SOURCES §3e)');
@@ -750,6 +777,10 @@ function legendRows() {
   const valueFor = id => {
     if (insp) return insp[id] ?? null;
     const s = b && b.series[id];
+    if (isZoneSeries(id)) {
+      const ext = zoneExtents(id);
+      return (s && s.available && ext) ? ext[1] : null;
+    }
     return s && s.available && s.points.length ? s.points[s.points.length - 1].v : null;
   };
   const ids = SERIES.map(s => s.id).filter(id => id !== 'checkQ50');
@@ -805,6 +836,7 @@ const DEFAULT_BANNER_LEVELS = [
   { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', type: 'level', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
   { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', type: 'level', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
   { id: 'q15', label: 'Q15 band', support_label: 'Q15 band (soft support)', overhead_label: 'Q15 band, overhead', testing_label: 'Q15 band (testing)', kind: 'level', type: 'level', live: 'q15', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.', note_overhead: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead.' },
+  { id: 'buyer_cushion', label: 'Buyer cushion $62.3–64.2k', support_label: 'Buyer cushion $62.3–64.2k', overhead_label: 'Buyer cushion $62.3–64.2k, resistance to reclaim', testing_label: 'Inside the buyer cushion $62.3–64.2k', low: 62300, high: 64200, kind: 'zone', type: 'level', badge: 'cost-basis support', in_banner: true, in_daily: true, note_support: 'Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.', note_overhead: 'The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.', note_testing: 'Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.' },
   { id: 'liquidation_cluster', label: 'Liquidation magnet $60.5–62.5k', low: 60500, high: 62500, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, note: 'Glassnode liquidation cluster. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone.' },
   { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', type: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
   { id: 'realized', label: 'Realized price', support_label: 'Realized price', overhead_label: 'Realized price, overhead', testing_label: 'Realized price (testing)', kind: 'level', type: 'level', live: 'realized', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live realized price from the same Bitview / Check overlays as the chart: the average cost of every coin.', note_overhead: 'Live realized price from the same Bitview / Check overlays as the chart. Now overhead.' },
@@ -844,6 +876,7 @@ function resolveLevelPrice(item, snap) {
 
 function bannerLevelDisplay(L) {
   if (isMagnetLevel(L)) return `liquidation magnet ${bannerRangeText(L.low, L.high)}`;
+  if (L.id === 'buyer_cushion') return `the buyer cushion ${bannerRangeText(L.low, L.high)}`;
   if (L.id === 'wma200') return `the 200-week average (~${fmtK(L.low)})`;
   if (L.id === 'q15') return `Q15 band ~${fmtK(L.low)}`;
   if (L.id === 'realized') return `realized price (~${fmtK(L.low)})`;
@@ -860,7 +893,7 @@ function bannerLevelSet(snap) {
   for (const L of raw) {
     if (L.in_banner === false) continue;
     const type = L.type || (isMagnetLevel(L) ? 'liquidation_cluster' : 'level');
-    if (isMagnetLevel(L) && isNum(L.low) && isNum(L.high)) {
+    if ((isMagnetLevel(L) || L.kind === 'zone') && isNum(L.low) && isNum(L.high)) {
       const lo = Math.min(L.low, L.high), hi = Math.max(L.low, L.high);
       items.push({ id: L.id, kind: 'zone', type, low: lo, high: hi, label: L.label });
       continue;
@@ -904,11 +937,18 @@ function soWhat() {
   const real = levels.filter(L => !isMagnetLevel(L));
   const clause = magnetClause(px, magnets);
 
-  const testing = real.filter(L => px >= L.low && px <= L.high);
+  const testing = real.filter(L => px >= L.low && px <= L.high)
+    .sort((a, b) => (a.id === 'buyer_cushion' ? -1 : b.id === 'buyer_cushion' ? 1 : (b.high - b.low) - (a.high - a.low)));
   const supports = real.filter(L => L.high < px).sort((a, b) => b.high - a.high);
   const resistance = real.filter(L => L.low > px).sort((a, b) => a.low - b.low);
+  const belowOf = (anchor) => {
+    if (!anchor) return supports;
+    const cut = anchor.kind === 'zone' ? anchor.low : anchor.high;
+    return supports.filter(s => s.id !== anchor.id && s.high < cut);
+  };
   const nearestSup = supports[0] || null;
-  const nextSup = supports[1] || null;
+  const nextAfter = (first) => (belowOf(first)[0] || null);
+  const nextSup = nextAfter(nearestSup);
   const nearestRes = resistance[0] || null;
   const tone = (clause && clause.kind !== 'above') || (nearestRes && nearestRes.id === 'wma200') ? 'warning' : (supports.length && !resistance.length ? 'accent' : 'warning');
 
@@ -916,7 +956,8 @@ function soWhat() {
     let msg = clause.text;
     if (nearestSup) {
       msg += ` Nearest support: ${nearestSup.display}`;
-      if (nextSup) msg += `, then ${nextSup.display}`;
+      const nxt = nextAfter(nearestSup);
+      if (nxt) msg += `, then ${nxt.display}`;
       msg += '.';
     }
     if (nearestRes) msg += ` Nearest resistance to reclaim: ${nearestRes.display}.`;
@@ -926,13 +967,11 @@ function soWhat() {
 
   if (testing.length) {
     const z = testing[0];
-    let msg = `Testing ${z.display}.`;
+    let msg = z.id === 'buyer_cushion' ? `Inside ${z.display}.` : `Testing ${z.display}.`;
     if (nearestRes) msg += ` Nearest resistance to reclaim: ${nearestRes.display}.`;
-    if (nearestSup) {
-      msg += ` Next support: ${nearestSup.display}.`;
-    } else if (!nearestRes) {
-      msg += ' No listed support below, and no listed resistance above.';
-    }
+    const nxt = nextAfter(z);
+    if (nxt) msg += ` Next support: ${nxt.display}.`;
+    else if (!nearestRes) msg += ' No listed support below, and no listed resistance above.';
     return { tone, msg: withMagnet(msg, clause) };
   }
 
@@ -977,6 +1016,54 @@ function dailyNoteFor(L, relation) {
   return L.note_support || L.source || '';
 }
 
+function cushionFeed() { return state.feeds['buyer_cushion.json'] || null; }
+function cushionAsOfISO(f) {
+  const s = (f && (f.as_of || (f.today && f.today.date))) || '';
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(s);
+  return m ? m[1] : null;
+}
+function cushionIsStale(f) {
+  const asOf = cushionAsOfISO(f);
+  if (!asOf) return false;
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 1000;
+  const ts = isoToUnix(asOf);
+  return ts != null && ts < todayUtc - 2 * DAY;
+}
+function signedBtc(n) {
+  if (!isNum(n)) return null;
+  const body = nf0.format(Math.abs(Math.round(n)));
+  return (n > 0 ? '+' : n < 0 ? '−' : '') + body;
+}
+function pctLabel(n) {
+  if (!isNum(n)) return null;
+  const sign = n > 0 ? '+' : n < 0 ? '−' : '';
+  return sign + fx(Math.abs(n), 2) + '%';
+}
+function cushionStats(f) {
+  const t = f && f.today;
+  if (!t || !isNum(t.band_btc)) return null;
+  const asOf = cushionAsOfISO(f);
+  const chg7 = isNum(t.change_7d_btc) ? `${signedBtc(t.change_7d_btc)} BTC` + (isNum(t.change_7d_pct) ? ` (${pctLabel(t.change_7d_pct)})` : '') : null;
+  const chgOct = isNum(t.change_since_oct15_btc) ? `${signedBtc(t.change_since_oct15_btc)} BTC` + (isNum(t.change_since_oct15_pct) ? ` (${pctLabel(t.change_since_oct15_pct)})` : '') : null;
+  let sub = null;
+  if (isNum(t.new_buyers_64_65k)) {
+    sub = `new buyers $64–65k  ${nf0.format(Math.round(t.new_buyers_64_65k))} BTC`;
+    if (isNum(t.new_buyers_change_7d_btc)) {
+      sub += `  ·  7d ${signedBtc(t.new_buyers_change_7d_btc)} BTC`;
+      if (isNum(t.new_buyers_change_7d_pct)) sub += ` (${pctLabel(t.new_buyers_change_7d_pct)})`;
+    }
+  }
+  return {
+    bandBtc: t.band_btc,
+    status: t.status || null,
+    chg7, chgOct, sub,
+    asOf,
+    stale: cushionIsStale(f),
+    note: 'Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.',
+  };
+}
+
 function dailyLevelsCatalog() {
   const file = state.feeds['banner_levels.json'] || {};
   return Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
@@ -986,7 +1073,7 @@ function dailyLevels() {
   const snap = snapshot();
   const spot = isNum(state.spot) ? state.spot : (snap && snap.spot);
   const catalog = dailyLevelsCatalog();
-  const L = (id, kind, title, price, priceHigh, source, note) => ({ id, kind, title, price, priceHigh, source, note });
+  const L = (id, kind, title, price, priceHigh, source, note, extra) => ({ id, kind, title, price, priceHigh, source, note, ...(extra || {}) });
   const rows = [];
   for (const item of catalog) {
     if (item.in_daily === false) continue;
@@ -1017,7 +1104,25 @@ function dailyLevels() {
     const note = extraNote || dailyNoteFor(item, rel);
     rows.push(L(item.id, 'level', dailyTitleFor(item, rel), lo, hi, source, note));
   }
+  const cush = cushionStats(cushionFeed());
+  if (cush) {
+    const row = rows.find(r => r.id === 'buyer_cushion');
+    if (row) {
+      row.source = 'cost-basis support';
+      const bits = [`${nf0.format(Math.round(cush.bandBtc))} BTC`];
+      if (cush.status) bits.push(cush.status);
+      if (cush.chg7) bits.push(`7d ${cush.chg7}`);
+      if (cush.chgOct) bits.push(`since Oct 15 ${cush.chgOct}`);
+      row.detail = bits.join('  ·  ');
+      row.sub = cush.sub;
+      row.status = cush.status;
+      const asOfBit = cush.asOf ? ` As of ${shortDateISO(cush.asOf) || cush.asOf}.` : '';
+      const staleBit = cush.stale ? ` Data is stale: last update ${shortDateISO(cush.asOf) || cush.asOf}.` : '';
+      row.note = (row.note ? row.note + ' ' : '') + cush.note + asOfBit + staleBit;
+    }
+  }
   const w = state.feeds['bull_watch.json'] || {};
+
   const addLiveBand = (id, labels, value, note) => {
     if (!isNum(value)) return;
     const rel = levelRelation(value, value, spot);
@@ -1153,7 +1258,8 @@ let view = null;
 function computeView() {
   const domain = yScaleDomain() || [0, 1];
   const xd = xDomain();
-  const plot = plottableSeries(domain);
+  const plot = plottableSeries(domain).filter(s => !isZoneSeries(s.id));
+  const zoneSig = ['buyerCushion', 'liquidationMagnet'].filter(id => state.enabled.has(id) && state.bundle && state.bundle.series[id] && state.bundle.series[id].available).join(',');
   // Union of timestamps inside the BTC window (series keep their own dates; gaps are spanned).
   const ts = new Set();
   for (const s of plot) for (const p of s.points) if (p.t >= xd[0] && p.t <= xd[1]) ts.add(p.t);
@@ -1176,7 +1282,7 @@ function computeView() {
   const vols = aggregateVolume(b.volumePoints, state.range).filter(p => p.t >= xd[0] - 40 * DAY && p.t <= xd[1]);
   const vmax = vols.length ? Math.max(...vols.map(p => p.v)) : 1;
   const macroOn = withMacro ? MACRO_SERIES.map(s => s.id).filter(id => state.macroEnabled.has(id) && macroPoints(id).length).join(',') : '';
-  const sig = plot.map(p => p.id).join(',') + '|' + leftG + '|' + rightG + '|' + (vols.length > 0) + '|' + state.range + '|' + withMacro + '|' + macroOn;
+  const sig = plot.map(p => p.id).join(',') + '|' + leftG + '|' + rightG + '|' + (vols.length > 0) + '|' + state.range + '|' + withMacro + '|' + macroOn + '|' + zoneSig;
   return { domain, xd, plot, xs, data, sOpts, gutter: rightG, leftG, rightG, withMacro, vols, vmax, sig };
 }
 function liveRedraw() {
@@ -1201,6 +1307,57 @@ function liveRedraw() {
   chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
   renderLegend();
   renderMacroLegend();
+}
+
+function hatchFill(ctx, x, y, w, h, color) {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.fillStyle = color.replace(/[\d.]+\)$/, '0.12)');
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.25;
+  const step = 7 * (window.devicePixelRatio || 1);
+  const diag = h + w;
+  for (let i = -diag; i < w + diag; i += step) {
+    ctx.beginPath();
+    ctx.moveTo(x + i, y + h);
+    ctx.lineTo(x + i + h, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawPriceZones(u) {
+  if (!state.bundle) return;
+  const x0 = u.bbox.left, w = u.bbox.width;
+  const band = (lo, hi) => {
+    const yHi = u.valToPos(hi, 'y', true), yLo = u.valToPos(lo, 'y', true);
+    const y = Math.min(yHi, yLo), h = Math.abs(yLo - yHi);
+    return { y, h };
+  };
+  const ctx = u.ctx;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
+  const cushOn = state.enabled.has('buyerCushion') && state.bundle.series.buyerCushion && state.bundle.series.buyerCushion.available;
+  const magOn = state.enabled.has('liquidationMagnet') && state.bundle.series.liquidationMagnet && state.bundle.series.liquidationMagnet.available;
+  if (cushOn) {
+    const ext = zoneExtents('buyerCushion');
+    if (ext) {
+      const { y, h } = band(ext[0], ext[1]);
+      ctx.fillStyle = 'rgba(64, 199, 122, 0.16)';
+      ctx.fillRect(x0, y, w, h);
+      ctx.strokeStyle = 'rgba(64, 199, 122, 0.42)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.moveTo(x0, y + h); ctx.lineTo(x0 + w, y + h); ctx.stroke();
+    }
+  }
+  if (magOn) {
+    const ext = zoneExtents('liquidationMagnet');
+    if (ext) {
+      const { y, h } = band(ext[0], ext[1]);
+      hatchFill(ctx, x0, y, w, h, 'rgba(230, 90, 60, 0.55)');
+    }
+  }
+  ctx.restore();
 }
 
 function renderChart() {
@@ -1243,7 +1400,7 @@ function renderChart() {
       { side: 1, stroke: T.text2, font: AXIS_FONT, size: rightG, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: Math.max(36, priceH / 6), values: (u, vals) => vals.map(axisUSD) },
     ],
     series: sOpts,
-    hooks: { setCursor: [u => onCursor(u, 'price')] },
+    hooks: { drawClear: [drawPriceZones], setCursor: [u => onCursor(u, 'price')] },
   }, data, priceEl);
   // Volume strip: same width, same right gutter (blank labels), no date labels.
   const vols = v.vols;
@@ -1339,7 +1496,12 @@ function renderLegend() {
     const def = SID[r.id];
     const on = state.enabled.has(r.id) && r.available;
     const dot = r.available ? def.color : 'rgba(255,255,255,0.19)';
-    const val = r.available && r.value != null ? `<span class="lval" style="color:${on ? def.color : T.text2}">${usd(r.value)}</span>` : (!r.available ? '<span class="lna">n/a</span>' : '');
+    let valTxt = null;
+    if (r.available && isZoneSeries(r.id)) {
+      const ext = zoneExtents(r.id);
+      valTxt = ext ? bannerRangeText(ext[0], ext[1]) : null;
+    } else if (r.available && r.value != null) valTxt = usd(r.value);
+    const val = valTxt ? `<span class="lval" style="color:${on ? def.color : T.text2}">${valTxt}</span>` : (!r.available ? '<span class="lna">n/a</span>' : '');
     return `<button class="lrow" data-sid="${r.id}" ${r.available ? '' : 'disabled'} aria-pressed="${on}">
       <span class="ldot" style="background:${dot};opacity:${on ? 1 : 0.35}"></span>
       <span class="ltitle" style="color:${r.available ? T.text : T.text2}">${esc(legendTitle(r.id))}</span>${val}${on ? ICON.check(def.color) : ICON.circle(T.text2)}</button>`;
@@ -1535,13 +1697,24 @@ function renderBull() {
 function renderDailyLevels() {
   const snap = snapshot(); const spot = state.spot;
   const rows = dailyLevels().map(l => {
-    const badgeCls = l.source === 'live' ? 'live' : l.source === 'mock' ? 'mock' : l.source === 'thesis line' ? 'thesis' : l.source === 'history' ? 'history' : l.source === 'zone' ? 'zone' : '';
+    const badgeCls = l.source === 'live' ? 'live' : l.source === 'mock' ? 'mock' : l.source === 'thesis line' ? 'thesis' : l.source === 'history' ? 'history' : l.source === 'zone' ? 'zone' : l.source === 'cost-basis support' ? 'costbasis' : '';
     const badge = `<span class="badge ${badgeCls}">${l.source === 'mock' ? 'mock fallback' : esc(l.source)}</span>`;
     if (l.kind === 'note') return `<div class="lv"><div class="lv-top"><span class="brow-title">${esc(l.title)}</span>${badge}</div><div class="foot">${esc(l.note)}</div></div>`;
     const price = l.priceHigh != null ? `${usd(l.price)}–${usd(l.priceHigh)}` : usd(l.price);
     let dist = '';
-    if (spot != null && l.price) { const d = spot - l.price, p = d / l.price * 100; dist = `<span class="dist ${d >= 0 ? 'c-pos' : 'c-neg'}">${d >= 0 ? '+' : '-'}${nf0.format(Math.round(Math.abs(d)))}&nbsp;&nbsp;(${fx(p, 1)}%)</span>`; }
-    return `<div class="lv"><div class="lv-top"><span class="brow-title">${esc(l.title)}</span>${badge}</div><div class="lv-mid"><span class="price">${price}</span>${dist}</div>${l.note ? `<div class="caption2">${esc(l.note)}</div>` : ''}</div>`;
+    if (spot != null && isNum(l.price)) {
+      let ref, delta;
+      if (isNum(l.priceHigh)) {
+        const lo = Math.min(l.price, l.priceHigh), hi = Math.max(l.price, l.priceHigh);
+        if (spot < lo) { ref = lo; delta = spot - lo; }
+        else if (spot > hi) { ref = hi; delta = spot - hi; }
+        else { ref = spot; delta = 0; }
+      } else { ref = l.price; delta = spot - l.price; }
+      dist = `<span class="dist ${delta >= 0 ? 'c-pos' : 'c-neg'}">${delta >= 0 ? '+' : '-'}${nf0.format(Math.round(Math.abs(delta)))}&nbsp;&nbsp;(${fx(ref ? delta / ref * 100 : 0, 1)}%)</span>`;
+    }
+    const detail = l.detail ? `<div class="cushion-detail">${esc(l.detail)}</div>` : '';
+    const sub = l.sub ? `<div class="cushion-sub">${esc(l.sub)}</div>` : '';
+    return `<div class="lv"><div class="lv-top"><span class="brow-title">${esc(l.title)}</span>${badge}</div><div class="lv-mid"><span class="price">${price}</span>${dist}</div>${detail}${sub}${l.note ? `<div class="caption2">${esc(l.note)}</div>` : ''}</div>`;
   }).join('');
   const spotBox = spot != null ? `<div class="spot-box"><div class="caption2">Spot</div><div class="v">${usd(spot)}</div><div class="live-slot">${liveTagHTML()}</div></div>` : '';
   const asOf = snap && snap.asOf ? `<div class="caption2">As of ${new Date(snap.asOf * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>` : '';
@@ -1799,7 +1972,30 @@ function placeDailyLevels() {
   const slot = wide ? $('#dailyLevelsSlotMain') : $('#dailyLevelsSlotPhone');
   if (dailyLevelsEl.parentElement !== slot) slot.appendChild(dailyLevelsEl);
 }
-function renderCards() { renderBull(); renderDailyLevels(); renderRegime(); renderBTD(); renderETF(); renderMacroCard(); renderLiquidity(); renderFooter(); }
+function renderCushion() {
+  const el = $('#cushionCard');
+  if (!el) return;
+  const f = cushionFeed();
+  const stats = cushionStats(f);
+  if (!stats) {
+    el.innerHTML = card(`<div class="row-between"><h2>Buyer cushion $62.3–64.2k</h2><span class="badge">waiting</span></div><div class="caption">Cost-basis support. Waiting on the buyer cushion feed.</div>`);
+    return;
+  }
+  const st = stats.status || '—';
+  const stCls = st === 'Holding' ? 'c-pos' : st === 'Thinning' ? 'c-acc' : st === 'Evaporating' ? 'c-neg' : 'c-2';
+  const stale = stats.stale ? `<div class="banner sth-stale" role="status"><span class="ico">▲</span><span>Data is stale: last update ${esc(shortDateISO(stats.asOf) || stats.asOf)}.</span></div>` : '';
+  const asOf = stats.asOf ? `As of ${shortDateISO(stats.asOf) || stats.asOf} · last finished UTC day.` : '';
+  el.innerHTML = card(`<div class="row-between"><h2>Buyer cushion $62.3–64.2k</h2><span class="badge costbasis">cost-basis support</span></div>
+    ${stale}
+    <div class="cushion-status ${stCls}">${esc(st)}</div>
+    <div class="price">${nf0.format(Math.round(stats.bandBtc))} BTC</div>
+    <div class="foot">${stats.chg7 ? `7-day  ${esc(stats.chg7)}` : '7-day change unavailable.'}</div>
+    <div class="foot">${stats.chgOct ? `Since Oct 15  ${esc(stats.chgOct)}` : 'Oct 15 baseline unavailable.'}</div>
+    ${stats.sub ? `<div class="cushion-sub">${esc(stats.sub)}</div>` : ''}
+    <div class="caption2">If the cushion drains, the $60.5–62.5k liquidation magnet is next.</div>
+    <div class="caption2">Count from $62–64k cost-basis buckets. ${esc(asOf)}</div>`);
+}
+function renderCards() { renderBull(); renderCushion(); renderDailyLevels(); renderRegime(); renderBTD(); renderETF(); renderMacroCard(); renderLiquidity(); renderFooter(); }
 
 // ---------- support floors history sheet (SupportFloorsHistoryView) ----------
 const SPANS = [['all', 'Since 2012', null], ['y8', '8Y', 8], ['y4', '4Y', 4], ['y1', '1Y', 1]];
@@ -3339,7 +3535,7 @@ function setTab(tab) {
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json', 'banner_levels.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json', 'banner_levels.json', 'buyer_cushion.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();

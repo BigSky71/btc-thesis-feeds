@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "banner_levels",
   "generated_at": "2026-11-16",
-  "notes": "type is 'level' (support/resistance; labels follow live spot) or 'liquidation_cluster' (a magnet, never support or resistance). 50-week and 200-week averages are computed live from price_history.json. Q15 and realized price are live from support_floors.json (the same Bitview / Check overlays as the chart). STH Q75/Q90 in Daily Levels come from bull_watch.json. Fixed thesis lines: $150k, $100k, $83k, $72k, $70k. June 30 low is a historical fact.",
+  "notes": "type is 'level' (support/resistance; labels follow live spot) or 'liquidation_cluster' (a magnet, never support or resistance). 50-week and 200-week averages are computed live from price_history.json. Q15 and realized price are live from support_floors.json (the same Bitview / Check overlays as the chart). STH Q75/Q90 in Daily Levels come from bull_watch.json. Fixed thesis lines: $150k, $100k, $83k, $72k, $70k. June 30 low is a historical fact. The buyer cushion is a real level at $62,300–$64,200 (support / inside / resistance to reclaim follows live spot). Its BTC count comes from Bitview lin1000 buckets 62000 + 63000.",
   "levels": [
     {
       "id": "recovery_gate",
@@ -129,6 +129,24 @@
       "source": "Live Q15 cost-basis band from support_floors.json (Bitview / Check overlays, cost_basis_by_dollar_p15).",
       "note_support": "Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.",
       "note_overhead": "Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead."
+    },
+    {
+      "id": "buyer_cushion",
+      "label": "Buyer cushion $62.3–64.2k",
+      "support_label": "Buyer cushion $62.3–64.2k",
+      "overhead_label": "Buyer cushion $62.3–64.2k, resistance to reclaim",
+      "testing_label": "Inside the buyer cushion $62.3–64.2k",
+      "low": 62300,
+      "high": 64200,
+      "kind": "zone",
+      "type": "level",
+      "badge": "cost-basis support",
+      "in_banner": true,
+      "in_daily": true,
+      "source": "Bitview all-cohort URPD lin1000. Displayed range $62,300–$64,200; count from $62–64k cost-basis buckets (62000 + 63000).",
+      "note_support": "Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.",
+      "note_overhead": "The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.",
+      "note_testing": "Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next."
     },
     {
       "id": "liquidation_cluster",
