@@ -2,7 +2,13 @@
   "schema_version": 1,
   "kind": "banner_levels",
   "generated_at": "2026-11-16",
-  "notes": "type is 'level' (support/resistance; labels follow live spot) or 'liquidation_cluster' (a magnet, never support or resistance). 50-week and 200-week averages are computed live from price_history.json. Q15 and realized price are live from support_floors.json (the same Bitview / Check overlays as the chart). STH Q75/Q90 in Daily Levels come from bull_watch.json. Fixed thesis lines: $150k, $100k, $83k, $72k, $70k. June 30 low is a historical fact. The buyer cushion is a real level at $62,300–$64,200 (support / inside / resistance to reclaim follows live spot). Its BTC count comes from Bitview lin1000 buckets 62000 + 63000.",
+  "notes": "type is 'level' (support/resistance; labels follow live spot) or 'liquidation_cluster' (a magnet, never support or resistance). 50-week and 200-week averages are computed live from price_history.json. Q15 and realized price are live from support_floors.json (the same Bitview / Check overlays as the chart). STH Q75/Q90 in Daily Levels come from bull_watch.json. Fixed thesis lines: $150k, $100k, $83k, $72k, $70k. June 30 low is a historical fact. The buyer cushion is a real level at $62,300–$64,200 (support / inside / resistance to reclaim follows live spot). Its BTC count comes from Bitview lin1000 buckets 62000 + 63000. howell_signal is app copy and status config only (not a chart or Daily Levels row): trigger_price and hold_days are read by the PWA to score Howell's $70k hold from finished UTC daily closes in price_history.json.",
+  "howell_signal": {
+    "trigger_price": 70000,
+    "hold_days": 3,
+    "source": "Michael Howell, Stockfindr interview 'Bond markets speak the truth' (Nov 15, 2026)",
+    "detail": "His trigger is BTC reclaiming and holding above ~$70k (his lower trend line) and bouncing. Early crisis warning: a strengthening US dollar (DXY rising). Liquidity turn expected ~Feb–May 2027."
+  },
   "levels": [
     {
       "id": "recovery_gate",

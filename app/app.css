@@ -244,6 +244,9 @@ table.lows td:first-child { font-family: inherit; }
 .macro-cell .k { font-size: 12px; font-weight: 600; }
 .macro-cell .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 20px; }
 .macro-cell .w { font-size: 11px; color: var(--text2); margin-top: 2px; line-height: 1.35; }
+.howell-signal { display: flex; flex-direction: column; gap: 4px; padding-top: 10px; margin-top: 4px; border-top: 0.5px solid var(--border); }
+.howell-body { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; }
+.howell-status { font-weight: 600; }
 #macroLegend { padding-top: 0; }
 
 

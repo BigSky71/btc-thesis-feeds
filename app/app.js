@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.5.5';
+const WEB_VERSION = 'web 1.5.6';
 const CHART_VERSION = 'chart v2.33';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -1631,7 +1631,7 @@ function renderMacroCard() {
   if (!root) return;
   const j = state.feeds['macro_history.json'];
   if (!j || !j.ust10y && !j.dxy) {
-    root.innerHTML = card(`<h2>Yields & dollar</h2><div class="caption">Waiting on the daily yield and dollar-index feed.</div>`);
+    root.innerHTML = card(`<h2>Yields & dollar</h2><div class="caption">Waiting on the daily yield and dollar-index feed.</div>${howellSignalHTML()}`);
     return;
   }
   const cell = (id, title, meta) => {
@@ -1646,7 +1646,8 @@ function renderMacroCard() {
   const src = 'US 10-year from the Treasury daily yield (FRED DGS10). Dollar index is DXY (Yahoo DX-Y.NYB), not the broad trade-weighted dollar.';
   root.innerHTML = card(`<h2>Yields & dollar</h2>
     <div class="macro-tile">${cell('ust10y', 'US 10-year yield', j.ust10y)}${cell('dxy', 'Dollar index (DXY)', j.dxy)}</div>
-    <div class="caption2">${esc(src)}</div>`);
+    <div class="caption2">${esc(src)}</div>
+    ${howellSignalHTML()}`);
 }
 
 let chartGen = 0;
@@ -1738,6 +1739,48 @@ function renderRegime() {
     <div class="regime-box" style="background:${bg}"><span class="regime-dot" style="background:${dot}"></span>${esc(summary)}</div>
     <div class="foot">${esc(detail)}</div>`);
 }
+
+const DEFAULT_HOWELL_SIGNAL = {
+  trigger_price: 70000,
+  hold_days: 3,
+  source: "Michael Howell, Stockfindr interview 'Bond markets speak the truth' (Nov 15, 2026)",
+};
+function howellConfig() {
+  const file = state.feeds['banner_levels.json'] || {};
+  const raw = file.howell_signal && typeof file.howell_signal === 'object' ? file.howell_signal : {};
+  const trigger = isNum(raw.trigger_price) && raw.trigger_price > 0 ? raw.trigger_price : DEFAULT_HOWELL_SIGNAL.trigger_price;
+  const daysRaw = isNum(raw.hold_days) ? Math.round(raw.hold_days) : DEFAULT_HOWELL_SIGNAL.hold_days;
+  const hold_days = Math.max(1, daysRaw);
+  const source = typeof raw.source === 'string' && raw.source.trim() ? raw.source.trim() : DEFAULT_HOWELL_SIGNAL.source;
+  return { trigger_price: trigger, hold_days, source };
+}
+/** Finished UTC daily closes from price_history.json only (not the Coinbase-extended master, which can include the in-progress UTC day). */
+function howellFinishedCloses() {
+  const ph = state.feeds['price_history.json'];
+  if (!ph || !Array.isArray(ph.t) || !Array.isArray(ph.c)) return [];
+  const today = new Date().toISOString().slice(0, 10);
+  const out = [];
+  for (let i = 0; i < ph.t.length; i++) {
+    const t = ph.t[i] > 1e12 ? ph.t[i] / 1000 : ph.t[i];
+    if (!isNum(t) || !isNum(ph.c[i]) || !(ph.c[i] > 0)) continue;
+    const d = new Date(t * 1000).toISOString().slice(0, 10);
+    if (d < today) out.push({ date: d, close: ph.c[i], t });
+  }
+  return out;
+}
+function howellStatus() {
+  const cfg = howellConfig();
+  const recent = howellFinishedCloses().slice(-cfg.hold_days);
+  const triggered = recent.length >= cfg.hold_days && recent.every(r => r.close > cfg.trigger_price);
+  return { triggered, status: triggered ? 'Triggered?' : 'Not triggered', recent, ...cfg };
+}
+function howellSignalHTML() {
+  const h = howellStatus();
+  const stCls = h.triggered ? 'c-acc' : '';
+  const rest = `. His trigger is BTC reclaiming and holding above ~${fmtK(h.trigger_price)} (his lower trend line) and bouncing. Early crisis warning: a strengthening US dollar (DXY rising). Liquidity turn expected ~Feb–May 2027.`;
+  return `<div class="howell-signal"><div class="howell-body">Howell buy signal: <span class="howell-status ${stCls}">${esc(h.status)}</span>${esc(rest)}</div><div class="caption2">${esc(h.source)}</div></div>`;
+}
+
 function renderBTD() {
   const j = state.feeds['btd_watch.json'];
   let st = 'waiting', m = null, s = null, cb = null, spot = null, asOf = null;
@@ -1759,7 +1802,8 @@ function renderBTD() {
     ${m != null || s != null ? `<div class="metrics">${metric('STH-MVRV', m)}${metric('STH-SOPR', s)}</div>` : ''}
     ${cb != null || spot != null ? `<div class="metrics c-2">${cb != null ? `<span>STH CB ${usd(cb)}</span>` : ''}${spot != null ? `<span>spot ${usd(spot)}</span>` : ''}</div>` : ''}
     ${asOf ? `<div class="caption2">as of ${esc(asOf)}</div>` : ''}</div></div>
-    <div class="caption2">Cash-reserve checklist only — not a trade button.</div>`);
+    <div class="caption2">Cash-reserve checklist only — not a trade button.</div>
+    ${howellSignalHTML()}`);
 }
 function billions(v) { const b = Math.abs(v) / 1e9; return '$' + (b < 1 ? fx(Math.round(b * 100) / 100, 2) : fx(Math.round(b * 10) / 10, 1)) + 'B'; }
 function renderETF() {
@@ -1959,6 +2003,7 @@ function renderLiquidity() {
   } else top = '<div class="caption">Soft GLI momentum + MOVE / 2y−SOFR / bills / reserves (funding watch).</div>';
   $('#liquidityCard').innerHTML = card(`<h2>Liquidity Stress</h2>${top}
     <div><div style="font-size:12px;font-weight:600">Macro lines</div><div class="caption2" style="margin-top:4px">${esc(moveS)}</div><div class="caption2" style="margin-top:4px">${esc(tight)}</div></div>
+    ${howellSignalHTML()}
     <div class="chips">${flags.map(f => `<div class="chip ${f.severity}"><div class="chip-t">${esc(f.title)}</div><div class="chip-d">${esc(f.detail)}</div></div>`).join('')}</div>
     ${reservesPanel(liq)}`);
   drawReservesSpark();
