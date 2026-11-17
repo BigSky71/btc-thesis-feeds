@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "banner_levels",
-  "generated_at": "2026-11-16",
+  "generated_at": "2026-11-17",
   "notes": "type is 'level' (support/resistance; labels follow live spot) or 'liquidation_cluster' (a magnet, never support or resistance). 50-week and 200-week averages are computed live from price_history.json. Q15 and realized price are live from support_floors.json (the same Bitview / Check overlays as the chart). STH Q75/Q90 in Daily Levels come from bull_watch.json. Fixed thesis lines: $150k, $100k, $83k, $72k, $70k. June 30 low is a historical fact. The buyer cushion is a real level at $62,300–$64,200 (support / inside / resistance to reclaim follows live spot). Its BTC count comes from Bitview lin1000 buckets 62000 + 63000. howell_signal is app copy and status config only (not a chart or Daily Levels row): trigger_price and hold_days are read by the PWA to score Howell's $70k hold from finished UTC daily closes in price_history.json.",
   "howell_signal": {
     "trigger_price": 70000,
@@ -150,22 +150,24 @@
       "in_banner": true,
       "in_daily": true,
       "source": "Bitview all-cohort URPD lin1000. Displayed range $62,300–$64,200; count from $62–64k cost-basis buckets (62000 + 63000).",
-      "note_support": "Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.",
+      "note_support": "Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.",
       "note_overhead": "The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.",
-      "note_testing": "Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next."
+      "note_testing": "Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next."
     },
     {
       "id": "liquidation_cluster",
-      "label": "Liquidation magnet $60.5–62.5k",
-      "low": 60500,
-      "high": 62500,
+      "label": "Liquidation magnet $59.5–62.2k",
+      "low": 59500,
+      "high": 62200,
       "kind": "zone",
       "type": "liquidation_cluster",
       "badge": "zone",
       "in_banner": true,
       "in_daily": true,
-      "source": "Glassnode liquidation cluster $60.5k–$62.5k. A magnet, not support or resistance.",
-      "note": "Glassnode liquidation cluster. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone."
+      "source": "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K",
+      "note": "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k).",
+      "url": "https://research.glassnode.com/the-week-onchain-week-46-2026/",
+      "as_of": "2026-11-17"
     },
     {
       "id": "june_30_low",

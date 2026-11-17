@@ -5,8 +5,8 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.5.6';
-const CHART_VERSION = 'chart v2.33';
+const WEB_VERSION = 'web 1.5.7';
+const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
 const CB = 'https://api.exchange.coinbase.com/products/BTC-USD';
@@ -41,7 +41,7 @@ const SERIES = [
   ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', rgba(0.86, 0.62, 0.38, 0.85), 1.0, BULL_DASH],
   ['valuationTop', 'Valuation-range top', '$150k top', rgba(0.72, 0.50, 0.48, 0.8), 1.0, BULL_DASH],
   ['buyerCushion', 'Buyer cushion $62.3–64.2k', 'Cushion $62.3–64.2k', rgba(0.25, 0.78, 0.48, 0.95), 0, null],
-  ['liquidationMagnet', 'Liquidation magnet $60.5–62.5k', 'Magnet $60.5–62.5k', rgba(0.90, 0.40, 0.28, 0.95), 0, null],
+  ['liquidationMagnet', 'Liquidation magnet $59.5–62.2k', 'Magnet $59.5–62.2k', rgba(0.90, 0.40, 0.28, 0.95), 0, null],
   ['floorQ25', 'Q25: 75% of BTC dollars underwater', 'Q25', rgba(0.55, 0.85, 0.55), 1.2, FLOOR_DASH],
   ['floorQ20', 'Q20: 80% of BTC dollars underwater', 'Q20', rgba(0.35, 0.75, 0.50), 1.2, FLOOR_DASH],
   ['floorQ15', 'Q15: 85% of BTC dollars underwater', 'Q15', rgba(0.25, 0.62, 0.48), 1.2, FLOOR_DASH],
@@ -50,13 +50,30 @@ const SERIES = [
 ].map(([id, title, short, color, width, dash]) => ({ id, title, short, color, width, dash }));
 const SID = Object.fromEntries(SERIES.map(s => [s.id, s]));
 const datedLabels = { checkQ50: null, checkQ75: null };
-const legendTitle = id => (datedLabels[id] || SID[id].title);
+const legendTitle = id => {
+  if (id === 'liquidationMagnet') return `Liquidation magnet ${magnetRangeText()}`;
+  return datedLabels[id] || SID[id].title;
+};
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
 const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'realizedPrice', 'lthCostBasis'].includes(id);
 const isZoneSeries = id => id === 'buyerCushion' || id === 'liquidationMagnet';
 const CUSHION_LO = 62300, CUSHION_HI = 64200;
-const MAGNET_LO = 60500, MAGNET_HI = 62500;
+const MAGNET_LO = 59500, MAGNET_HI = 62200; // fallback if banner_levels.json is missing
+function magnetBand() {
+  const levels = dailyLevelsCatalog();
+  const item = levels.find(L => L && (L.id === 'liquidation_cluster' || L.type === 'liquidation_cluster'));
+  const lo = item && isNum(item.low) ? item.low : MAGNET_LO;
+  const hi = item && isNum(item.high) ? item.high : MAGNET_HI;
+  return [Math.min(lo, hi), Math.max(lo, hi)];
+}
+function magnetRangeText() {
+  const [lo, hi] = magnetBand();
+  return bannerRangeText(lo, hi);
+}
+function cushionMagnetNote() {
+  return `If the cushion drains, the ${magnetRangeText()} liquidation magnet is next.`;
+}
 const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', realized: 'realizedPrice', lth: 'lthCostBasis' };
 const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy', 'buyerCushion', 'liquidationMagnet']);
 
@@ -576,7 +593,7 @@ function zoneExtents(id) {
     const hi = isNum(b.high) ? b.high : CUSHION_HI;
     return [Math.min(lo, hi), Math.max(lo, hi)];
   }
-  if (id === 'liquidationMagnet') return [MAGNET_LO, MAGNET_HI];
+  if (id === 'liquidationMagnet') return magnetBand();
   return null;
 }
 
@@ -658,7 +675,7 @@ function buildBundle(range, displayBars) {
   const cush = cushionFeed();
   if (cush && cush.today && isNum(cush.today.band_btc)) {
     const asOf = cushionAsOfISO(cush);
-    notes.push(`Buyer cushion $62.3–64.2k is a shaded band (on by default). Count from $62–64k cost-basis buckets${asOf ? `, as of ${asOf}` : ''}. The $60.5–62.5k liquidation magnet is a separate hatched zone, not support.`);
+    notes.push(`Buyer cushion $62.3–64.2k is a shaded band (on by default). Count from $62–64k cost-basis buckets${asOf ? `, as of ${asOf}` : ''}. The ${magnetRangeText()} liquidation magnet is a separate hatched zone, not support.`);
   }
 
 
@@ -811,7 +828,7 @@ function snapshot() {
   return { spot: state.spot, wma50, wma200, source: 'live', asOf: state.spotAt };
 }
 
-/** Thousands label: 67906 → $67.9k, 60500 → $60.5k, 70000 → $70k */
+/** Thousands label: 67906 → $67.9k, 59500 → $59.5k, 70000 → $70k */
 function fmtK(v) {
   if (!isNum(v)) return 'n/a';
   const k = v / 1000;
@@ -821,7 +838,7 @@ function fmtK(v) {
 
 function bannerRangeText(low, high) {
   const a = fmtK(low), b = fmtK(high);
-  // "$60.5k" + "$62.5k" → "$60.5–62.5k"
+  // "$59.5k" + "$62.2k" → "$59.5–62.2k"
   if (a.endsWith('k') && b.endsWith('k') && a.charAt(0) === '$' && b.charAt(0) === '$') {
     return a.slice(0, -1) + '–' + b.slice(1);
   }
@@ -837,8 +854,8 @@ const DEFAULT_BANNER_LEVELS = [
   { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', type: 'level', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
   { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', type: 'level', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
   { id: 'q15', label: 'Q15 band', support_label: 'Q15 band (soft support)', overhead_label: 'Q15 band, overhead', testing_label: 'Q15 band (testing)', kind: 'level', type: 'level', live: 'q15', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.', note_overhead: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead.' },
-  { id: 'buyer_cushion', label: 'Buyer cushion $62.3–64.2k', support_label: 'Buyer cushion $62.3–64.2k', overhead_label: 'Buyer cushion $62.3–64.2k, resistance to reclaim', testing_label: 'Inside the buyer cushion $62.3–64.2k', low: 62300, high: 64200, kind: 'zone', type: 'level', badge: 'cost-basis support', in_banner: true, in_daily: true, note_support: 'Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.', note_overhead: 'The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.', note_testing: 'Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.' },
-  { id: 'liquidation_cluster', label: 'Liquidation magnet $60.5–62.5k', low: 60500, high: 62500, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, note: 'Glassnode liquidation cluster. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone.' },
+  { id: 'buyer_cushion', label: 'Buyer cushion $62.3–64.2k', support_label: 'Buyer cushion $62.3–64.2k', overhead_label: 'Buyer cushion $62.3–64.2k, resistance to reclaim', testing_label: 'Inside the buyer cushion $62.3–64.2k', low: 62300, high: 64200, kind: 'zone', type: 'level', badge: 'cost-basis support', in_banner: true, in_daily: true, note_support: 'Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.', note_overhead: 'The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.', note_testing: 'Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.' },
+  { id: 'liquidation_cluster', label: 'Liquidation magnet $59.5–62.2k', low: 59500, high: 62200, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, source: 'Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K', url: 'https://research.glassnode.com/the-week-onchain-week-46-2026/', as_of: '2026-11-17', note: "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k)." },
   { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', type: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
   { id: 'realized', label: 'Realized price', support_label: 'Realized price', overhead_label: 'Realized price, overhead', testing_label: 'Realized price (testing)', kind: 'level', type: 'level', live: 'realized', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live realized price from the same Bitview / Check overlays as the chart: the average cost of every coin.', note_overhead: 'Live realized price from the same Bitview / Check overlays as the chart. Now overhead.' },
 ];
@@ -1061,7 +1078,7 @@ function cushionStats(f) {
     chg7, chgOct, sub,
     asOf,
     stale: cushionIsStale(f),
-    note: 'Count from $62–64k cost-basis buckets. If the cushion drains, the $60.5–62.5k liquidation magnet is next.',
+    note: 'Count from $62–64k cost-basis buckets. ' + cushionMagnetNote(),
   };
 }
 
@@ -2042,7 +2059,7 @@ function renderCushion() {
     <div class="foot">${stats.chg7 ? `7-day  ${esc(stats.chg7)}` : '7-day change unavailable.'}</div>
     <div class="foot">${stats.chgOct ? `Since Oct 15  ${esc(stats.chgOct)}` : 'Oct 15 baseline unavailable.'}</div>
     ${stats.sub ? `<div class="cushion-sub">${esc(stats.sub)}</div>` : ''}
-    <div class="caption2">If the cushion drains, the $60.5–62.5k liquidation magnet is next.</div>
+    <div class="caption2">${esc(cushionMagnetNote())}</div>
     <div class="caption2">Count from $62–64k cost-basis buckets. ${esc(asOf)}</div>`);
 }
 function renderCards() { renderBull(); renderCushion(); renderDailyLevels(); renderRegime(); renderBTD(); renderETF(); renderMacroCard(); renderLiquidity(); renderFooter(); }
