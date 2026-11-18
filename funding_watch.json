@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-11-16",
+  "as_of": "2026-11-17",
   "overall_severity": "elevated",
   "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
-  "move": 101.28,
-  "move_as_of": "2026-11-16",
-  "move_recent_high_5d": 101.28,
-  "sofr_pct": 3.9,
-  "sofr_as_of": "2026-11-13",
-  "ust_2y_pct": 4.88,
-  "ust_2y_as_of": "2026-11-13",
-  "ust2y_minus_sofr_bp": 98.0,
-  "sofr_minus_2y_bp": -98.0,
+  "move": 101.88,
+  "move_as_of": "2026-11-17",
+  "move_recent_high_5d": 101.88,
+  "sofr_pct": 3.93,
+  "sofr_as_of": "2026-11-16",
+  "ust_2y_pct": 4.83,
+  "ust_2y_as_of": "2026-11-16",
+  "ust2y_minus_sofr_bp": 90.0,
+  "sofr_minus_2y_bp": -90.0,
   "bills_share_pct": 22.96,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -37,34 +37,34 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 101.28,
+      "value": 101.88,
       "unit": "index",
-      "as_of": "2026-11-16",
-      "detail": "101.3 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-11-17",
+      "detail": "101.9 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
       "id": "sofr",
       "title": "SOFR",
-      "value": 3.9,
+      "value": 3.93,
       "unit": "pct",
-      "as_of": "2026-11-13",
-      "detail": "3.90% effective",
+      "as_of": "2026-11-16",
+      "detail": "3.93% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "2y \u2212 SOFR",
-      "value": 98.0,
+      "value": 90.0,
       "unit": "bp",
-      "as_of": "2026-11-13",
-      "detail": "+98.0bp \u00b7 2y above SOFR (market expects higher rates / tighter) \u00b7 as of Nov 13",
+      "as_of": "2026-11-16",
+      "detail": "+90.0bp \u00b7 2y above SOFR (market expects higher rates / tighter) \u00b7 as of Nov 16",
       "severity": "elevated",
       "components": {
-        "sofr_pct": 3.9,
-        "ust_2y_pct": 4.88,
+        "sofr_pct": 3.93,
+        "ust_2y_pct": 4.83,
         "ust_2y_source": "FRED DGS2",
-        "ust_2y_as_of": "2026-11-13"
+        "ust_2y_as_of": "2026-11-16"
       }
     },
     {
@@ -126,7 +126,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-11-17T12:46:45.436067+00:00",
+  "refreshed_at_utc": "2026-11-18T12:53:44.970632+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
