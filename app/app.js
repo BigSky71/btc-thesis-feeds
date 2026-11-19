@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.5.7';
+const WEB_VERSION = 'web 1.5.8';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -2802,7 +2802,7 @@ function renderSellers() {
 // ---------- buyers returning tab ----------
 const BUY_FEED = 'buyer_exhaustion.json';
 const buy = {
-  range: (localStorage.getItem('buy.range') === '2y' ? '2y' : 'all'),
+  range: (localStorage.getItem('buy.range') === 'all' ? 'all' : '2y'),
   sel: { prem: null, etf: null, cvd: null, stable: null },
   plots: { prem: null, etf: null, cvd: null, stable: null },
   points: [],
@@ -2876,6 +2876,45 @@ function buyPoints() {
   if (!f) return [];
   const block = buy.range === '2y' ? f.chart_daily_2y : f.chart_weekly;
   return parseBuyChart(block);
+}
+function buyEtfComplete(p) {
+  return !!(p && isNum(p.etf14) && isNum(p.etf28));
+}
+/** Last daily (else weekly) row with both 14d and 28d ETF prints. Skips provisional/null days. */
+function buyLastCompleteEtf() {
+  const f = buyFeed();
+  if (!f) return null;
+  const scan = block => {
+    const rows = parseBuyChart(block);
+    for (let i = rows.length - 1; i >= 0; i--) if (buyEtfComplete(rows[i])) return rows[i];
+    return null;
+  };
+  return scan(f.chart_daily_2y) || scan(f.chart_weekly);
+}
+/** Latest full ETF 14d/28d point, with as-of date when the latest (or inspected trailing) day is provisional. */
+function buyEtfView(pts) {
+  const complete = buyLastCompleteEtf();
+  const sel = buy.sel.etf;
+  if (sel != null) {
+    const p = buyAt(pts, sel);
+    if (buyEtfComplete(p)) return { point: p, asOf: null };
+    if (complete && p && p.t >= complete.t) return { point: complete, asOf: complete.date };
+    return { point: p, asOf: null };
+  }
+  const last = pts && pts.length ? pts[pts.length - 1] : null;
+  if (buyEtfComplete(last) && complete && last.date === complete.date) return { point: last, asOf: null };
+  if (complete && !buyEtfComplete(last)) return { point: complete, asOf: complete.date };
+  if (complete && last && last.date !== complete.date) return { point: complete, asOf: complete.date };
+  return { point: last || complete, asOf: null };
+}
+function buyEtfLegendCap(pts, view) {
+  const t = buy.sel.etf;
+  if (view && view.asOf) {
+    const label = shortDateISO(view.asOf) || view.asOf;
+    if (t != null) return `Inspecting · as of ${label}`;
+    return `Latest · as of ${label} · touch the chart to inspect`;
+  }
+  return buyLegendCap('etf', pts);
 }
 
 function buyEventLabel(name) {
@@ -2982,9 +3021,19 @@ function buyPartDetails(f) {
   const pState = P.state || 'off';
   const pDetail = `Coinbase premium 30d ${fmtSignedPct(P.prem30_pct, 3)}, 7d ${fmtSignedPct(P.prem7_pct, 3)}. ${buySincePhrase(pState, P.since)}`.trim();
 
-  const E = parts.E || {};
+  const E = Object.assign({}, parts.E || {});
   const eState = E.state || 'off';
-  const eDetail = `14d ${fmtFlowM(E.sum14_usd_m, true)}, 28d ${fmtFlowM(E.sum28_usd_m, true)}. ${buySincePhrase(eState, E.since)}`.trim();
+  let eAsOf = buyPartAsOf(E, null);
+  if (!isNum(E.sum14_usd_m) || !isNum(E.sum28_usd_m)) {
+    const fb = buyLastCompleteEtf();
+    if (fb) {
+      if (!isNum(E.sum14_usd_m)) E.sum14_usd_m = fb.etf14;
+      if (!isNum(E.sum28_usd_m)) E.sum28_usd_m = fb.etf28;
+      eAsOf = eAsOf || fb.date;
+    }
+  }
+  let eDetail = `14d ${fmtFlowM(E.sum14_usd_m, true)}, 28d ${fmtFlowM(E.sum28_usd_m, true)}. ${buySincePhrase(eState, E.since)}`.trim();
+  if (eAsOf && eAsOf !== asOfFeed) eDetail += ` As of ${shortDateISO(eAsOf) || eAsOf}.`;
 
   const C = parts.C || {};
   const cState = C.state || 'off';
@@ -3171,8 +3220,9 @@ function renderBuyPremLegend() {
 function renderBuyEtfLegend() {
   const el = $('#buyEtfLegend'); if (!el) return;
   const pts = buy.points;
-  const p = buyAt(pts, buy.sel.etf);
-  el.innerHTML = `<div class="legend-cap">${esc(buyLegendCap('etf', pts))}</div>` +
+  const view = buyEtfView(pts);
+  const p = view.point;
+  el.innerHTML = `<div class="legend-cap">${esc(buyEtfLegendCap(pts, view))}</div>` +
     rowHTML('14-day ETF flows', rgba(0.35, 0.72, 0.95), p && isNum(p.etf14) ? fmtFlowM(p.etf14, true) : null) +
     rowHTML('28-day ETF flows', rgba(0.72, 0.55, 0.95), p && isNum(p.etf28) ? fmtFlowM(p.etf28, true) : null);
 }
@@ -3478,6 +3528,22 @@ function robustRange(vals, padFrac, includeZero) {
   const pad = (hi - lo) * (padFrac || 0.12) || 1;
   return [lo - pad, hi + pad];
 }
+/** 2nd–98th of the visible window, symmetric around zero. A one-sided tail does not set the scale. Latest print stays on-scale. */
+function clipSymRange(vals, latest) {
+  const v = vals.filter(isNum).slice().sort((a, b) => a - b);
+  if (!v.length) return [-1, 1];
+  const at = (arr, p) => arr[Math.min(arr.length - 1, Math.max(0, Math.round((arr.length - 1) * p)))];
+  const qLo = at(v, 0.02), qHi = at(v, 0.98);
+  let half = Math.max(Math.abs(qLo), Math.abs(qHi), 1e-6);
+  const tight = Math.min(Math.abs(qLo) || half, Math.abs(qHi) || half);
+  if (tight > 0 && half > tight * 2.5) {
+    const abs = v.map(x => Math.abs(x)).sort((a, b) => a - b);
+    half = Math.max(tight * 2.5, at(abs, 0.85));
+  }
+  if (isNum(latest)) half = Math.max(half, Math.abs(latest));
+  const pad = half * 0.12 || 0.5;
+  return [-(half + pad), half + pad];
+}
 
 function renderBuyStableChart() {
   const el = $('#buyStablePlot'); if (!el) return;
@@ -3496,7 +3562,8 @@ function renderBuyStableChart() {
   let sLo = svals.length ? Math.min(...svals) : 0, sHi = svals.length ? Math.max(...svals) : 1;
   const sPad = (sHi - sLo) * 0.12 || 1;
   sLo -= sPad; sHi += sPad;
-  const [cLo, cHi] = robustRange(chg, 0.12, true);
+  const latestChg = [...chg].reverse().find(isNum);
+  const [cLo, cHi] = clipSymRange(chg, latestChg);
   const gL = gutterFor(['$000.0B', fmtUsdB1(sHi)]);
   const gR = gutterFor(['-00.0%', '00.0%']);
   const xKey = buy.range === '2y' ? '2Y' : '10Y';
@@ -3532,9 +3599,23 @@ function renderBuyStableChart() {
       for (let i = 0; i < pts.length; i++) {
         const v = chg[i]; if (v == null) continue;
         const x = u.valToPos(pts[i].t, 'x', true);
-        const y = u.valToPos(v, 'y2', true);
-        ctx.fillStyle = v >= 0 ? 'rgba(51,199,122,0.35)' : 'rgba(242,89,97,0.35)';
+        const clippedHi = v > cHi, clippedLo = v < cLo;
+        const vDraw = clippedHi ? cHi : (clippedLo ? cLo : v);
+        const y = u.valToPos(vDraw, 'y2', true);
+        const col = v >= 0 ? 'rgba(51,199,122,0.35)' : 'rgba(242,89,97,0.35)';
+        ctx.fillStyle = col;
         ctx.fillRect(x - w / 2, Math.min(y, y0), w, Math.max(dpr, Math.abs(y0 - y)));
+        if (clippedHi || clippedLo) {
+          const ah = 5 * dpr, aw = 3.5 * dpr, up = clippedHi;
+          const tip = y + (up ? 1 : -1);
+          ctx.beginPath();
+          ctx.moveTo(x, tip);
+          ctx.lineTo(x - aw, tip + (up ? ah : -ah));
+          ctx.lineTo(x + aw, tip + (up ? ah : -ah));
+          ctx.closePath();
+          ctx.fillStyle = v >= 0 ? 'rgba(51,199,122,0.95)' : 'rgba(242,89,97,0.95)';
+          ctx.fill();
+        }
       }
       const yZero = u.valToPos(0, 'y2', true);
       ctx.strokeStyle = 'rgba(255,255,255,0.35)';
