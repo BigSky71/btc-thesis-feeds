@@ -229,6 +229,15 @@ table.lows td:first-child { font-family: inherit; }
 .sth-strip-label { font-size: 11px; font-weight: 600; color: var(--text2); }
 .sth-strip { height: 36px; border-radius: 8px; background: rgba(255,255,255,0.04); overflow: hidden; border: 1px solid var(--border); }
 .sth-strip canvas { width: 100%; height: 100%; display: block; }
+.buy-strips-col { position: relative; display: flex; flex-direction: column; gap: 12px; touch-action: pan-y; }
+.buy-strip-marker { position: absolute; top: 0; width: 2px; margin-left: -1px; background: rgba(255,255,255,0.88); box-shadow: 0 0 0 1px rgba(0,0,0,0.25); pointer-events: none; z-index: 2; border-radius: 1px; }
+.buy-strip-axis { position: relative; height: 20px; margin-top: -2px; font: 11px -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; color: var(--text2); }
+.buy-strip-tick, .buy-strip-edge { position: absolute; top: 0; white-space: nowrap; pointer-events: none; line-height: 20px; }
+.buy-strip-tick.year { transform: translateX(-50%); }
+.buy-strip-tick.month { transform: translateX(-50%); font-size: 10px; opacity: 0.62; }
+.buy-strip-edge.start { left: 0; }
+.buy-strip-edge.end { right: 0; }
+.buy-strip-readout { font-size: 11px; font-weight: 600; color: var(--text2); min-height: 14px; line-height: 1.35; }
 .sth-chart-plot { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .sth-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .sth-head h3 { font-size: 17px; font-weight: 600; margin: 0; }

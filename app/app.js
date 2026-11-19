@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.5.8';
+const WEB_VERSION = 'web 1.5.9';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -2807,6 +2807,7 @@ const buy = {
   plots: { prem: null, etf: null, cvd: null, stable: null },
   points: [],
   width: 0,
+  stripSel: null,
 };
 const BUY_RANGE_PILLS = [['all', 'Since 2017'], ['2y', '2Y']];
 const BUY_SCORE_COLOR = { 0: T.negative, 1: T.warning, 2: T.accent, 3: T.positive, 4: T.positive };
@@ -3099,22 +3100,29 @@ function ensureBuyShell() {
       <div class="legend" id="buyStableLegend"></div>
     </div>
     <div class="card" id="buyStripCard">
-      <div class="sth-head"><div><h3>Score history</h3><div class="caption">Buyers score (of 4) and Sellers gauge (of 3), colored by day</div></div></div>
-      <div>
-        <div class="sth-strip-label">Buyers score</div>
-        <div class="sth-strip" id="buyBuyerStrip"><canvas id="buyBuyerStripCanvas"></canvas></div>
+      <div class="sth-head"><div><h3>Score history</h3><div class="caption" id="buyStripCaption">Buyers score (of 4) and Sellers gauge (of 3).</div></div></div>
+      <div class="buy-strips-col" id="buyStripsCol">
+        <div>
+          <div class="sth-strip-label">Buyers score</div>
+          <div class="sth-strip" id="buyBuyerStrip"><canvas id="buyBuyerStripCanvas"></canvas></div>
+        </div>
+        <div>
+          <div class="sth-strip-label">Sellers gauge</div>
+          <div class="sth-strip" id="buySellerStrip"><canvas id="buySellerStripCanvas"></canvas></div>
+        </div>
+        <div class="buy-strip-marker" id="buyStripMarker" hidden></div>
       </div>
-      <div>
-        <div class="sth-strip-label">Sellers gauge</div>
-        <div class="sth-strip" id="buySellerStrip"><canvas id="buySellerStripCanvas"></canvas></div>
-      </div>
+      <div class="buy-strip-axis" id="buyStripAxis"></div>
+      <div class="buy-strip-readout" id="buyStripReadout"></div>
     </div>`;
+  bindBuyStripInspect(root);
   root.addEventListener('click', e => {
     const rb = e.target.closest('[data-buy-range]');
     if (rb && rb.dataset.buyRange !== buy.range) {
       buy.range = rb.dataset.buyRange;
       persistBuy('range', buy.range);
       buy.sel = { prem: null, etf: null, cvd: null, stable: null };
+      buy.stripSel = null;
       renderBuyCharts(true);
       renderBuyGaugeStrips();
     }
@@ -3163,6 +3171,176 @@ function renderBuyGauge() {
     <div class="sth-caption">${esc(f.gauge_caption || '')}</div>`;
 }
 
+function monthYearUTC(t) {
+  const d = new Date(t * 1000);
+  return `${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+function buyStripX(i, n, width) {
+  return n <= 0 ? 0 : (i + 0.5) / n * width;
+}
+function buyStripInspectPoint(pts) {
+  if (!pts.length) return null;
+  if (buy.stripSel == null) return pts[pts.length - 1];
+  const i = nearestIdx(pts, buy.stripSel);
+  return i >= 0 ? pts[i] : pts[pts.length - 1];
+}
+function buyStripReadoutText(p) {
+  if (!p) return '';
+  const when = buy.range === '2y' ? fmtUTCDate(p.t) : `Week of ${fmtUTCDate(p.t)}`;
+  const b = isNum(p.buyer_score) ? `${Math.round(p.buyer_score)} of 4` : 'n/a';
+  const s = isNum(p.seller_score) ? `${Math.round(p.seller_score)} of 3` : 'n/a';
+  return `${when} · Buyers ${b} · Sellers ${s}`;
+}
+function buyStripTimeLabels(pts, width) {
+  if (!pts.length) return { start: null, end: null, ticks: [] };
+  const n = pts.length;
+  const xOf = i => buyStripX(i, n, width);
+  const first = pts[0], last = pts[n - 1];
+  const start = { kind: 'edge', align: 'start', x: 0, label: monthYearUTC(first.t) };
+  const end = { kind: 'edge', align: 'end', x: width, label: fmtUTCDate(last.t) };
+  const years = [], months = [];
+  let prevY = new Date(first.t * 1000).getUTCFullYear();
+  let prevM = new Date(first.t * 1000).getUTCMonth();
+  for (let i = 1; i < n; i++) {
+    const d = new Date(pts[i].t * 1000);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    if (y !== prevY) {
+      if (i !== n - 1) years.push({ kind: 'year', x: xOf(i), label: String(y) });
+      prevY = y; prevM = m;
+      continue;
+    }
+    if (buy.range === '2y' && m !== prevM) {
+      if (m !== 0 && i !== n - 1) months.push({ kind: 'month', x: xOf(i), label: MON[m] });
+      prevM = m;
+    }
+  }
+  measureCtx.font = XAXIS_FONT;
+  const pad = 4;
+  const startW = measureCtx.measureText(start.label).width;
+  const endW = measureCtx.measureText(end.label).width;
+  const startBox = { lo: 0, hi: startW + pad };
+  const endBox = { lo: width - endW - pad, hi: width };
+  const boxes = [startBox, endBox];
+  const ticks = [];
+  const hitsFor = (lo, hi) => boxes.filter(b => lo < b.hi && hi > b.lo);
+  const placeAt = (tick, lo, hi) => {
+    if (lo < 0 || hi > width) return false;
+    if (hitsFor(lo, hi).length) return false;
+    boxes.push({ lo: lo - pad, hi: hi + pad });
+    ticks.push({ ...tick, x: (lo + hi) / 2 });
+    return true;
+  };
+  const tryYear = (tick, allowShift) => {
+    measureCtx.font = XAXIS_FONT;
+    const w = measureCtx.measureText(tick.label).width;
+    const natLo = tick.x - w / 2, natHi = tick.x + w / 2;
+    if (placeAt(tick, natLo, natHi)) return true;
+    if (!allowShift) return false;
+    const hits = hitsFor(natLo, natHi);
+    const onlyStart = hits.length && hits.every(b => b === startBox);
+    const onlyEnd = hits.length && hits.every(b => b === endBox);
+    if (onlyStart) return placeAt(tick, startBox.hi, startBox.hi + w);
+    if (onlyEnd) return placeAt(tick, endBox.lo - w, endBox.lo);
+    return false;
+  };
+  const leftover = [];
+  years.forEach(t => { if (!tryYear(t, false)) leftover.push(t); });
+  leftover
+    .map(t => {
+      measureCtx.font = XAXIS_FONT;
+      const w = measureCtx.measureText(t.label).width;
+      const natLo = t.x - w / 2, natHi = t.x + w / 2;
+      let shift = Infinity;
+      if (natLo < startBox.hi) shift = Math.min(shift, startBox.hi - natLo);
+      if (natHi > endBox.lo) shift = Math.min(shift, natHi - endBox.lo);
+      return { t, shift };
+    })
+    .sort((a, b) => a.shift - b.shift)
+    .forEach(({ t }) => tryYear(t, true));
+  const monthFont = '10px -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif';
+  months.forEach(tick => {
+    measureCtx.font = monthFont;
+    const w = measureCtx.measureText(tick.label).width;
+    placeAt(tick, tick.x - w / 2, tick.x + w / 2);
+  });
+  return { start, end, ticks };
+}
+function renderBuyStripAxis(pts) {
+  const el = $('#buyStripAxis');
+  const col = $('#buyStripsCol');
+  if (!el) return;
+  if (!pts.length || !col) { el.innerHTML = ''; return; }
+  const width = col.clientWidth;
+  const { start, end, ticks } = buyStripTimeLabels(pts, width);
+  const parts = [];
+  if (start) parts.push(`<span class="buy-strip-edge start">${esc(start.label)}</span>`);
+  for (const t of ticks) {
+    parts.push(`<span class="buy-strip-tick ${t.kind}" style="left:${t.x.toFixed(1)}px">${esc(t.label)}</span>`);
+  }
+  if (end) parts.push(`<span class="buy-strip-edge end">${esc(end.label)}</span>`);
+  el.innerHTML = parts.join('');
+}
+function renderBuyStripReadout(pts) {
+  const el = $('#buyStripReadout');
+  if (!el) return;
+  el.textContent = buyStripReadoutText(buyStripInspectPoint(pts));
+}
+function updateBuyStripMarker(pts) {
+  const col = $('#buyStripsCol'), marker = $('#buyStripMarker');
+  const a = $('#buyBuyerStrip'), b = $('#buySellerStrip');
+  if (!col || !marker || !a || !b || !pts.length) { if (marker) marker.hidden = true; return; }
+  const p = buyStripInspectPoint(pts);
+  const i = p ? nearestIdx(pts, p.t) : -1;
+  if (i < 0) { marker.hidden = true; return; }
+  const cr = col.getBoundingClientRect();
+  const ar = a.getBoundingClientRect();
+  const br = b.getBoundingClientRect();
+  const x = Math.max(1, Math.min(cr.width - 1, buyStripX(i, pts.length, cr.width)));
+  marker.hidden = false;
+  marker.style.left = `${Math.round(x)}px`;
+  marker.style.top = `${Math.round(ar.top - cr.top)}px`;
+  marker.style.height = `${Math.round(br.bottom - ar.top)}px`;
+}
+function updateBuyStripInspect() {
+  const pts = buy.points.length ? buy.points : buyPoints();
+  updateBuyStripMarker(pts);
+  renderBuyStripReadout(pts);
+}
+function bindBuyStripInspect(root) {
+  const col = root.querySelector('#buyStripsCol');
+  if (!col || col.dataset.bound) return;
+  col.dataset.bound = '1';
+  const idxFromEvent = e => {
+    const pts = buy.points;
+    if (!pts.length) return -1;
+    const r = col.getBoundingClientRect();
+    const x = Math.max(0, Math.min(r.width, e.clientX - r.left));
+    return Math.max(0, Math.min(pts.length - 1, Math.floor((x / Math.max(r.width, 1)) * pts.length)));
+  };
+  const apply = i => {
+    const pts = buy.points;
+    if (i < 0 || !pts[i]) return;
+    buy.stripSel = pts[i].t;
+    updateBuyStripInspect();
+    buy.sel.prem = buy.sel.etf = buy.sel.cvd = buy.sel.stable = pts[i].t;
+    renderBuyPremLegend(); renderBuyEtfLegend(); renderBuyCvdLegend(); renderBuyStableLegend();
+  };
+  let dragging = false;
+  col.addEventListener('pointerdown', e => {
+    dragging = true;
+    try { col.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    apply(idxFromEvent(e));
+  });
+  col.addEventListener('pointermove', e => {
+    if (e.pointerType === 'mouse' && !dragging) { apply(idxFromEvent(e)); return; }
+    if (dragging) apply(idxFromEvent(e));
+  });
+  const end = () => { dragging = false; };
+  col.addEventListener('pointerup', end);
+  col.addEventListener('pointercancel', end);
+  col.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !dragging && buy.stripSel == null) updateBuyStripInspect(); });
+}
+
 function drawScoreStrip(canvas, values, palette, fallback) {
   if (!canvas) return;
   const wrap = canvas.parentElement;
@@ -3190,8 +3368,12 @@ function drawScoreStrip(canvas, values, palette, fallback) {
 
 function renderBuyGaugeStrips() {
   const pts = buy.points.length ? buy.points : buyPoints();
+  const cap = $('#buyStripCaption');
+  if (cap) cap.textContent = 'Buyers score (of 4) and Sellers gauge (of 3), one bar per ' + (buy.range === '2y' ? 'day.' : 'week.');
   drawScoreStrip($('#buyBuyerStripCanvas'), pts.map(p => p.buyer_score), BUY_STRIP_FILL, BUY_STRIP_FILL[0]);
   drawScoreStrip($('#buySellerStripCanvas'), pts.map(p => p.seller_score), STH_STRIP_FILL, STH_STRIP_FILL[0]);
+  renderBuyStripAxis(pts);
+  updateBuyStripInspect();
 }
 
 function buyLegendCap(key, pts) {
@@ -3257,6 +3439,7 @@ function buyCursorHook(key) {
     if (left != null && left >= 0 && u.cursor.idx != null) t = u.posToVal(left, 'x');
     if (t !== buy.sel[key]) {
       buy.sel[key] = t;
+      if (t != null) { buy.stripSel = t; updateBuyStripInspect(); }
       if (key === 'prem') renderBuyPremLegend();
       else if (key === 'etf') renderBuyEtfLegend();
       else if (key === 'cvd') renderBuyCvdLegend();
