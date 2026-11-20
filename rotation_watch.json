@@ -1,6 +1,6 @@
 {
  "schema": "rotation_watch/v1",
- "refreshed_at_utc": "2026-11-19T12:53:08Z",
+ "refreshed_at_utc": "2026-11-20T12:54:52Z",
  "trigger": {
   "T_tech_outflow": "XLK creations/redemptions summed over 28 calendar days < 0",
   "E_btc_etf_inflow": "US spot BTC ETF net flows summed over 28 calendar days > 0",
@@ -8,48 +8,48 @@
   "score": "T + E + P; 3 ON, 2 Building, 1 Early, 0 Off; evaluated weekly (Fri) and on the latest day"
  },
  "current": {
-  "as_of": "2026-11-18",
-  "btc": 62982.0,
+  "as_of": "2026-11-19",
+  "btc": 61913.0,
   "score": 0,
   "state": "Off (0/3)",
   "premium": {
    "on": 0,
-   "as_of": "2026-11-18",
-   "daily_pct": -0.137,
-   "avg7_pct": -0.099,
-   "avg30_raw_pct": -0.138,
+   "as_of": "2026-11-19",
+   "daily_pct": -0.119,
+   "avg7_pct": -0.098,
+   "avg30_raw_pct": -0.139,
    "avg30_adj_usdt_pct": -0.0142,
    "signal_uses": "USDT-adjusted 30d avg",
-   "month_to_date_avg_pct": -0.126,
+   "month_to_date_avg_pct": -0.125,
    "state_since": "2026-10-17",
-   "raw30_last_lower": "2026-11-16",
-   "adj30_last_lower": "2026-11-17"
+   "raw30_last_lower": "2026-11-15",
+   "adj30_last_lower": "2026-11-18"
   },
   "btc_etf": {
    "on": 0,
-   "as_of": "2026-11-18",
-   "last_day_usd": -306500000.0,
-   "last_day_date": "2026-11-18",
-   "sum_7d_usd": -776300000.0,
-   "sum_28d_usd": -3694800000.0,
-   "month_to_date_usd": -2708200000.0,
+   "as_of": "2026-11-19",
+   "last_day_usd": -631900000.0,
+   "last_day_date": "2026-11-19",
+   "sum_7d_usd": -1357200000.0,
+   "sum_28d_usd": -3688800000.0,
+   "month_to_date_usd": -3340100000.0,
    "provisional_excluded": null,
    "state_since": "2026-10-29"
   },
   "tech_proxy": {
    "on": 0,
-   "as_of": "2026-11-18",
+   "as_of": "2026-11-19",
    "ticker": "XLK",
-   "last_day_usd": -303018600.0,
-   "last_day_date": "2026-11-18",
-   "sum_7d_usd": 594762311.0,
-   "sum_28d_usd": 2236572248.0,
-   "month_to_date_usd": 1800610733.0,
+   "last_day_usd": 425904062.0,
+   "last_day_date": "2026-11-19",
+   "sum_7d_usd": 299682877.0,
+   "sum_28d_usd": 2607795280.0,
+   "month_to_date_usd": 2226514795.0,
    "state_since": "2026-10-01"
   },
   "tech_crosscheck_qqq": {
-   "as_of": "2026-11-19",
-   "sum_28d_usd": 16664065741.0,
+   "as_of": "2026-11-20",
+   "sum_28d_usd": 15043490790.0,
    "agrees_with_xlk_sign": true,
    "source": "github.com/isaergun/etf-flows-data (issuer shares x price), Mar 2026+"
   }
@@ -962,18 +962,6 @@
   }
  ],
  "daily": [
-  {
-   "d": "2025-10-14",
-   "btc": 113068.0,
-   "psig": -0.0217,
-   "prem": 0.035,
-   "prem30": 0.054,
-   "prem_adj30": -0.0038,
-   "etf": 102700000.0,
-   "xlk": 98494586.0,
-   "etf28": 5148700000.0,
-   "xlk28": 7161289.0
-  },
   {
    "d": "2025-10-15",
    "btc": 110804.0,
@@ -5773,6 +5761,18 @@
    "xlk": -303018600.0,
    "etf28": -3694800000.0,
    "xlk28": 2236572248.0
+  },
+  {
+   "d": "2026-11-19",
+   "btc": 61913.0,
+   "psig": -0.0026,
+   "prem": -0.119,
+   "prem30": -0.139,
+   "prem_adj30": -0.0142,
+   "etf": -631900000.0,
+   "xlk": 425904062.0,
+   "etf28": -3688800000.0,
+   "xlk28": 2607795280.0
   }
  ],
  "weekly": [
@@ -10710,14 +10710,14 @@
   },
   {
    "d": "2026-11-20",
-   "btc": 62982.0,
-   "psig": -0.0005,
-   "prem": -0.091,
-   "prem30": -0.138,
+   "btc": 61913.0,
+   "psig": -0.0008,
+   "prem": -0.096,
+   "prem30": -0.139,
    "prem_adj30": -0.0142,
    "psig30": -0.0142,
-   "etf": -539900000.0,
-   "xlk": -49615167.0,
+   "etf": -1171800000.0,
+   "xlk": 376288895.0,
    "score": 0.0
   }
  ],
@@ -11570,12 +11570,12 @@
   },
   {
    "d": "2026-11-30",
-   "btc": 62982.0,
-   "psig": -0.0078,
-   "prem": -0.126,
-   "prem_adj": -0.0078,
-   "etf": -2708200000.0,
-   "xlk": 1800610733.0
+   "btc": 61913.0,
+   "psig": -0.0075,
+   "prem": -0.125,
+   "prem_adj": -0.0075,
+   "etf": -3340100000.0,
+   "xlk": 2226514795.0
   }
  ],
  "sources": {
