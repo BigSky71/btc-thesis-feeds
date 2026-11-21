@@ -46,7 +46,7 @@
       "id": "bears_last_stand",
       "label": "Bears' Last Stand",
       "support_label": "First support to defend (cleared confirm)",
-      "overhead_label": "Bears' Last Stand, reclaim",
+      "overhead_label": "Bears' Last Stand, $83k reclaim",
       "testing_label": "Bears' Last Stand (testing)",
       "price": 83000,
       "kind": "level",
@@ -56,7 +56,7 @@
       "in_daily": true,
       "source": "Thesis: former first support to defend (cleared confirm). Static $83,000.",
       "note_support": "Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.",
-      "note_overhead": "Thesis line: former first support to defend, now overhead. Resistance to reclaim."
+      "note_overhead": "Thesis line: former first support, now overhead. Resistance to reclaim."
     },
     {
       "id": "72k",
@@ -71,7 +71,7 @@
       "in_daily": true,
       "source": "Thesis: weekly-close invalidation / soft invalidation.",
       "note_support": "Thesis line: a weekly close under $72k is the soft invalidation.",
-      "note_overhead": "Thesis line: $72k weekly invalidation, now overhead. Resistance to reclaim."
+      "note_overhead": "Thesis line: weekly close under $72k already printed Nov 15, 2026 at $65,305. Now overhead, resistance to reclaim."
     },
     {
       "id": "70k",
@@ -146,11 +146,11 @@
       "high": 64200,
       "kind": "zone",
       "type": "level",
-      "badge": "cost-basis support",
+      "badge": "cost-basis zone",
       "in_banner": true,
       "in_daily": true,
       "source": "Bitview all-cohort URPD lin1000. Displayed range $62,300–$64,200; count from $62–64k cost-basis buckets (62000 + 63000).",
-      "note_support": "Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.",
+      "note_support": "Cost-basis zone. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.",
       "note_overhead": "The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.",
       "note_testing": "Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next."
     },
@@ -165,7 +165,7 @@
       "in_banner": true,
       "in_daily": true,
       "source": "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K",
-      "note": "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k).",
+      "note": "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. A dated snapshot; liquidations in this zone can pull price around inside it. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k).",
       "url": "https://research.glassnode.com/the-week-onchain-week-46-2026/",
       "as_of": "2026-11-17"
     },

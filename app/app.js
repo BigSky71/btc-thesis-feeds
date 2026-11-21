@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.0';
+const WEB_VERSION = 'web 1.6.1';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -51,10 +51,89 @@ const SERIES = [
 ].map(([id, title, short, color, width, dash]) => ({ id, title, short, color, width, dash }));
 const SID = Object.fromEntries(SERIES.map(s => [s.id, s]));
 const datedLabels = { checkQ50: null, checkQ75: null };
-const legendTitle = id => {
-  if (id === 'liquidationMagnet') return `Liquidation magnet ${magnetRangeText()}`;
+function chartSpot() {
+  return isNum(state.spot) ? state.spot : null;
+}
+function magnetAsOfISO(item) {
+  const src = item || (typeof dailyLevelsCatalog === 'function' ? dailyLevelsCatalog().find(L => L && (L.id === 'liquidation_cluster' || L.type === 'liquidation_cluster')) : null);
+  const s = src && src.as_of;
+  return (s && String(s).slice(0, 10)) || null;
+}
+function magnetAsOfLabel(item) {
+  const iso = magnetAsOfISO(item);
+  return iso ? (shortDateISO(iso) || iso) : null;
+}
+function magnetTitle(item, lo, hi) {
+  const range = bannerRangeText(lo != null ? lo : magnetBand()[0], hi != null ? hi : magnetBand()[1]);
+  const asOf = magnetAsOfLabel(item);
+  return `Liquidation magnet ${range}${asOf ? ` (as of ${asOf})` : ''}`;
+}
+function finishedWeeklyCloses(bars) {
+  if (!bars || !bars.length) return [];
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const map = new Map();
+  for (const b of bars) {
+    if (!(b.c > 0) && !(b.v > 0)) continue;
+    const px = isNum(b.c) ? b.c : b.v;
+    if (!(px > 0)) continue;
+    const d = new Date(b.t * 1000);
+    const start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    const dow = new Date(start).getUTCDay();
+    const sunday = start + ((7 - dow) % 7) * 86400000;
+    if (sunday >= todayUtc) continue;
+    const prev = map.get(sunday);
+    if (!prev || b.t > prev.t) map.set(sunday, { t: b.t, c: px });
+  }
+  return [...map.values()].sort((a, b) => a.t - b.t);
+}
+function lastWeeklyCloseUnder(level) {
+  const bars = state.master && state.master.length ? state.master : null;
+  if (!bars || !isNum(level)) return null;
+  const closes = finishedWeeklyCloses(bars);
+  for (let i = closes.length - 1; i >= 0; i--) if (closes[i].c < level) return closes[i];
+  return null;
+}
+function weeklyInvalidationNote(relation) {
+  if (relation !== 'overhead') return null;
+  const p = lastWeeklyCloseUnder(72000);
+  if (!p) return null;
+  return `Thesis line: weekly close under $72k already printed ${fmtUTCDate(p.t)} at ${usd(p.c)}. Now overhead, resistance to reclaim.`;
+}
+function weeklyConfirmChartNote() {
+  const px = chartSpot();
+  if (px != null && px < 83000) {
+    return "Bears' Last Stand is a thesis line at $83k, now overhead (former first support). Chart line starts at the May 2026 peak. It is not the live 50-week average.";
+  }
+  if (px != null && px <= 83000) {
+    return "Bears' Last Stand (thesis line at $83k) is being tested. Chart line starts at the May 2026 peak. It is not the live 50-week average.";
+  }
+  return "Bears' Last Stand / first support (thesis line at $83k) starts at the May 2026 peak. It is not the live 50-week average.";
+}
+function legendTitle(id) {
+  const px = chartSpot();
+  if (id === 'weeklyConfirm') {
+    const rel = levelRelation(83000, 83000, px);
+    if (rel === 'overhead') return "Bears' Last Stand, $83k reclaim";
+    if (rel === 'testing') return "Bears' Last Stand (testing)";
+    return "Bears' Last Stand / first support";
+  }
+  if (id === 'bullInvalidation') {
+    const rel = levelRelation(72000, 72000, px);
+    if (rel === 'overhead') return '$72k, resistance to reclaim';
+    if (rel === 'testing') return 'Weekly invalidation (testing)';
+    return 'Weekly invalidation';
+  }
+  if (id === 'buyerCushion') {
+    const rel = levelRelation(CUSHION_LO, CUSHION_HI, px);
+    const range = bannerRangeText(CUSHION_LO, CUSHION_HI);
+    if (rel === 'overhead') return `Buyer cushion ${range}, reclaim`;
+    if (rel === 'testing') return `Inside the buyer cushion ${range}`;
+    return `Buyer cushion ${range}`;
+  }
+  if (id === 'liquidationMagnet') return magnetTitle();
   return datedLabels[id] || SID[id].title;
-};
+}
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
 const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'realizedPrice', 'lthCostBasis'].includes(id);
@@ -393,10 +472,10 @@ function bullSnapshot(levels, watch) {
   const placeThesis = (r) => { if (r.role === 'support') supports.push(r); else overhead.push(r); };
   placeThesis(thesisRow('weekly_invalidation', lvl(levels, 'weekly_invalidation'),
     { support: 'Weekly invalidation ($72k)', overhead: '$72k, resistance to reclaim', testing: 'Weekly invalidation (testing)' },
-    { support: 'Thesis line: a weekly close under this level is the soft invalidation.', overhead: 'Thesis line: weekly invalidation, now overhead. Resistance to reclaim.' }));
+    { support: 'Thesis line: a weekly close under this level is the soft invalidation.', overhead: weeklyInvalidationNote('overhead') || 'Thesis line: weekly invalidation, now overhead. Resistance to reclaim.' }));
   placeThesis(thesisRow('first_support', lvl(levels, 'first_support_defend'),
-    { support: 'First support to defend (cleared confirm)', overhead: "Bears' Last Stand, reclaim", testing: "Bears' Last Stand (testing)" },
-    { support: 'Thesis line: cleared confirm. First support to defend on a pullback. The live 50-week average is a separate line.', overhead: "Thesis line: former first support to defend, now overhead. Resistance to reclaim." }));
+    { support: 'First support to defend (cleared confirm)', overhead: "Bears' Last Stand, $83k reclaim", testing: "Bears' Last Stand (testing)" },
+    { support: 'Thesis line: cleared confirm. First support to defend on a pullback. The live 50-week average is a separate line.', overhead: 'Thesis line: former first support, now overhead. Resistance to reclaim.' }));
   const mri = liveValue(W.mri_q50);
   if (mri != null) overhead.push(row('mri_midpoint', 'MRI midpoint (Check Q50)', mri, 'live', 'CheckOnChain Mean Reversion Index bands, Q50, daily' + (W.mri_q50.as_of ? ` (as of ${W.mri_q50.as_of})` : '') + '.', 'overhead'));
   // No static MRI fallback — if the live series is missing, omit the row rather than show a stale $90k.
@@ -629,7 +708,11 @@ function buildBundle(range, displayBars) {
   const confirmLevel = bull.firstSupport ?? CONFIG.weeklyConfirmRef;
   const lineDates = spotPts.map(p => p.t).filter(t => t >= CONFIG.weeklyConfirmVisibleFrom);
   put('weeklyConfirm', lineDates.map(t => ({ t, v: confirmLevel })));
-  if (lineDates.length) notes.push("Bears' Last Stand / first support (thesis line at $83k) starts at the May 2026 peak. It is not the live 50-week average.");
+  if (lineDates.length) notes.push(weeklyConfirmChartNote());
+  const invPrint = lastWeeklyCloseUnder(72000);
+  if (chartSpot() != null && chartSpot() < 72000 && invPrint) {
+    notes.push(`Weekly close under $72k already printed ${fmtUTCDate(invPrint.t)} at ${usd(invPrint.c)}. The $72k thesis line is now overhead.`);
+  }
   if (!series.wma200.available) notes.push('200 WMA unavailable — need ~1400 daily closes.');
 
   const oc = state.feeds['checkonchain_overlays.json'];
@@ -802,7 +885,7 @@ function legendRows() {
     }
     return s && s.available && s.points.length ? s.points[s.points.length - 1].v : null;
   };
-  const ids = SERIES.map(s => s.id).filter(id => id !== 'checkQ50');
+  const ids = SERIES.map(s => s.id).filter(id => id !== 'checkQ50' && id !== 'checkQ75' && id !== 'floorTmm');
   const rows = ids.map(id => ({ id, value: valueFor(id), available: !!(b && b.series[id] && b.series[id].available) }));
   const cmp = (a, b2) => legendTitle(a.id).localeCompare(legendTitle(b2.id), undefined, { numeric: true });
   const byPrice = (a, b2) => {
@@ -850,14 +933,14 @@ function bannerRangeText(low, high) {
 const DEFAULT_BANNER_LEVELS = [
   { id: 'recovery_gate', label: '$100k recovery to excitement', support_label: '$100k recovery gate', overhead_label: '$100k recovery gate, overhead', testing_label: '$100k recovery gate (testing)', price: 100000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: recovery-to-excitement gate.', note_overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' },
   { id: 'valuation_top', label: 'Valuation-range top', support_label: 'Valuation-range top', overhead_label: 'Valuation-range top, overhead', testing_label: 'Valuation-range top (testing)', price: 150000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: Check valuation-range top. First large long-term-holder distribution zone.', note_overhead: 'Thesis line: Check valuation-range top, now overhead.' },
-  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.', note_overhead: 'Thesis line: former first support to defend, now overhead. Resistance to reclaim.' },
+  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, $83k reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.', note_overhead: 'Thesis line: former first support, now overhead. Resistance to reclaim.' },
   { id: '72k', label: '$72k', support_label: 'Weekly invalidation ($72k)', overhead_label: '$72k, resistance to reclaim', price: 72000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: a weekly close under $72k is the soft invalidation.', note_overhead: 'Thesis line: $72k weekly invalidation, now overhead. Resistance to reclaim.' },
   { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: confluence near $70k. The bull card carries the weekly-close line at $72k.', note_overhead: 'Thesis line: $70k is overhead. Resistance to reclaim.' },
   { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', type: 'level', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
   { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', type: 'level', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
   { id: 'q15', label: 'Q15 band', support_label: 'Q15 band (soft support)', overhead_label: 'Q15 band, overhead', testing_label: 'Q15 band (testing)', kind: 'level', type: 'level', live: 'q15', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.', note_overhead: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead.' },
-  { id: 'buyer_cushion', label: 'Buyer cushion $62.3–64.2k', support_label: 'Buyer cushion $62.3–64.2k', overhead_label: 'Buyer cushion $62.3–64.2k, resistance to reclaim', testing_label: 'Inside the buyer cushion $62.3–64.2k', low: 62300, high: 64200, kind: 'zone', type: 'level', badge: 'cost-basis support', in_banner: true, in_daily: true, note_support: 'Cost-basis support. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.', note_overhead: 'The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.', note_testing: 'Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.' },
-  { id: 'liquidation_cluster', label: 'Liquidation magnet $59.5–62.2k', low: 59500, high: 62200, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, source: 'Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K', url: 'https://research.glassnode.com/the-week-onchain-week-46-2026/', as_of: '2026-11-17', note: "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. As price nears its top edge, forced liquidations can pull price down into and through the zone. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k)." },
+  { id: 'buyer_cushion', label: 'Buyer cushion $62.3–64.2k', support_label: 'Buyer cushion $62.3–64.2k', overhead_label: 'Buyer cushion $62.3–64.2k, resistance to reclaim', testing_label: 'Inside the buyer cushion $62.3–64.2k', low: 62300, high: 64200, kind: 'zone', type: 'level', badge: 'cost-basis zone', in_banner: true, in_daily: true, note_support: 'Cost-basis zone. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.', note_overhead: 'The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.', note_testing: 'Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.' },
+  { id: 'liquidation_cluster', label: 'Liquidation magnet $59.5–62.2k', low: 59500, high: 62200, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, source: 'Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K', url: 'https://research.glassnode.com/the-week-onchain-week-46-2026/', as_of: '2026-11-17', note: "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. A dated snapshot; liquidations in this zone can pull price around inside it. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k)." },
   { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', type: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
   { id: 'realized', label: 'Realized price', support_label: 'Realized price', overhead_label: 'Realized price, overhead', testing_label: 'Realized price (testing)', kind: 'level', type: 'level', live: 'realized', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live realized price from the same Bitview / Check overlays as the chart: the average cost of every coin.', note_overhead: 'Live realized price from the same Bitview / Check overlays as the chart. Now overhead.' },
 ];
@@ -1031,6 +1114,10 @@ function dailyTitleFor(L, relation) {
 
 function dailyNoteFor(L, relation) {
   if (isMagnetLevel(L)) return L.note || L.source || '';
+  if (L.id === '72k') {
+    const computed = weeklyInvalidationNote(relation);
+    if (computed) return computed;
+  }
   if (relation === 'overhead') return L.note_overhead || L.note_support || L.source || '';
   if (relation === 'testing') return L.note_testing || L.note_support || L.source || '';
   return L.note_support || L.source || '';
@@ -1080,7 +1167,7 @@ function cushionStats(f) {
     chg7, chgOct, sub,
     asOf,
     stale: cushionIsStale(f),
-    note: 'Count from $62–64k cost-basis buckets. ' + cushionMagnetNote(),
+    note: 'Count from $62–64k cost-basis buckets.',
   };
 }
 
@@ -1099,8 +1186,7 @@ function dailyLevels() {
     if (item.in_daily === false) continue;
     if (isMagnetLevel(item) && isNum(item.low) && isNum(item.high)) {
       const lo = Math.min(item.low, item.high), hi = Math.max(item.low, item.high);
-      const title = item.label || `Liquidation magnet ${bannerRangeText(lo, hi)}`;
-      rows.push(L(item.id, 'magnet', title, lo, hi, item.badge || 'zone', dailyNoteFor(item)));
+      rows.push(L(item.id, 'magnet', magnetTitle(item, lo, hi), lo, hi, item.badge || 'zone', dailyNoteFor(item)));
       continue;
     }
     let lo = null, hi = null, source = item.badge || 'thesis line', extraNote = null;
@@ -1128,7 +1214,8 @@ function dailyLevels() {
   if (cush) {
     const row = rows.find(r => r.id === 'buyer_cushion');
     if (row) {
-      row.source = 'cost-basis support';
+      const rel = levelRelation(row.price, row.priceHigh, spot);
+      row.source = rel === 'overhead' ? 'overhead / reclaim' : 'cost-basis zone';
       const bits = [`${nf0.format(Math.round(cush.bandBtc))} BTC`];
       if (cush.status) bits.push(cush.status);
       if (cush.chg7) bits.push(`7d ${cush.chg7}`);
@@ -1138,7 +1225,9 @@ function dailyLevels() {
       row.status = cush.status;
       const asOfBit = cush.asOf ? ` As of ${shortDateISO(cush.asOf) || cush.asOf}.` : '';
       const staleBit = cush.stale ? ` Data is stale: last update ${shortDateISO(cush.asOf) || cush.asOf}.` : '';
-      row.note = (row.note ? row.note + ' ' : '') + cush.note + asOfBit + staleBit;
+      const countBit = row.note && /Count from/.test(row.note) ? '' : ' Count from $62–64k cost-basis buckets.';
+      const magnetBit = rel === 'overhead' ? '' : ' ' + cushionMagnetNote();
+      row.note = ((row.note ? row.note : '') + countBit + magnetBit + asOfBit + staleBit).replace(/^ +/, '');
     }
   }
   const w = state.feeds['bull_watch.json'] || {};
@@ -2047,21 +2136,24 @@ function renderCushion() {
   const f = cushionFeed();
   const stats = cushionStats(f);
   if (!stats) {
-    el.innerHTML = card(`<div class="row-between"><h2>Buyer cushion $62.3–64.2k</h2><span class="badge">waiting</span></div><div class="caption">Cost-basis support. Waiting on the buyer cushion feed.</div>`);
+    el.innerHTML = card(`<div class="row-between"><h2>Buyer cushion $62.3–64.2k</h2><span class="badge">waiting</span></div><div class="caption">Cost-basis zone. Waiting on the buyer cushion feed.</div>`);
     return;
   }
   const st = stats.status || '—';
   const stCls = st === 'Holding' ? 'c-pos' : st === 'Thinning' ? 'c-acc' : st === 'Evaporating' ? 'c-neg' : 'c-2';
+  const rel = levelRelation(CUSHION_LO, CUSHION_HI, state.spot);
+  const badge = rel === 'overhead' ? 'overhead / reclaim' : 'cost-basis zone';
   const stale = stats.stale ? `<div class="banner sth-stale" role="status"><span class="ico">▲</span><span>Data is stale: last update ${esc(shortDateISO(stats.asOf) || stats.asOf)}.</span></div>` : '';
   const asOf = stats.asOf ? `As of ${shortDateISO(stats.asOf) || stats.asOf} · last finished UTC day.` : '';
-  el.innerHTML = card(`<div class="row-between"><h2>Buyer cushion $62.3–64.2k</h2><span class="badge costbasis">cost-basis support</span></div>
+  const drain = rel === 'overhead' ? '' : `<div class="caption2">${esc(cushionMagnetNote())}</div>`;
+  el.innerHTML = card(`<div class="row-between"><h2>Buyer cushion $62.3–64.2k</h2><span class="badge costbasis">${esc(badge)}</span></div>
     ${stale}
     <div class="cushion-status ${stCls}">${esc(st)}</div>
     <div class="price">${nf0.format(Math.round(stats.bandBtc))} BTC</div>
     <div class="foot">${stats.chg7 ? `7-day  ${esc(stats.chg7)}` : '7-day change unavailable.'}</div>
     <div class="foot">${stats.chgOct ? `Since Oct 15  ${esc(stats.chgOct)}` : 'Oct 15 baseline unavailable.'}</div>
     ${stats.sub ? `<div class="cushion-sub">${esc(stats.sub)}</div>` : ''}
-    <div class="caption2">${esc(cushionMagnetNote())}</div>
+    ${drain}
     <div class="caption2">Count from $62–64k cost-basis buckets. ${esc(asOf)}</div>`);
 }
 function renderCards() { renderBull(); renderCushion(); renderDailyLevels(); renderRegime(); renderBTD(); renderETF(); renderMacroCard(); renderLiquidity(); renderFooter(); }
