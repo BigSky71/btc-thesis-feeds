@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.2';
+const WEB_VERSION = 'web 1.6.3';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -2900,7 +2900,7 @@ const BUY_RANGE_DAYS = { '3m': 93, '6m': 186, '1y': 365, '2y': 730 };
 const BUY_RANGE_IDS = new Set(BUY_RANGE_PILLS.map(p => p[0]));
 const BUY_GUTTER_L = 52;
 const BUY_GUTTER_R = 52;
-const BUY_MIN_SPAN = 5 * 86400;
+const BUY_MIN_SPAN = 3 * DAY;
 function loadBuyRange() {
   try {
     const v = localStorage.getItem('buy.tf');
@@ -2919,6 +2919,8 @@ const buy = {
   stripSel: null,
   syncing: false,
   applying: false,
+  selectMode: false,
+  rangeDrag: null,
 };
 const BUY_SCORE_COLOR = { 0: T.negative, 1: T.warning, 2: T.accent, 3: T.positive, 4: T.positive };
 const BUY_STRIP_FILL = {
@@ -3061,7 +3063,7 @@ function buyBaseOpts(width, height) {
   const xd = buyXRange();
   const opts = sthCommonOpts(width, height, xd, buyXAxisKey(), BUY_GUTTER_R, 4);
   opts.padding = [10, 0, 0, 4];
-  opts.cursor = Object.assign({}, opts.cursor, { drag: { setScale: false, x: true, y: false } });
+  opts.cursor = Object.assign({}, opts.cursor, { drag: { setScale: false, x: false, y: false } });
   return opts;
 }
 function buyPushYAxes(opts, leftFmt, rightFmt, rightStroke) {
@@ -3104,71 +3106,192 @@ function buyApplyWindow(t0, t1, mode) {
   renderBuyGaugeStrips();
   buy.applying = false;
 }
-function buyHandleSelect(u) {
-  if (buy.applying) return;
-  const sel = u.select;
-  if (!sel || sel.width < 12) return;
-  const a = u.posToVal(sel.left, 'x');
-  const b = u.posToVal(sel.left + sel.width, 'x');
-  u.setSelect({ left: 0, width: 0, top: 0, height: 0 }, false);
+function buyRangeSpanText(t0, t1) {
+  const a = Math.min(t0, t1), b = Math.max(t0, t1);
+  const d0 = new Date(a * 1000), d1 = new Date(b * 1000);
+  const y0 = d0.getUTCFullYear(), y1 = d1.getUTCFullYear();
+  const left = `${MON[d0.getUTCMonth()]} ${d0.getUTCDate()}${y0 !== y1 ? ', ' + y0 : ''}`;
+  const right = `${MON[d1.getUTCMonth()]} ${d1.getUTCDate()}, ${y1}`;
+  return `${left} → ${right}`;
+}
+function buyEnsureRangeOverlay(u) {
+  let ov = u.over.querySelector('.buy-range-overlay');
+  if (ov) return ov;
+  ov = document.createElement('div');
+  ov.className = 'buy-range-overlay';
+  ov.hidden = true;
+  ov.innerHTML = '<div class="buy-range-band"></div><div class="buy-range-label"></div>';
+  u.over.appendChild(ov);
+  return ov;
+}
+function buyHideRangeOverlay() {
+  Object.values(buy.plots).forEach(u => {
+    if (!u || !u.over) return;
+    const ov = u.over.querySelector('.buy-range-overlay');
+    if (ov) ov.hidden = true;
+  });
+  if (window.__btc && window.__btc.buyTf) window.__btc.buyTf.selecting = null;
+}
+function buyShowRangeOverlay(t0, t1) {
+  const a = Math.min(t0, t1), b = Math.max(t0, t1);
+  const text = buyRangeSpanText(a, b);
+  Object.values(buy.plots).forEach(u => {
+    if (!u || !u.over) return;
+    const ov = buyEnsureRangeOverlay(u);
+    const band = ov.querySelector('.buy-range-band');
+    const lab = ov.querySelector('.buy-range-label');
+    const x0 = u.valToPos(a, 'x');
+    const x1 = u.valToPos(b, 'x');
+    const left = Math.max(0, Math.min(x0, x1));
+    const right = Math.min(u.bbox.width, Math.max(x0, x1));
+    const width = Math.max(2, right - left);
+    ov.hidden = false;
+    band.style.left = left + 'px';
+    band.style.width = width + 'px';
+    lab.textContent = text;
+    const lw = lab.offsetWidth || 0;
+    const mid = left + width / 2;
+    const labLeft = Math.max(2, Math.min((u.over.clientWidth || u.bbox.width) - lw - 2, mid - lw / 2));
+    lab.style.left = labLeft + 'px';
+  });
+  if (window.__btc) {
+    window.__btc.buyTf = Object.assign(window.__btc.buyTf || {}, { selecting: { t0: a, t1: b, label: text } });
+  }
+}
+function buyClientToT(u, clientX) {
+  const r = u.over.getBoundingClientRect();
+  const x = Math.max(0, Math.min(r.width, clientX - r.left));
+  return u.posToVal(x, 'x');
+}
+function buyInspectAt(u, clientX) {
+  const r = u.over.getBoundingClientRect();
+  const x = Math.max(0, Math.min(r.width, clientX - r.left));
+  u.setCursor({ left: x, top: 10 });
+}
+function buySetSelectMode(on) {
+  buy.selectMode = !!on;
+  syncBuyTfChrome();
+}
+function buyLockChartTouch(on) {
+  const root = $('#buyRoot');
+  if (root) root.classList.toggle('buy-select-armed', !!on);
+}
+function buyFinishRangeDrag(drag, u, clientX) {
+  buyHideRangeOverlay();
+  buyLockChartTouch(buy.selectMode);
+  if (!drag || !u) return;
+  const t1 = isNum(clientX) ? buyClientToT(u, clientX) : drag.t1;
+  const t0 = drag.t0;
+  const a = Math.min(t0, t1), b = Math.max(t0, t1);
+  const px = Math.abs(u.valToPos(b, 'x') - u.valToPos(a, 'x'));
+  const TAP_PX = 12;
+  if (!(px >= TAP_PX) || (b - a) < BUY_MIN_SPAN) {
+    buyInspectAt(u, isNum(clientX) ? clientX : drag.x0);
+    return;
+  }
+  if (buy.selectMode) buySetSelectMode(false);
   buyApplyWindow(a, b);
 }
-function attachBuyZoom(u) {
+function attachBuyRangeSelect(u, key) {
   const over = u.over;
-  if (!over || over.dataset.buyZoom) return;
-  over.dataset.buyZoom = '1';
-  const distOf = e => {
-    const a = e.touches[0], b = e.touches[1];
-    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (!over || over.dataset.buyRangeSel) return;
+  over.dataset.buyRangeSel = '1';
+  buyEnsureRangeOverlay(u);
+  const HOLD_MS = 250;
+  const SLOP = 12;
+
+  const startSelect = (drag, clientX) => {
+    drag.mode = 'select';
+    if (drag.holdTimer) { clearTimeout(drag.holdTimer); drag.holdTimer = null; }
+    drag.t1 = buyClientToT(u, clientX);
+    buy.rangeDrag = drag;
+    buyLockChartTouch(true);
+    buyShowRangeOverlay(drag.t0, drag.t1);
   };
-  let pinch = null;
+
+  over.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.pointerType !== 'mouse' && e.isPrimary === false) return;
+    try { over.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    if (buy.rangeDrag && buy.rangeDrag.holdTimer) clearTimeout(buy.rangeDrag.holdTimer);
+    const t = buyClientToT(u, e.clientX);
+    const drag = {
+      key, id: e.pointerId, type: e.pointerType,
+      x0: e.clientX, y0: e.clientY, t0: t, t1: t,
+      mode: 'pending', holdTimer: null,
+    };
+    buy.rangeDrag = drag;
+    if (buy.selectMode) {
+      if (e.cancelable) e.preventDefault();
+      startSelect(drag, e.clientX);
+      return;
+    }
+    if (e.pointerType !== 'mouse') {
+      drag.holdTimer = setTimeout(() => {
+        if (buy.rangeDrag !== drag || drag.mode !== 'pending') return;
+        startSelect(drag, drag.x0);
+      }, HOLD_MS);
+    }
+  });
+
+  over.addEventListener('pointermove', e => {
+    const drag = buy.rangeDrag;
+    if (!drag || drag.id !== e.pointerId || drag.key !== key) return;
+    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (drag.mode === 'pending') {
+      if (e.pointerType === 'mouse') {
+        if (Math.abs(dx) >= SLOP) startSelect(drag, e.clientX);
+      } else if (Math.hypot(dx, dy) >= SLOP) {
+        // Moved before the hold armed: let the page scroll.
+        if (drag.holdTimer) { clearTimeout(drag.holdTimer); drag.holdTimer = null; }
+        drag.mode = 'scroll';
+      }
+      return;
+    }
+    if (drag.mode !== 'select') return;
+    if (e.cancelable) e.preventDefault();
+    drag.t1 = buyClientToT(u, e.clientX);
+    buyShowRangeOverlay(drag.t0, drag.t1);
+  }, { passive: false });
+
+  const endPointer = e => {
+    const drag = buy.rangeDrag;
+    if (!drag || drag.id !== e.pointerId || drag.key !== key) return;
+    if (drag.holdTimer) { clearTimeout(drag.holdTimer); drag.holdTimer = null; }
+    buy.rangeDrag = null;
+    if (drag.mode === 'select') {
+      if (e.cancelable) e.preventDefault();
+      buyFinishRangeDrag(drag, u, e.clientX);
+      return;
+    }
+    if (drag.mode === 'pending') buyInspectAt(u, drag.x0);
+  };
+  over.addEventListener('pointerup', endPointer);
+  over.addEventListener('pointercancel', e => {
+    const drag = buy.rangeDrag;
+    if (!drag || drag.id !== e.pointerId || drag.key !== key) return;
+    if (drag.holdTimer) clearTimeout(drag.holdTimer);
+    buy.rangeDrag = null;
+    buyHideRangeOverlay();
+    buyLockChartTouch(buy.selectMode);
+  });
+
+  // iOS: preventDefault on touch events is what actually stops page scroll once we are selecting.
   over.addEventListener('touchstart', e => {
-    if (e.touches.length !== 2) return;
-    e.preventDefault();
-    const w = buyWindow();
-    pinch = { dist: distOf(e), t0: w.t0, t1: w.t1 };
+    if (buy.selectMode && e.cancelable) e.preventDefault();
   }, { passive: false });
   over.addEventListener('touchmove', e => {
-    if (!pinch || e.touches.length !== 2) return;
-    e.preventDefault();
-    const dist = distOf(e);
-    if (!(dist > 0) || !(pinch.dist > 0)) return;
-    const scale = pinch.dist / dist;
-    const mid = (pinch.t0 + pinch.t1) / 2;
-    const half = Math.max(BUY_MIN_SPAN / 2, ((pinch.t1 - pinch.t0) / 2) * scale);
-    pinch.dirty = true;
-    buyApplyWindow(mid - half, mid + half, 'live');
+    const drag = buy.rangeDrag;
+    if ((buy.selectMode || (drag && drag.mode === 'select')) && e.cancelable) e.preventDefault();
   }, { passive: false });
-  const endPinch = () => {
-    const dirty = pinch && pinch.dirty;
-    pinch = null;
-    if (dirty) buyApplyWindow(buyWindow().t0, buyWindow().t1);
-  };
-  over.addEventListener('touchend', endPinch);
-  over.addEventListener('touchcancel', endPinch);
+
+  // Mouse hover inspect is left to uPlot; touch inspect is handled above.
 }
-function attachBuyTouch(u) {
-  const over = u.over;
-  let active = false;
-  const move = (e) => {
-    const r = over.getBoundingClientRect();
-    const x = Math.max(0, Math.min(r.width, e.clientX - r.left));
-    u.setCursor({ left: x, top: 10 });
-  };
-  over.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; active = true; move(e); });
-  over.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || !active) return; move(e); });
-  const end = e => { if (e.pointerType === 'mouse') return; active = false; };
-  over.addEventListener('pointerup', end);
-  over.addEventListener('pointercancel', end);
-  over.addEventListener('pointerleave', end);
-}
+
 function mountBuyPlot(key, opts, data, el) {
   opts.hooks = opts.hooks || {};
-  const prevSelect = opts.hooks.setSelect || [];
-  opts.hooks.setSelect = prevSelect.concat([u => buyHandleSelect(u)]);
   buy.plots[key] = new uPlot(opts, data, el);
-  attachBuyTouch(buy.plots[key]);
-  attachBuyZoom(buy.plots[key]);
+  attachBuyRangeSelect(buy.plots[key], key);
   syncBuyPlotAlign();
 }
 function syncBuyPlotAlign() {
@@ -3184,9 +3307,26 @@ function syncBuyTfChrome() {
   root.querySelectorAll('#buyPills .pill').forEach(p => p.classList.toggle('on', p.dataset.buyRange === buy.range));
   const reset = $('#buyTfReset');
   if (reset) reset.hidden = !buy.win;
+  const selBtn = $('#buyTfSelect');
+  if (selBtn) {
+    selBtn.classList.toggle('on', !!buy.selectMode);
+    selBtn.setAttribute('aria-pressed', buy.selectMode ? 'true' : 'false');
+  }
+  root.classList.toggle('buy-select-mode', !!buy.selectMode);
+  buyLockChartTouch(!!buy.selectMode || !!(buy.rangeDrag && buy.rangeDrag.mode === 'select'));
+  const cap = $('#buyTfCaption');
+  if (cap) {
+    cap.textContent = buy.selectMode
+      ? 'Press a start date, drag to the end, then release. Charts zoom to that window.'
+      : 'One time range for every chart below. Press-drag-release to zoom, or use Select range on a phone. Reset returns to the preset.';
+  }
   if (window.__btc) {
     const w = buyWindow();
-    window.__btc.buyTf = { range: buy.range, zoomed: !!buy.win, t0: w.t0, t1: w.t1, useDaily: buyUseDaily() };
+    window.__btc.buyTf = {
+      range: buy.range, zoomed: !!buy.win, t0: w.t0, t1: w.t1, useDaily: buyUseDaily(),
+      selectMode: !!buy.selectMode,
+      selecting: (window.__btc.buyTf && window.__btc.buyTf.selecting) || null,
+    };
   }
 }
 function buyEtfComplete(p) {
@@ -3478,9 +3618,10 @@ function ensureBuyShell() {
     <div class="card buy-tf-card">
       <div class="buy-tf-row">
         <div class="pills" id="buyPills">${BUY_RANGE_PILLS.map(([id, label]) => `<button class="pill" data-buy-range="${id}">${label}</button>`).join('')}</div>
+        <button type="button" class="pill" id="buyTfSelect" aria-pressed="false">Select range</button>
         <button type="button" class="pill" id="buyTfReset" hidden>Reset</button>
       </div>
-      <div class="caption">One time range for every chart below. Drag or pinch to zoom; Reset returns to the preset.</div>
+      <div class="caption" id="buyTfCaption">One time range for every chart below. Press-drag-release to zoom, or use Select range on a phone. Reset returns to the preset.</div>
     </div>
     <div class="card" id="buyPremCard">
       <div class="sth-head"><div><h3>Coinbase premium</h3><div class="caption">USDT-adjusted, 7-day and 30-day averages. The 30-day average is the part that matters.</div></div></div>
@@ -3520,9 +3661,16 @@ function ensureBuyShell() {
     </div>`;
   bindBuyStripInspect(root);
   root.addEventListener('click', e => {
+    if (e.target.closest('#buyTfSelect')) {
+      buySetSelectMode(!buy.selectMode);
+      const btn = $('#buyTfSelect');
+      if (btn) btn.setAttribute('aria-pressed', buy.selectMode ? 'true' : 'false');
+      return;
+    }
     if (e.target.closest('#buyTfReset')) {
       buy.sel = { prem: null, etf: null, cvd: null, stable: null };
       buy.stripSel = null;
+      buySetSelectMode(false);
       buyApplyWindow(null, null, 'reset');
       return;
     }
@@ -3533,6 +3681,7 @@ function ensureBuyShell() {
         buy.range = id;
         persistBuy('tf', buy.range);
         buy.win = null;
+        buy.selectMode = false;
         buy.sel = { prem: null, etf: null, cvd: null, stable: null };
         buy.stripSel = null;
         renderBuyCharts(true);
