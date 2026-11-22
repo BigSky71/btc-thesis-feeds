@@ -268,3 +268,13 @@ table.lows td:first-child { font-family: inherit; }
 .buy-part-stale { font-size: 11px; color: var(--warning); margin-top: 2px; line-height: 1.35; }
 .buy-logging { color: var(--text2); font-weight: 600; }
 
+
+.ldot.line { border-radius: 0; height: 2px; width: 12px; flex: 0 0 12px; }
+.ldot.line.dashed { background-image: linear-gradient(90deg, currentColor 0 5px, transparent 5px 8px); background-size: 8px 2px; background-repeat: repeat-x; }
+.buy-watch-tag { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: rgba(242,184,64,0.2); color: var(--warning); vertical-align: 1px; }
+
+.buy-tf-card { gap: 8px; }
+.buy-tf-row { display: flex; align-items: center; gap: 8px; }
+.buy-tf-row .pills { flex: 1; min-width: 0; }
+#buyTfReset { background: rgba(255,255,255,0.10); }
+#buyStripsCol, #buyStripAxis { margin-left: var(--buy-plot-left, 0px); margin-right: var(--buy-plot-right, 0px); }
