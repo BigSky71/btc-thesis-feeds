@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.3';
+const WEB_VERSION = 'web 1.6.4';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -19,35 +19,48 @@ const T = {
   warning: rgba(0.95, 0.72, 0.25), text: 'rgba(255,255,255,0.92)', text2: 'rgba(255,255,255,0.55)',
   border: 'rgba(255,255,255,0.08)', grid: 'rgba(255,255,255,0.08)', gridY: 'rgba(255,255,255,0.056)',
 };
+// Distinct metric hues. BTC price stays T.accent (orange) on every chart.
+const COL = {
+  underwater: rgba(0.22, 0.80, 0.88),          // teal
+  wma50: rgba(0.86, 0.88, 0.94),               // silver (dashed)
+  weeklyConfirm: rgba(0.98, 0.36, 0.62),       // hot pink
+  trueMean: rgba(0.96, 0.88, 0.22),             // lemon yellow
+  bullInvalidation: rgba(0.88, 0.38, 0.48, 0.90),
+  recoveryGate: rgba(0.62, 0.78, 0.42, 0.85),  // olive
+  mayer15: rgba(0.72, 0.44, 0.22, 0.90),        // copper
+  magnet: rgba(0.92, 0.28, 0.24, 0.95),         // clear red
+  coinbase: rgba(0.70, 0.48, 0.98),             // violet
+  coinbaseDown: rgba(0.48, 0.32, 0.78, 0.85),
+};
 
 // ---------- series catalogue (OverlaySeriesID) ----------
 const MA_DASH = [5, 4], BULL_DASH = [2, 4], FLOOR_DASH = [8, 3];
 const SERIES = [
   ['spot', 'BTC', 'BTC', T.accent, 2.0, null],
-  ['wma50', '50 WMA (live)', '50 WMA', rgba(0.95, 0.45, 0.35), 1.4, MA_DASH],
-  ['weeklyConfirm', "Bears' Last Stand / first support", 'Bears\' Last Stand', rgba(0.92, 0.68, 0.18), 1.4, null],
+  ['wma50', '50 WMA (live)', '50 WMA', COL.wma50, 1.4, MA_DASH],
+  ['weeklyConfirm', "Bears' Last Stand / first support", 'Bears\' Last Stand', COL.weeklyConfirm, 1.4, null],
   ['wma200', '200 WMA', '200 WMA', rgba(0.55, 0.75, 0.95), 1.4, MA_DASH],
   ['dma200', '200 DMA', '200 DMA', rgba(0.45, 0.85, 0.65), 1.4, MA_DASH],
   ['sthCostBasis', 'STH Cost Basis', 'STH CB', rgba(0.75, 0.55, 0.95), 1.4, null],
-  ['trueMean', 'True Mean Price', 'True Mean', rgba(0.95, 0.80, 0.35), 1.4, null],
-  ['bullInvalidation', 'Weekly invalidation', 'Weekly inv.', rgba(0.90, 0.55, 0.50, 0.85), 1.0, BULL_DASH],
+  ['trueMean', 'True Mean Price', 'True Mean', COL.trueMean, 1.4, null],
+  ['bullInvalidation', 'Weekly invalidation', 'Weekly inv.', COL.bullInvalidation, 1.0, BULL_DASH],
   ['checkQ50', 'Check Q50 (dated, unused)', 'Check Q50', rgba(0.30, 0.80, 0.95), 1.6, null],
   ['checkQ75', 'Check Q75 (dated, unused)', 'Check Q75', rgba(0.95, 0.45, 0.70), 1.6, null],
   ['checkQ50Proxy', 'Check Q50 proxy (STH CB p75)', 'Q50 proxy', rgba(0.30, 0.80, 0.95, 0.75), 1.3, [6, 3]],
   ['sthQ75', 'STH Q75 (profit-taking)', 'STH Q75', rgba(0.72, 0.62, 0.90, 0.8), 1.0, BULL_DASH],
   ['sthQ90', 'STH Q90 (profit-taking)', 'STH Q90', rgba(0.62, 0.55, 0.82, 0.8), 1.0, BULL_DASH],
   ['mriMidpoint', 'MRI midpoint (Check Q50)', 'MRI mid', rgba(0.55, 0.78, 0.74, 0.85), 1.0, BULL_DASH],
-  ['recoveryGate', 'Recovery to excitement', '$100k gate', rgba(0.78, 0.74, 0.48, 0.85), 1.0, BULL_DASH],
-  ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', rgba(0.86, 0.62, 0.38, 0.85), 1.0, BULL_DASH],
+  ['recoveryGate', 'Recovery to excitement', '$100k gate', COL.recoveryGate, 1.0, BULL_DASH],
+  ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', COL.mayer15, 1.0, BULL_DASH],
   ['valuationTop', 'Valuation-range top', '$150k top', rgba(0.72, 0.50, 0.48, 0.8), 1.0, BULL_DASH],
   ['buyerCushion', 'Buyer cushion $62.3–64.2k', 'Cushion $62.3–64.2k', rgba(0.25, 0.78, 0.48, 0.95), 0, null],
-  ['liquidationMagnet', 'Liquidation magnet $59.5–62.2k', 'Magnet $59.5–62.2k', rgba(0.90, 0.40, 0.28, 0.95), 0, null],
+  ['liquidationMagnet', 'Liquidation magnet $59.5–62.2k', 'Magnet $59.5–62.2k', COL.magnet, 0, null],
   ['floorQ25', 'Q25: 75% of BTC dollars underwater', 'Q25', rgba(0.55, 0.85, 0.55), 1.2, FLOOR_DASH],
   ['floorQ20', 'Q20: 80% of BTC dollars underwater', 'Q20', rgba(0.35, 0.75, 0.50), 1.2, FLOOR_DASH],
   ['floorQ15', 'Q15: 85% of BTC dollars underwater', 'Q15', rgba(0.25, 0.62, 0.48), 1.2, FLOOR_DASH],
   ['realizedPrice', 'Realized: average cost of every coin', 'Realized', rgba(0.30, 0.62, 0.80), 1.2, FLOOR_DASH],
   ['lthCostBasis', "LTH CB: long-term holders' average cost", 'LTH CB', rgba(0.42, 0.48, 0.85), 1.2, FLOOR_DASH],
-  ['floorTmm', 'TMM: active investors\' average cost', 'TMM', rgba(0.95, 0.80, 0.35), 1.2, FLOOR_DASH],
+  ['floorTmm', 'TMM: active investors\' average cost', 'TMM', COL.trueMean, 1.2, FLOOR_DASH],
 ].map(([id, title, short, color, width, dash]) => ({ id, title, short, color, width, dash }));
 const SID = Object.fromEntries(SERIES.map(s => [s.id, s]));
 const datedLabels = { checkQ50: null, checkQ75: null };
@@ -2579,8 +2592,8 @@ function renderSthUwLegend() {
   }) : null;
   const evNote = ev ? `<span class="caption2" style="white-space:nowrap">${esc(sthEventLabel(ev.name))} low</span>` : '';
   el.innerHTML = `<div class="legend-cap">${esc(sthLegendCap('uw', pts))}</div>` +
-    rowHTML('Underwater share', rgba(0.95, 0.45, 0.55), p && isNum(p.uwLine) ? fx(p.uwLine, 1) + '%' : null, evNote) +
-    rowHTML('Supply in loss', rgba(0.95, 0.45, 0.55, 0.7), p && isNum(p.uw_btc) ? fmtBtc(p.uw_btc) : null) +
+    rowHTML('Underwater share', COL.underwater, p && isNum(p.uwLine) ? fx(p.uwLine, 1) + '%' : null, evNote) +
+    rowHTML('Supply in loss', rgba(0.22, 0.80, 0.88, 0.7), p && isNum(p.uw_btc) ? fmtBtc(p.uw_btc) : null) +
     rowHTML('BTC price', T.accent, p && isNum(p.price) ? usd(p.price) : null);
 }
 
@@ -2706,7 +2719,7 @@ function renderSthUwChart() {
   );
   opts.series = [
     {},
-    { label: 'Underwater', scale: 'y', stroke: rgba(0.95, 0.45, 0.55), width: 1.8, spanGaps: true, points: { show: false } },
+    { label: 'Underwater', scale: 'y', stroke: COL.underwater, width: 1.8, spanGaps: true, points: { show: false } },
     { label: 'BTC', scale: 'y2', stroke: T.accent, width: 1.3, spanGaps: true, points: { show: false } },
     { label: 'Lows', scale: 'y', stroke: '#fff', width: 0, paths: () => null, points: { show: true, size: 7, fill: '#fff', stroke: 'rgba(0,0,0,0.55)', width: 1, space: 0 } },
   ];
@@ -4049,7 +4062,7 @@ function renderBuyCvdLegend() {
   const p = buyAt(pts, buy.sel.cvd);
   el.innerHTML = `<div class="legend-cap">${esc(buyLegendCap('cvd', pts))}</div>` +
     rowHTML('Binance 14d', rgba(0.30, 0.82, 0.78), p && isNum(p.bn14) ? fmtFlowM(p.bn14) : null) +
-    rowHTML('Coinbase 14d', rgba(0.95, 0.62, 0.30), p && isNum(p.cb14) ? fmtFlowM(p.cb14) : null) +
+    rowHTML('Coinbase 14d', COL.coinbase, p && isNum(p.cb14) ? fmtFlowM(p.cb14) : null) +
     rowHTML('Binance cumulative', rgba(0.85, 0.85, 0.90), p && isNum(p.bn_cum) ? (p.bn_cum > 0 ? '+' : '') + fx(p.bn_cum, 1) + 'B' : null);
 }
 
@@ -4407,7 +4420,7 @@ function renderBuyCvdChart() {
       ctx.save();
       ctx.beginPath(); ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height); ctx.clip();
       const colBn = v => v >= 0 ? 'rgba(70, 210, 195, 0.95)' : 'rgba(50, 140, 135, 0.85)';
-      const colCb = v => v >= 0 ? 'rgba(245, 170, 70, 0.9)' : 'rgba(190, 120, 50, 0.85)';
+      const colCb = v => v >= 0 ? COL.coinbase : COL.coinbaseDown;
       drawSignedBars(u, pts, bn, colBn, -0.16, 0.42);
       drawSignedBars(u, pts, cb, colCb, 0.16, 0.42);
       drawZeroLine(u);
