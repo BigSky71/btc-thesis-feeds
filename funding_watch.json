@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-11-19",
+  "as_of": "2026-11-20",
   "overall_severity": "elevated",
-  "overall_detail": "MOVE on/above ~80 fragile line, under the 100 stress line \u2014 plumbing accident residual live; size BTD cautiously",
-  "move": 96.04,
-  "move_as_of": "2026-11-19",
-  "move_recent_high_5d": 101.88,
-  "sofr_pct": 3.9,
-  "sofr_as_of": "2026-11-18",
-  "ust_2y_pct": 4.8,
-  "ust_2y_as_of": "2026-11-18",
-  "ust2y_minus_sofr_bp": 90.0,
-  "sofr_minus_2y_bp": -90.0,
+  "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
+  "move": 106.31,
+  "move_as_of": "2026-11-20",
+  "move_recent_high_5d": 106.31,
+  "sofr_pct": 3.91,
+  "sofr_as_of": "2026-11-19",
+  "ust_2y_pct": 4.76,
+  "ust_2y_as_of": "2026-11-19",
+  "ust2y_minus_sofr_bp": 85.0,
+  "sofr_minus_2y_bp": -85.0,
   "bills_share_pct": 22.96,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -37,34 +37,34 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 96.04,
+      "value": 106.31,
       "unit": "index",
-      "as_of": "2026-11-19",
-      "detail": "96.0 \u00b7 fragile (\u226580), under 100 stress \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-11-20",
+      "detail": "106.3 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
       "id": "sofr",
       "title": "SOFR",
-      "value": 3.9,
+      "value": 3.91,
       "unit": "pct",
-      "as_of": "2026-11-18",
-      "detail": "3.90% effective",
+      "as_of": "2026-11-19",
+      "detail": "3.91% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "2y \u2212 SOFR",
-      "value": 90.0,
+      "value": 85.0,
       "unit": "bp",
-      "as_of": "2026-11-18",
-      "detail": "+90.0bp \u00b7 2y above SOFR (market expects higher rates / tighter) \u00b7 as of Nov 18",
+      "as_of": "2026-11-19",
+      "detail": "+85.0bp \u00b7 2y above SOFR (market expects higher rates / tighter) \u00b7 as of Nov 19",
       "severity": "elevated",
       "components": {
-        "sofr_pct": 3.9,
-        "ust_2y_pct": 4.8,
+        "sofr_pct": 3.91,
+        "ust_2y_pct": 4.76,
         "ust_2y_source": "FRED DGS2",
-        "ust_2y_as_of": "2026-11-18"
+        "ust_2y_as_of": "2026-11-19"
       }
     },
     {
@@ -126,7 +126,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-11-20T12:54:33.338264+00:00",
+  "refreshed_at_utc": "2026-11-23T12:55:21.483328+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]

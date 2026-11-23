@@ -1,6 +1,6 @@
 {
  "schema": "rotation_watch/v1",
- "refreshed_at_utc": "2026-11-20T12:54:52Z",
+ "refreshed_at_utc": "2026-11-23T12:55:40Z",
  "trigger": {
   "T_tech_outflow": "XLK creations/redemptions summed over 28 calendar days < 0",
   "E_btc_etf_inflow": "US spot BTC ETF net flows summed over 28 calendar days > 0",
@@ -8,48 +8,48 @@
   "score": "T + E + P; 3 ON, 2 Building, 1 Early, 0 Off; evaluated weekly (Fri) and on the latest day"
  },
  "current": {
-  "as_of": "2026-11-19",
-  "btc": 61913.0,
+  "as_of": "2026-11-22",
+  "btc": 61163.0,
   "score": 0,
   "state": "Off (0/3)",
   "premium": {
    "on": 0,
-   "as_of": "2026-11-19",
-   "daily_pct": -0.119,
-   "avg7_pct": -0.098,
-   "avg30_raw_pct": -0.139,
-   "avg30_adj_usdt_pct": -0.0142,
+   "as_of": "2026-11-22",
+   "daily_pct": -0.176,
+   "avg7_pct": -0.156,
+   "avg30_raw_pct": -0.148,
+   "avg30_adj_usdt_pct": -0.014,
    "signal_uses": "USDT-adjusted 30d avg",
-   "month_to_date_avg_pct": -0.125,
+   "month_to_date_avg_pct": -0.137,
    "state_since": "2026-10-17",
-   "raw30_last_lower": "2026-11-15",
-   "adj30_last_lower": "2026-11-18"
+   "raw30_last_lower": "2019-05-28",
+   "adj30_last_lower": "2026-11-21"
   },
   "btc_etf": {
    "on": 0,
-   "as_of": "2026-11-19",
-   "last_day_usd": -631900000.0,
-   "last_day_date": "2026-11-19",
-   "sum_7d_usd": -1357200000.0,
-   "sum_28d_usd": -3688800000.0,
-   "month_to_date_usd": -3340100000.0,
+   "as_of": "2026-11-20",
+   "last_day_usd": -671500000.0,
+   "last_day_date": "2026-11-20",
+   "sum_7d_usd": -1843300000.0,
+   "sum_28d_usd": -4218200000.0,
+   "month_to_date_usd": -4011600000.0,
    "provisional_excluded": null,
    "state_since": "2026-10-29"
   },
   "tech_proxy": {
    "on": 0,
-   "as_of": "2026-11-19",
+   "as_of": "2026-11-20",
    "ticker": "XLK",
-   "last_day_usd": 425904062.0,
-   "last_day_date": "2026-11-19",
-   "sum_7d_usd": 299682877.0,
-   "sum_28d_usd": 2607795280.0,
-   "month_to_date_usd": 2226514795.0,
+   "last_day_usd": -409724403.0,
+   "last_day_date": "2026-11-20",
+   "sum_7d_usd": -33435508.0,
+   "sum_28d_usd": 2005674088.0,
+   "month_to_date_usd": 1816790392.0,
    "state_since": "2026-10-01"
   },
   "tech_crosscheck_qqq": {
-   "as_of": "2026-11-20",
-   "sum_28d_usd": 15043490790.0,
+   "as_of": "2026-11-23",
+   "sum_28d_usd": 13470111270.0,
    "agrees_with_xlk_sign": true,
    "source": "github.com/isaergun/etf-flows-data (issuer shares x price), Mar 2026+"
   }
@@ -108,9 +108,9 @@
   },
   "score_down": {
    "fwd_1m": {
-    "n": 21,
-    "median": -6.1,
-    "pct_up": 33.0
+    "n": 22,
+    "median": -6.8,
+    "pct_up": 32.0
    },
    "fwd_3m": {
     "n": 19,
@@ -152,20 +152,20 @@
    },
    "3": {
     "weeks": 21,
-    "n": 17,
+    "n": 18,
     "median": 8.1,
-    "pct_up": 59.0
+    "pct_up": 56.0
    }
   },
   "fwd_3m_by_premium": {
    "psig30>0": {
     "weeks": 314,
-    "n": 309,
-    "median": 9.5,
+    "n": 310,
+    "median": 9.4,
     "pct_up": 61.0
    },
    "psig30<=0": {
-    "weeks": 95,
+    "weeks": 96,
     "n": 86,
     "median": -10.1,
     "pct_up": 42.0
@@ -177,10 +177,10 @@
     "pct_up": 56.0
    },
    "raw30<=0": {
-    "weeks": 155,
-    "n": 141,
-    "median": 12.0,
-    "pct_up": 60.0
+    "weeks": 156,
+    "n": 142,
+    "median": 11.7,
+    "pct_up": 59.0
    }
   }
  },
@@ -697,7 +697,7 @@
    "direction": "down",
    "parts_on": "-",
    "btc": 81078.0,
-   "fwd_1m": null,
+   "fwd_1m": -24.6,
    "fwd_3m": null,
    "fwd_6m": null
   }
@@ -962,42 +962,6 @@
   }
  ],
  "daily": [
-  {
-   "d": "2025-10-15",
-   "btc": 110804.0,
-   "psig": -0.0211,
-   "prem": 0.037,
-   "prem30": 0.054,
-   "prem_adj30": -0.0043,
-   "etf": -104100000.0,
-   "xlk": -99486397.0,
-   "etf28": 5095900000.0,
-   "xlk28": -133044746.0
-  },
-  {
-   "d": "2025-10-16",
-   "btc": 108198.0,
-   "psig": -0.0166,
-   "prem": 0.003,
-   "prem30": 0.053,
-   "prem_adj30": -0.0048,
-   "etf": -530900000.0,
-   "xlk": 14225872.0,
-   "etf28": 4402000000.0,
-   "xlk28": -2549188618.0
-  },
-  {
-   "d": "2025-10-17",
-   "btc": 106463.0,
-   "psig": -0.0093,
-   "prem": 0.03,
-   "prem30": 0.053,
-   "prem_adj30": -0.0052,
-   "etf": -366600000.0,
-   "xlk": 142459632.0,
-   "etf28": 3812800000.0,
-   "xlk28": -2392784395.0
-  },
   {
    "d": "2025-10-18",
    "btc": 107209.0,
@@ -5773,6 +5737,42 @@
    "xlk": 425904062.0,
    "etf28": -3688800000.0,
    "xlk28": 2607795280.0
+  },
+  {
+   "d": "2026-11-20",
+   "btc": 58815.0,
+   "psig": 0.0044,
+   "prem": -0.232,
+   "prem30": -0.144,
+   "prem_adj30": -0.014,
+   "etf": -671500000.0,
+   "xlk": -409724403.0,
+   "etf28": -4218200000.0,
+   "xlk28": 2005674088.0
+  },
+  {
+   "d": "2026-11-21",
+   "btc": 60086.0,
+   "psig": -0.0095,
+   "prem": -0.216,
+   "prem30": -0.146,
+   "prem_adj30": -0.0141,
+   "etf": null,
+   "xlk": null,
+   "etf28": null,
+   "xlk28": null
+  },
+  {
+   "d": "2026-11-22",
+   "btc": 61163.0,
+   "psig": -0.0054,
+   "prem": -0.176,
+   "prem30": -0.148,
+   "prem_adj30": -0.014,
+   "etf": null,
+   "xlk": null,
+   "etf28": null,
+   "xlk28": null
   }
  ],
  "weekly": [
@@ -10710,15 +10710,27 @@
   },
   {
    "d": "2026-11-20",
-   "btc": 61913.0,
-   "psig": -0.0008,
-   "prem": -0.096,
-   "prem30": -0.139,
-   "prem_adj30": -0.0142,
-   "psig30": -0.0142,
-   "etf": -1171800000.0,
-   "xlk": 376288895.0,
+   "btc": 58815.0,
+   "psig": -0.0001,
+   "prem": -0.115,
+   "prem30": -0.144,
+   "prem_adj30": -0.014,
+   "psig30": -0.014,
+   "etf": -1843300000.0,
+   "xlk": -33435508.0,
    "score": 0.0
+  },
+  {
+   "d": "2026-11-27",
+   "btc": 61163.0,
+   "psig": -0.0075,
+   "prem": -0.196,
+   "prem30": -0.148,
+   "prem_adj30": -0.014,
+   "psig30": -0.014,
+   "etf": null,
+   "xlk": null,
+   "score": null
   }
  ],
  "monthly": [
@@ -11570,12 +11582,12 @@
   },
   {
    "d": "2026-11-30",
-   "btc": 61913.0,
-   "psig": -0.0075,
-   "prem": -0.125,
-   "prem_adj": -0.0075,
-   "etf": -3340100000.0,
-   "xlk": 2226514795.0
+   "btc": 61163.0,
+   "psig": -0.007,
+   "prem": -0.137,
+   "prem_adj": -0.007,
+   "etf": -4011600000.0,
+   "xlk": 1816790392.0
   }
  ],
  "sources": {
