@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.4';
+const WEB_VERSION = 'web 1.6.5';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -38,7 +38,6 @@ const MA_DASH = [5, 4], BULL_DASH = [2, 4], FLOOR_DASH = [8, 3];
 const SERIES = [
   ['spot', 'BTC', 'BTC', T.accent, 2.0, null],
   ['wma50', '50 WMA (live)', '50 WMA', COL.wma50, 1.4, MA_DASH],
-  ['weeklyConfirm', "Bears' Last Stand / first support", 'Bears\' Last Stand', COL.weeklyConfirm, 1.4, null],
   ['wma200', '200 WMA', '200 WMA', rgba(0.55, 0.75, 0.95), 1.4, MA_DASH],
   ['dma200', '200 DMA', '200 DMA', rgba(0.45, 0.85, 0.65), 1.4, MA_DASH],
   ['sthCostBasis', 'STH Cost Basis', 'STH CB', rgba(0.75, 0.55, 0.95), 1.4, null],
@@ -53,8 +52,6 @@ const SERIES = [
   ['recoveryGate', 'Recovery to excitement', '$100k gate', COL.recoveryGate, 1.0, BULL_DASH],
   ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', COL.mayer15, 1.0, BULL_DASH],
   ['valuationTop', 'Valuation-range top', '$150k top', rgba(0.72, 0.50, 0.48, 0.8), 1.0, BULL_DASH],
-  ['buyerCushion', 'Buyer cushion $62.3–64.2k', 'Cushion $62.3–64.2k', rgba(0.25, 0.78, 0.48, 0.95), 0, null],
-  ['liquidationMagnet', 'Liquidation magnet $59.5–62.2k', 'Magnet $59.5–62.2k', COL.magnet, 0, null],
   ['floorQ25', 'Q25: 75% of BTC dollars underwater', 'Q25', rgba(0.55, 0.85, 0.55), 1.2, FLOOR_DASH],
   ['floorQ20', 'Q20: 80% of BTC dollars underwater', 'Q20', rgba(0.35, 0.75, 0.50), 1.2, FLOOR_DASH],
   ['floorQ15', 'Q15: 85% of BTC dollars underwater', 'Q15', rgba(0.25, 0.62, 0.48), 1.2, FLOOR_DASH],
@@ -168,7 +165,7 @@ function cushionMagnetNote() {
   return `If the cushion drains, the ${magnetRangeText()} liquidation magnet is next.`;
 }
 const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm' };
-const DEFAULT_ON = new Set(['spot', 'wma50', 'weeklyConfirm', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy', 'buyerCushion', 'liquidationMagnet']);
+const DEFAULT_ON = new Set(['spot', 'wma50', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy']);
 
 const MACRO_SERIES = [
   { id: 'ust10y', title: 'US 10-year yield', short: '10-year', color: rgba(0.92, 0.78, 0.35), width: 1.6 },
@@ -195,9 +192,9 @@ const CONFIG = {
   mock50WMA: 79000, reaccumShelfLow: 76000, reaccumShelfHigh: 82000,
   deeperInvalidation: 70000, digestionLow: 87000, digestionHigh: 100000, sthQ75: 87000, sthQ90: 104000,
   regimeSummary: 'Quiet & Trending — early bull',
-  regimeDetail: 'Dips will be bought · early innings. The bull-market card is the measurable set once price is above the live 50-week average: supports, overhead, and top signals. ~$83k is the first support to defend (cleared 2026-09-24), not a level still waiting to clear. The live 50-week average stays a separate line. Soft GLI and MOVE / liquidity caution still apply.',
-  invalidationNote: 'Bull-layer invalidation is the weekly-close line on the bull card. The older ~$70k confluence is still the hard regime challenge. Losing the first support to defend on a weekly close would reopen the old debate.',
-  liveSupportsNote: 'True Market Mean, short-term holder cost basis, and the 200-day average are live on the bull-market card and on the chart. Not the first-support line.',
+  regimeDetail: 'Dips will be bought · early innings. The bull-market card is the measurable set once price is above the live 50-week average: supports, overhead, and top signals. The live 50-week average stays a separate line. Soft GLI and MOVE / liquidity caution still apply.',
+  invalidationNote: 'Bull-layer invalidation is the weekly-close line on the bull card. The older ~$70k confluence is still the hard regime challenge.',
+  liveSupportsNote: 'True Market Mean, short-term holder cost basis, and the 200-day average are live on the bull-market card and on the chart.',
   hinge2027Note: '2027 hinge: Howell GLI trough + Check ATH/discovery — timing note, not a price target.',
   liquidityFlags: [
     { id: 'gli', title: 'GLI momentum', detail: 'Soft / watch', severity: 'soft' },
@@ -486,9 +483,6 @@ function bullSnapshot(levels, watch) {
   placeThesis(thesisRow('weekly_invalidation', lvl(levels, 'weekly_invalidation'),
     { support: 'Weekly invalidation ($72k)', overhead: '$72k, resistance to reclaim', testing: 'Weekly invalidation (testing)' },
     { support: 'Thesis line: a weekly close under this level is the soft invalidation.', overhead: weeklyInvalidationNote('overhead') || 'Thesis line: weekly invalidation, now overhead. Resistance to reclaim.' }));
-  placeThesis(thesisRow('first_support', lvl(levels, 'first_support_defend'),
-    { support: 'First support to defend (cleared confirm)', overhead: "Bears' Last Stand, $83k reclaim", testing: "Bears' Last Stand (testing)" },
-    { support: 'Thesis line: cleared confirm. First support to defend on a pullback. The live 50-week average is a separate line.', overhead: 'Thesis line: former first support, now overhead. Resistance to reclaim.' }));
   const mri = liveValue(W.mri_q50);
   if (mri != null) overhead.push(row('mri_midpoint', 'MRI midpoint (Check Q50)', mri, 'live', 'CheckOnChain Mean Reversion Index bands, Q50, daily' + (W.mri_q50.as_of ? ` (as of ${W.mri_q50.as_of})` : '') + '.', 'overhead'));
   // No static MRI fallback — if the live series is missing, omit the row rather than show a stale $90k.
@@ -718,10 +712,6 @@ function buildBundle(range, displayBars) {
 
   const levels = state.feeds['bull_levels.json'], watch = state.feeds['bull_watch.json'];
   const bull = chartAnchors(levels, watch);
-  const confirmLevel = bull.firstSupport ?? CONFIG.weeklyConfirmRef;
-  const lineDates = spotPts.map(p => p.t).filter(t => t >= CONFIG.weeklyConfirmVisibleFrom);
-  put('weeklyConfirm', lineDates.map(t => ({ t, v: confirmLevel })));
-  if (lineDates.length) notes.push(weeklyConfirmChartNote());
   const invPrint = lastWeeklyCloseUnder(72000);
   if (chartSpot() != null && chartSpot() < 72000 && invPrint) {
     notes.push(`Weekly close under $72k already printed ${fmtUTCDate(invPrint.t)} at ${usd(invPrint.c)}. The $72k thesis line is now overhead.`);
@@ -733,7 +723,8 @@ function buildBundle(range, displayBars) {
   put('sthCostBasis', sth.length ? clip(sth) : []);
   put('trueMean', tm.length ? clip(tm) : []);
 
-  // Bull overlays (appendBullOverlays)
+  // Bull overlays (appendBullOverlays). Flat thesis lines still start at the May 2026 peak date.
+  const lineDates = spotPts.map(p => p.t).filter(t => t >= CONFIG.weeklyConfirmVisibleFrom);
   const flat = (id, value) => { if (!(value > 0) || !lineDates.length) return put(id, []); put(id, lineDates.map(t => ({ t, v: value }))); };
   const curve = (id, history, fallback) => { const daily = tv(history); if (daily.length) return put(id, clip(daily)); flat(id, fallback); };
   const marker = (id, value, asOf, maxAgeDays) => {
@@ -754,7 +745,7 @@ function buildBundle(range, displayBars) {
   flat('recoveryGate', bull.recoveryGate);
   flat('valuationTop', bull.valuationTop);
   put('mayer15', series.dma200.points.map(p => ({ t: p.t, v: p.v * bull.mayerMultiple })));
-  notes.push('STH Q75/Q90, the Q50 proxy, URPD point of control, and the MRI midpoint update daily. Thesis lines ($83k, $72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
+  notes.push('STH Q75/Q90, the Q50 proxy, URPD point of control, and the MRI midpoint update daily. Thesis lines ($72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
 
   // Support floors
   const floors = floorsSnapshot(state.feeds['support_floors.json']);
@@ -765,16 +756,6 @@ function buildBundle(range, displayBars) {
     put(id, clip(f.history));
   }
   if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: Q25/Q20/Q15, realized price, LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
-  for (const id of ['buyerCushion', 'liquidationMagnet']) {
-    const ext = zoneExtents(id);
-    if (!ext || !spotPts.length) { put(id, []); continue; }
-    put(id, [{ t: spotPts[0].t, v: ext[0] }, { t: spotPts[spotPts.length - 1].t, v: ext[1] }]);
-  }
-  const cush = cushionFeed();
-  if (cush && cush.today && isNum(cush.today.band_btc)) {
-    const asOf = cushionAsOfISO(cush);
-    notes.push(`Buyer cushion $62.3–64.2k is a shaded band (on by default). Count from $62–64k cost-basis buckets${asOf ? `, as of ${asOf}` : ''}. The ${magnetRangeText()} liquidation magnet is a separate hatched zone, not support.`);
-  }
 
 
   const hasOnChain = sth.length > 0 && tm.length > 0;
@@ -943,17 +924,16 @@ function bannerRangeText(low, high) {
   return a + '–' + b;
 }
 
+const HIDDEN_LEVEL_IDS = new Set(['bears_last_stand', 'buyer_cushion', 'liquidation_cluster']);
+const isHiddenLevel = L => !L || HIDDEN_LEVEL_IDS.has(L.id) || L.type === 'liquidation_cluster';
 const DEFAULT_BANNER_LEVELS = [
   { id: 'recovery_gate', label: '$100k recovery to excitement', support_label: '$100k recovery gate', overhead_label: '$100k recovery gate, overhead', testing_label: '$100k recovery gate (testing)', price: 100000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: recovery-to-excitement gate.', note_overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' },
   { id: 'valuation_top', label: 'Valuation-range top', support_label: 'Valuation-range top', overhead_label: 'Valuation-range top, overhead', testing_label: 'Valuation-range top (testing)', price: 150000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: Check valuation-range top. First large long-term-holder distribution zone.', note_overhead: 'Thesis line: Check valuation-range top, now overhead.' },
-  { id: 'bears_last_stand', label: "Bears' Last Stand", support_label: 'First support to defend (cleared confirm)', overhead_label: "Bears' Last Stand, $83k reclaim", testing_label: "Bears' Last Stand (testing)", price: 83000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: cleared confirm — first support to defend on a pullback (Check cleared it 2026-09-24). Chart line from the May 2026 peak. Not the live 50-week average.', note_overhead: 'Thesis line: former first support, now overhead. Resistance to reclaim.' },
   { id: '72k', label: '$72k', support_label: 'Weekly invalidation ($72k)', overhead_label: '$72k, resistance to reclaim', price: 72000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: a weekly close under $72k is the soft invalidation.', note_overhead: 'Thesis line: $72k weekly invalidation, now overhead. Resistance to reclaim.' },
   { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: confluence near $70k. The bull card carries the weekly-close line at $72k.', note_overhead: 'Thesis line: $70k is overhead. Resistance to reclaim.' },
   { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', type: 'level', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
   { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', type: 'level', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
   { id: 'q15', label: 'Q15 band', support_label: 'Q15 band (soft support)', overhead_label: 'Q15 band, overhead', testing_label: 'Q15 band (testing)', kind: 'level', type: 'level', live: 'q15', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.', note_overhead: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead.' },
-  { id: 'buyer_cushion', label: 'Buyer cushion $62.3–64.2k', support_label: 'Buyer cushion $62.3–64.2k', overhead_label: 'Buyer cushion $62.3–64.2k, resistance to reclaim', testing_label: 'Inside the buyer cushion $62.3–64.2k', low: 62300, high: 64200, kind: 'zone', type: 'level', badge: 'cost-basis zone', in_banner: true, in_daily: true, note_support: 'Cost-basis zone. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.', note_overhead: 'The $62.3–64.2k buyer cushion is overhead. Resistance to reclaim. Count from $62–64k cost-basis buckets.', note_testing: 'Price is inside the $62.3–64.2k buyer cushion. Count from $62–64k cost-basis buckets. If the cushion drains, the $59.5–62.2k liquidation magnet is next.' },
-  { id: 'liquidation_cluster', label: 'Liquidation magnet $59.5–62.2k', low: 59500, high: 62200, kind: 'zone', type: 'liquidation_cluster', badge: 'zone', in_banner: true, in_daily: true, source: 'Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K', url: 'https://research.glassnode.com/the-week-onchain-week-46-2026/', as_of: '2026-11-17', note: "Glassnode Week On-chain Wk46 (Nov 17, 2026), Capitulation Meets Support: long-liquidation cluster $59.5K–62.2K. A magnet, not support or resistance. A dated snapshot; liquidations in this zone can pull price around inside it. The earlier $60.5–62.5k band was a rounded version of Glassnode's Nov 16 heatmap ($60.3–62.2k)." },
   { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', type: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
   { id: 'realized', label: 'Realized price', support_label: 'Realized price', overhead_label: 'Realized price, overhead', testing_label: 'Realized price (testing)', kind: 'level', type: 'level', live: 'realized', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live realized price from the same Bitview / Check overlays as the chart: the average cost of every coin.', note_overhead: 'Live realized price from the same Bitview / Check overlays as the chart. Now overhead.' },
 ];
@@ -1007,7 +987,7 @@ function bannerLevelSet(snap) {
   const raw = Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
   const items = [];
   for (const L of raw) {
-    if (L.in_banner === false) continue;
+    if (isHiddenLevel(L) || L.in_banner === false) continue;
     const type = L.type || (isMagnetLevel(L) ? 'liquidation_cluster' : 'level');
     if ((isMagnetLevel(L) || L.kind === 'zone') && isNum(L.low) && isNum(L.high)) {
       const lo = Math.min(L.low, L.high), hi = Math.max(L.low, L.high);
@@ -1186,7 +1166,8 @@ function cushionStats(f) {
 
 function dailyLevelsCatalog() {
   const file = state.feeds['banner_levels.json'] || {};
-  return Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
+  const src = Array.isArray(file.levels) && file.levels.length ? file.levels : DEFAULT_BANNER_LEVELS;
+  return src.filter(L => !isHiddenLevel(L));
 }
 
 function dailyLevels() {
@@ -2146,6 +2127,10 @@ function placeDailyLevels() {
 function renderCushion() {
   const el = $('#cushionCard');
   if (!el) return;
+  el.innerHTML = '';
+  el.hidden = true;
+  return;
+  // Removed from the web app (1.6.5): Buyer cushion card is no longer shown.
   const f = cushionFeed();
   const stats = cushionStats(f);
   if (!stats) {
@@ -3311,8 +3296,22 @@ function syncBuyPlotAlign() {
   const u = buy.plots.prem || buy.plots.etf || buy.plots.cvd || buy.plots.stable;
   const root = $('#buyRoot');
   if (!u || !root) return;
-  root.style.setProperty('--buy-plot-left', u.bbox.left + 'px');
-  root.style.setProperty('--buy-plot-right', (u.width - u.bbox.left - u.bbox.width) + 'px');
+  // u.bbox is in device pixels; u.width is CSS px. Mixing them blew out the
+  // score-history strip margins on iPhone (page wider than the screen, iOS shrink-to-fit).
+  const host = (u.root || (u.over && u.over.parentElement));
+  const over = u.over && u.over.getBoundingClientRect();
+  const box = host && host.getBoundingClientRect();
+  let left, right;
+  if (over && box && box.width) {
+    left = Math.max(0, over.left - box.left);
+    right = Math.max(0, box.right - over.right);
+  } else {
+    const pr = u.pxRatio || window.devicePixelRatio || 1;
+    left = Math.max(0, (u.bbox.left || 0) / pr);
+    right = Math.max(0, u.width - left - ((u.bbox.width || 0) / pr));
+  }
+  root.style.setProperty('--buy-plot-left', left + 'px');
+  root.style.setProperty('--buy-plot-right', right + 'px');
 }
 function syncBuyTfChrome() {
   const root = $('#buyRoot');
