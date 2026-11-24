@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "feed_id": "funding_watch",
-  "as_of": "2026-11-20",
+  "as_of": "2026-11-23",
   "overall_severity": "elevated",
   "overall_detail": "MOVE through the 100 stress line and the ~80 fragile line, under the ~135 Howell recession line",
-  "move": 106.31,
-  "move_as_of": "2026-11-20",
+  "move": 100.91,
+  "move_as_of": "2026-11-23",
   "move_recent_high_5d": 106.31,
-  "sofr_pct": 3.91,
-  "sofr_as_of": "2026-11-19",
-  "ust_2y_pct": 4.76,
-  "ust_2y_as_of": "2026-11-19",
-  "ust2y_minus_sofr_bp": 85.0,
-  "sofr_minus_2y_bp": -85.0,
+  "sofr_pct": 3.92,
+  "sofr_as_of": "2026-11-20",
+  "ust_2y_pct": 4.63,
+  "ust_2y_as_of": "2026-11-20",
+  "ust2y_minus_sofr_bp": 71.0,
+  "sofr_minus_2y_bp": -71.0,
   "bills_share_pct": 22.96,
   "bills_share_corpus_pct": 22.2,
   "bills_target_pct": 30.0,
@@ -37,34 +37,34 @@
     {
       "id": "move",
       "title": "MOVE",
-      "value": 106.31,
+      "value": 100.91,
       "unit": "index",
-      "as_of": "2026-11-20",
-      "detail": "106.3 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
+      "as_of": "2026-11-23",
+      "detail": "100.9 \u00b7 above 100 stress, under ~135 recession \u00b7 lines ~80 fragile \u00b7 100 stress \u00b7 ~135 Howell recession",
       "severity": "elevated"
     },
     {
       "id": "sofr",
       "title": "SOFR",
-      "value": 3.91,
+      "value": 3.92,
       "unit": "pct",
-      "as_of": "2026-11-19",
-      "detail": "3.91% effective",
+      "as_of": "2026-11-20",
+      "detail": "3.92% effective",
       "severity": "neutral"
     },
     {
       "id": "sofr_minus_2y",
       "title": "2y \u2212 SOFR",
-      "value": 85.0,
+      "value": 71.0,
       "unit": "bp",
-      "as_of": "2026-11-19",
-      "detail": "+85.0bp \u00b7 2y above SOFR (market expects higher rates / tighter) \u00b7 as of Nov 19",
+      "as_of": "2026-11-20",
+      "detail": "+71.0bp \u00b7 2y above SOFR (market expects higher rates / tighter) \u00b7 as of Nov 20",
       "severity": "elevated",
       "components": {
-        "sofr_pct": 3.91,
-        "ust_2y_pct": 4.76,
+        "sofr_pct": 3.92,
+        "ust_2y_pct": 4.63,
         "ust_2y_source": "FRED DGS2",
-        "ust_2y_as_of": "2026-11-19"
+        "ust_2y_as_of": "2026-11-20"
       }
     },
     {
@@ -126,7 +126,7 @@
       "reserves"
     ]
   },
-  "refreshed_at_utc": "2026-11-23T12:55:21.483328+00:00",
+  "refreshed_at_utc": "2026-11-24T12:47:34.496786+00:00",
   "notes": [
     "Refreshed by refresh_funding_watch.py \u2014 do not invent prints."
   ]
