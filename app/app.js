@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.9';
+const WEB_VERSION = 'web 1.6.10';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -793,7 +793,7 @@ function buildBundle(range, displayBars) {
   if (!volumePoints.length) notes.push('Volume strip hidden — volume unavailable for this range.');
   if (!intraday && state.masterNote) notes.push(state.masterNote);
 
-  const sourceLabel = (intraday ? 'Coinbase BTC-USD' : 'Yahoo BTC-USD daily') + (hasOnChain ? ' · CheckOnChain' : '') + ' · ' + CHART_VERSION;
+  const sourceLabel = (intraday ? 'Coinbase BTC-USD' : 'Yahoo BTC-USD daily') + (hasOnChain ? ' · CheckOnChain' : '');
   return { range, series, volumePoints, notes, asOf: Date.now() / 1000, sourceLabel, floors };
 }
 
@@ -1275,7 +1275,7 @@ const bannerHTML = (b) => `<div class="banner tone-${b.tone}"><span class="ico">
 
 // ---------- chart card ----------
 const chartCard = h(`<div class="card" id="chartCard">
-  <div class="chart-head"><div><h2 style="font-size:20px">BTC Overlay Chart</h2><div class="caption2" id="chartSource">${CHART_VERSION}</div></div><div class="live-box" id="liveBox"><div class="live-px" id="livePx"></div><div class="live-slot"></div></div></div>
+  <div class="chart-head"><div><h2 style="font-size:20px">BTC Overlay Chart</h2><div class="caption2" id="chartSource"></div></div><div class="live-box" id="liveBox"><div class="live-px" id="livePx"></div><div class="live-slot"></div></div></div>
   <div class="pills" id="pills">${RANGES.map(r => `<button class="pill" data-range="${r}">${r}</button>`).join('')}</div>
   <div class="chart-wrap" id="chartWrap"><div class="chart-price" id="chartPrice"></div><div class="chart-vol" id="chartVol"></div><div class="chart-macro-head" id="chartMacroHead" hidden>Yields & dollar</div><div class="chart-macro" id="chartMacro" hidden></div><div class="chart-msg" id="chartMsg" hidden></div></div>
   <div class="legend" id="macroLegend" hidden></div>
@@ -1483,7 +1483,7 @@ function renderChart() {
   const msg = chartCard.querySelector('#chartMsg');
   const priceEl = chartCard.querySelector('#chartPrice'), volEl = chartCard.querySelector('#chartVol');
   chartCard.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.dataset.range === state.range));
-  chartCard.querySelector('#chartSource').textContent = b ? b.sourceLabel : CHART_VERSION;
+  chartCard.querySelector('#chartSource').textContent = b ? b.sourceLabel : '';
   chartCard.querySelector('#chartBanner').innerHTML = bannerHTML(soWhat());
   if (uPrice) { uPrice.destroy(); uPrice = null; }
   if (uVol) { uVol.destroy(); uVol = null; }
@@ -2131,7 +2131,7 @@ function renderLiquidity() {
 function renderFooter() {
   const errs = state.feedErrors.slice();
   if (state.spotFallback) errs.push('Live spot unavailable (Coinbase); showing the last daily close.');
-  const html = `<div>${esc(`${WEB_VERSION} · ${CHART_VERSION} · feed v2.3 · Coinbase/Yahoo/CheckOnChain/Bitview/FRED`)}</div>` +
+  const html = `<div>${esc(`${WEB_VERSION} · feed v2.3 · Coinbase/Yahoo/CheckOnChain/Bitview/FRED`)}</div>` +
     (state.lastRefresh ? `<div>Updated ${new Date(state.lastRefresh).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}${navigator.onLine === false ? ' · offline (cached data)' : ''}</div>` : '') +
     errs.map(e => `<div class="err">Live fetch note: ${esc(e)}</div>`).join('');
   $('#footerOverview').innerHTML = html; $('#footerChart').innerHTML = html; const fs = $('#footerSellers'); if (fs) fs.innerHTML = html; const fb = $('#footerBuyers'); if (fb) fb.innerHTML = html;
