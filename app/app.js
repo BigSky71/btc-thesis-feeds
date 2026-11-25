@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.8';
+const WEB_VERSION = 'web 1.6.9';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -170,10 +170,13 @@ const DEFAULT_ON = new Set(['spot', 'wma50', 'wma200', 'dma200', 'sthCostBasis',
 
 const MACRO_SERIES = [
   { id: 'ust10y', title: 'US 10-year yield', short: '10-year', color: rgba(0.92, 0.78, 0.35), width: 1.6 },
+  { id: 'ust2y', title: 'US 2-year Treasury yield', short: '2-year', color: rgba(0.22, 0.76, 0.62), width: 1.6 }, // emerald
+  { id: 'sofr', title: 'SOFR (overnight rate)', short: 'SOFR', color: rgba(0.80, 0.42, 0.70), width: 1.6 },     // orchid
   { id: 'dxy', title: 'Dollar index (DXY)', short: 'DXY', color: rgba(0.40, 0.72, 0.95), width: 1.6 },
 ];
 const MACRO_SID = Object.fromEntries(MACRO_SERIES.map(s => [s.id, s]));
-const MACRO_DEFAULT_ON = new Set(['ust10y', 'dxy']);
+const MACRO_DEFAULT_ON = new Set(['ust10y', 'ust2y', 'sofr', 'dxy']);
+const isMacroYield = id => id === 'ust10y' || id === 'ust2y' || id === 'sofr';
 
 // ---------- ranges (ChartRange) ----------
 const RANGES = ['1H', '1D', '1W', '1M', '3M', '6M', '1Y', '2Y', '5Y', '10Y'];
@@ -221,7 +224,7 @@ const pos = v => isNum(v) && v > 0 ? v : null;
 const compactVolume = v => { const a = Math.abs(v); return a >= 1e9 ? fx(v / 1e9, 2) + 'B' : a >= 1e6 ? fx(v / 1e6, 1) + 'M' : a >= 1e3 ? fx(v / 1e3, 1) + 'K' : fx(v, 0); };
 const fmtYield = v => fx(v, 2) + '%';
 const fmtDxy = v => fx(v, 2);
-const fmtMacroVal = (id, v) => id === 'ust10y' ? fmtYield(v) : fmtDxy(v);
+const fmtMacroVal = (id, v) => isMacroYield(id) ? fmtYield(v) : fmtDxy(v);
 const weekPhrase = ch => {
   if (!isNum(ch)) return '1-week change unavailable';
   if (Math.abs(ch) < 0.005) return 'unchanged from a week ago';
@@ -1320,7 +1323,7 @@ function xAxisValues(range) {
 }
 function axisUSD(v) { return v >= 1000 ? usd(v) : '$' + Math.round(v); }
 
-// Daily 10-year yield + DXY (macro_history.json). Used by the Chart-tab panel and the Overview tile.
+// Daily yields (10-year, 2-year, SOFR) + DXY (macro_history.json). Chart-tab panel; Overview tile uses 10-year + DXY.
 function hasMacroFeed() {
   const j = state.feeds['macro_history.json'];
   return !!(j && Array.isArray(j.t) && j.t.length);
@@ -1328,7 +1331,7 @@ function hasMacroFeed() {
 function showMacroPanel() { return state.tab === 'chart' && hasMacroFeed(); }
 function macroPoints(id) {
   const j = state.feeds['macro_history.json'];
-  const col = id === 'ust10y' ? 'ust10y_v' : id === 'dxy' ? 'dxy_v' : null;
+  const col = { ust10y: 'ust10y_v', ust2y: 'ust2y_v', sofr: 'sofr_v', dxy: 'dxy_v' }[id];
   if (!j || !col || !Array.isArray(j[col])) return [];
   const out = [];
   for (let i = 0; i < j.t.length; i++) if (isNum(j[col][i])) out.push({ t: j.t[i], v: j[col][i] });
@@ -1634,7 +1637,7 @@ function renderNotes() {
   const notes = (b ? b.notes : []).map(n => `<div>${esc(n)}</div>`);
   if (showMacroPanel()) {
     const j = state.feeds['macro_history.json'];
-    notes.push(`<div>Yields & dollar (daily): US 10-year from FRED DGS10${j && j.ust10y && j.ust10y.source && j.ust10y.source.includes('^TNX') ? ', latest session from Yahoo ^TNX until FRED publishes it' : ''}. Dollar index is DXY (Yahoo DX-Y.NYB).</div>`);
+    notes.push(`<div>Yields & dollar (daily): US 10-year from FRED DGS10${j && j.ust10y && j.ust10y.source && j.ust10y.source.includes('^TNX') ? ', latest session from Yahoo ^TNX until FRED publishes it' : ''}. US 2-year from FRED DGS2. SOFR from the NY Fed. Dollar index is DXY (Yahoo DX-Y.NYB).</div>`);
   }
   if (state.chartError && b) notes.push(`<div class="c-warn">${esc(state.chartError)}</div>`);
   chartCard.querySelector('#chartNotes').innerHTML = notes.join('');
@@ -1659,21 +1662,24 @@ function buildMacroData(xd) {
     const pts = stepHold(macroPoints(def.id), xd[0], xd[1]);
     const enabled = state.macroEnabled.has(def.id) && pts.length;
     if (!enabled) continue;
-    on.push({ def, pts, scale: def.id === 'ust10y' ? 'yUst' : 'yDxy' });
+    on.push({ def, pts, scale: isMacroYield(def.id) ? 'yUst' : 'yDxy' });
   }
-  // Shared x: union of timestamps so both lines share one axis window (range is forced to xd).
+  // Shared x: union of timestamps so the lines share one axis window (range is forced to xd).
   const ts = new Set();
   for (const s of on) for (const p of s.pts) ts.add(p.t);
   const xs = [...ts].sort((a, b) => a - b);
   const index = new Map(xs.map((t, i) => [t, i]));
   data[0] = xs;
+  const byScale = {};
   for (const s of on) {
     const arr = new Array(xs.length).fill(null);
     for (const p of s.pts) { const i = index.get(p.t); if (i != null) arr[i] = p.v; }
     data.push(arr);
     series.push({ label: s.def.short, stroke: s.def.color, width: s.def.width, scale: s.scale, spanGaps: true, points: { show: false } });
-    const vals = s.pts.map(p => p.v);
-    scales[s.scale] = { range: () => yPadRange(vals, s.def.id === 'ust10y' ? 0.2 : 0.8) };
+    (byScale[s.scale] || (byScale[s.scale] = [])).push(...s.pts.map(p => p.v));
+  }
+  for (const [scale, vals] of Object.entries(byScale)) {
+    scales[scale] = { range: () => yPadRange(vals, scale === 'yUst' ? 0.2 : 0.8) };
   }
   return { data, series, scales, on };
 }
@@ -1690,7 +1696,7 @@ function renderMacroPlot(common, leftAxis, leftG, rightG, width, xd) {
     return;
   }
   el.hidden = false;
-  const ustOn = md.on.some(s => s.def.id === 'ust10y');
+  const ustOn = md.on.some(s => isMacroYield(s.def.id));
   const dxyOn = md.on.some(s => s.def.id === 'dxy');
   const ustColor = MACRO_SID.ust10y.color, dxyColor = MACRO_SID.dxy.color;
   const axes = [
@@ -1720,7 +1726,7 @@ function renderMacroLegend() {
   let cap;
   if (state.sel != null) cap = `Inspecting · ${isIntraday(state.range) ? fmtDate(state.sel, true) : fmtUTCDate(state.sel)}`;
   else {
-    const last = j && (j.ust10y && j.ust10y.last || j.dxy && j.dxy.last);
+    const last = j && (j.as_of || j.last || (j.ust10y && j.ust10y.last) || (j.dxy && j.dxy.last));
     cap = last ? `Latest · ${last} · touch the chart to inspect` : 'Yields & dollar';
   }
   const rows = MACRO_SERIES.map(def => {
