@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.7';
+const WEB_VERSION = 'web 1.6.8';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -43,9 +43,15 @@ const SERIES = [
   ['sthCostBasis', 'STH Cost Basis', 'STH CB', rgba(0.75, 0.55, 0.95), 1.4, null],
   ['trueMean', 'True Mean Price', 'True Mean', COL.trueMean, 1.4, null],
   ['bullInvalidation', 'Weekly invalidation', 'Weekly inv.', COL.bullInvalidation, 1.0, BULL_DASH],
-  ['mriMidpoint', 'MRI midpoint (Check Q50)', 'MRI mid', rgba(0.55, 0.78, 0.74, 0.85), 1.0, BULL_DASH],
-  ['checkMriQ10', 'Check MRI Q10', 'MRI Q10', rgba(0.68, 0.38, 0.55), 1.2, FLOOR_DASH],  // muted plum
-  ['checkMriQ5', 'Check MRI Q5', 'MRI Q5', rgba(0.80, 0.46, 0.30), 1.2, FLOOR_DASH],     // terracotta
+  // Check MRI bands, cool (low Q) → warm (high Q), distinct from BTC orange.
+  ['checkMriQ5',  'Check MRI Q5', 'MRI Q5',  rgba(0.10, 0.58, 0.64), 1.2, FLOOR_DASH],
+  ['checkMriQ10', 'Check MRI Q10', 'MRI Q10', rgba(0.16, 0.50, 0.74), 1.2, FLOOR_DASH],
+  ['checkMriQ20', 'Check MRI Q20', 'MRI Q20', rgba(0.28, 0.42, 0.82), 1.2, FLOOR_DASH],
+  ['checkMriQ25', 'Check MRI Q25', 'MRI Q25', rgba(0.42, 0.36, 0.82), 1.2, FLOOR_DASH],
+  ['checkMriQ50', 'Check MRI Q50 (midpoint)', 'MRI Q50', rgba(0.62, 0.34, 0.74), 1.2, FLOOR_DASH],
+  ['checkMriQ75', 'Check MRI Q75', 'MRI Q75', rgba(0.78, 0.32, 0.55), 1.2, FLOOR_DASH],
+  ['checkMriQ90', 'Check MRI Q90', 'MRI Q90', rgba(0.86, 0.32, 0.40), 1.2, FLOOR_DASH],
+  ['checkMriQ95', 'Check MRI Q95', 'MRI Q95', rgba(0.90, 0.24, 0.34), 1.2, FLOOR_DASH],
   ['recoveryGate', 'Recovery to excitement', '$100k gate', COL.recoveryGate, 1.0, BULL_DASH],
   ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', COL.mayer15, 1.0, BULL_DASH],
   ['valuationTop', 'Valuation-range top', '$150k top', rgba(0.72, 0.50, 0.48, 0.8), 1.0, BULL_DASH],
@@ -140,7 +146,7 @@ function legendTitle(id) {
 }
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
-const isSupportFloor = id => ['checkMriQ10', 'checkMriQ5', 'realizedPrice', 'lthCostBasis'].includes(id);
+const isSupportFloor = id => ['realizedPrice', 'lthCostBasis'].includes(id);
 const isZoneSeries = id => id === 'buyerCushion' || id === 'liquidationMagnet';
 const CUSHION_LO = 62300, CUSHION_HI = 64200;
 const MAGNET_LO = 59500, MAGNET_HI = 62200; // fallback if banner_levels.json is missing
@@ -159,7 +165,7 @@ function cushionMagnetNote() {
   return `If the cushion drains, the ${magnetRangeText()} liquidation magnet is next.`;
 }
 const HIDDEN_FLOOR_IDS = new Set(['q25', 'q20', 'q15', 'q10', 'q5']); // cost-basis Qs: keep in the feed, hide in the UI
-const FLOOR_ID = { realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm', mri_q10: 'checkMriQ10', mri_q5: 'checkMriQ5' };
+const FLOOR_ID = { realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm', mri_q5: 'checkMriQ5', mri_q10: 'checkMriQ10', mri_q20: 'checkMriQ20', mri_q25: 'checkMriQ25', mri_q50: 'checkMriQ50', mri_q75: 'checkMriQ75', mri_q90: 'checkMriQ90', mri_q95: 'checkMriQ95' };
 const DEFAULT_ON = new Set(['spot', 'wma50', 'wma200', 'dma200', 'sthCostBasis', 'trueMean']);
 
 const MACRO_SERIES = [
@@ -388,10 +394,6 @@ function chartAnchors(levels, watch) {
     checkQ50Proxy: liveValue(g('check_q50_proxy')), checkQ50ProxyHistory: (g('check_q50_proxy') || {}).history || [],
     mriHistory: (g('mri_q50') || {}).history || [],
     mriMidpoint: liveValue(g('mri_q50')) ?? lvlVal(levels, 'mri_midpoint'),
-    mriQ10History: (g('mri_q10') || {}).history || [],
-    mriQ10: liveValue(g('mri_q10')),
-    mriQ5History: (g('mri_q5') || {}).history || [],
-    mriQ5: liveValue(g('mri_q5')),
     recoveryGate: lvlVal(levels, 'recovery_excitement_gate'),
     valuationTop: lvlVal(levels, 'valuation_range_top'),
     mayerMultiple: multiple > 0 ? multiple : 1.5,
@@ -478,7 +480,7 @@ function bullSnapshot(levels, watch) {
     { support: 'Weekly invalidation ($72k)', overhead: '$72k, resistance to reclaim', testing: 'Weekly invalidation (testing)' },
     { support: 'Thesis line: a weekly close under this level is the soft invalidation.', overhead: weeklyInvalidationNote('overhead') || 'Thesis line: weekly invalidation, now overhead. Resistance to reclaim.' }));
   const mri = liveValue(W.mri_q50);
-  if (mri != null) overhead.push(row('mri_midpoint', 'MRI midpoint (Check Q50)', mri, 'live', 'CheckOnChain Mean Reversion Index bands, Q50, daily' + (W.mri_q50.as_of ? ` (as of ${W.mri_q50.as_of})` : '') + '.', 'overhead'));
+  if (mri != null) overhead.push(row('mri_midpoint', 'Check MRI Q50 (midpoint)', mri, 'live', 'CheckOnChain Mean Reversion Index bands, Q50, daily' + (W.mri_q50.as_of ? ` (as of ${W.mri_q50.as_of})` : '') + '.', 'overhead'));
   // No static MRI fallback — if the live series is missing, omit the row rather than show a stale $90k.
   placeThesis(thesisRow('recovery_gate', lvl(levels, 'recovery_excitement_gate'),
     { support: '$100k recovery gate', overhead: '$100k recovery gate, overhead', testing: '$100k recovery gate (testing)' },
@@ -604,17 +606,21 @@ function floorsSnapshot(json) {
       get label() { return this.plain ? `${this.short}: ${this.plain}` : this.short; } };
   });
   const watch = (typeof state !== 'undefined' && state.feeds) ? state.feeds['bull_watch.json'] : null;
-  const mriFloor = (id, short, block) => {
+  const mriFloor = (id, title, block) => {
     const ok = !!(block && block.available !== false && isNum(block.value) && block.value > 0);
     const history = tv(block && block.history);
-    return { id, short, title: short, plain: 'price versus its history', value: ok ? block.value : null, change7dPct: null, history, seriesID: FLOOR_ID[id] || null,
-      get label() { return `${this.short}: ${this.plain}`; } };
+    const q = id.replace(/^mri_q/, '');
+    return { id, short: 'MRI Q' + q, title, plain: 'price versus its history', value: ok ? block.value : null, change7dPct: null, history, seriesID: FLOOR_ID[id] || null,
+      get label() { return this.title; } };
   };
   if (watch) {
-    const q10 = mriFloor('mri_q10', 'Check MRI Q10', watch.mri_q10);
-    const q5 = mriFloor('mri_q5', 'Check MRI Q5', watch.mri_q5);
-    if (q10.value != null || q10.history.length) floors.push(q10);
-    if (q5.value != null || q5.history.length) floors.push(q5);
+    const keys = Object.keys(watch).filter(k => /^mri_q\d+$/.test(k)).sort((a, b) => parseInt(a.slice(5), 10) - parseInt(b.slice(5), 10));
+    for (const key of keys) {
+      const q = key.slice(5);
+      const short = q === '50' ? 'Check MRI Q50 (midpoint)' : `Check MRI Q${q}`;
+      const f = mriFloor(key, short, watch[key]);
+      if (f.value != null || f.history.length) floors.push(f);
+    }
   }
   const nearestHist = (pts, t) => {
     if (!pts || !pts.length || t == null) return null;
@@ -754,13 +760,10 @@ function buildBundle(range, displayBars) {
   };
   datedLabels.checkQ50 = null; datedLabels.checkQ75 = null;
   flat('bullInvalidation', bull.weeklyInvalidation);
-  curve('mriMidpoint', bull.mriHistory, bull.mriMidpoint);
-  curve('checkMriQ10', bull.mriQ10History, bull.mriQ10);
-  curve('checkMriQ5', bull.mriQ5History, bull.mriQ5);
   flat('recoveryGate', bull.recoveryGate);
   flat('valuationTop', bull.valuationTop);
   put('mayer15', series.dma200.points.map(p => ({ t: p.t, v: p.v * bull.mayerMultiple })));
-  notes.push('The MRI midpoint, Check MRI Q10 and Check MRI Q5 update daily. MRI bands measure how stretched price is versus its history. Thesis lines ($72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
+  notes.push('Check MRI Q5–Q95 (every band Check publishes on the Mean Reversion Index chart, including Q50 as the midpoint) update daily. MRI bands measure how stretched price is versus its history. Thesis lines ($72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
 
   // Support floors
   const floors = floorsSnapshot(state.feeds['support_floors.json']);
@@ -770,7 +773,10 @@ function buildBundle(range, displayBars) {
     if (!f || f.value == null || !f.history.length) { put(id, []); continue; }
     put(id, clip(f.history));
   }
-  if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: realized price and LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Check MRI Q10 and Q5 are Mean Reversion Index bands (how stretched price is versus its history), distinct from those cost-basis lines. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
+  if (!(series.checkMriQ50 && series.checkMriQ50.available) && bull.mriMidpoint) {
+    curve('checkMriQ50', bull.mriHistory, bull.mriMidpoint);
+  }
+  if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: realized price and LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Check MRI Q bands are Mean Reversion Index bands (how stretched price is versus its history), distinct from those cost-basis lines. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
 
 
   const hasOnChain = sth.length > 0 && tm.length > 0;

@@ -193,6 +193,7 @@ details.signals[open] summary::after { transform: rotate(90deg); }
 .panel { background: var(--card); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
 .hist-chart { position: relative; padding: 14px 0; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .lows-label { position: absolute; font-size: 9px; font-weight: 600; color: var(--text2); transform: translateX(-50%); white-space: nowrap; pointer-events: none; }
+#histLows { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table.lows { border-collapse: collapse; width: 100%; font-size: 11px; }
 table.lows th, table.lows td { text-align: right; padding: 2px 4px; font-variant-numeric: tabular-nums; }
 table.lows th:first-child, table.lows td:first-child { text-align: left; }
