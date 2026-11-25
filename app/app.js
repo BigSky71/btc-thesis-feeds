@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.5';
+const WEB_VERSION = 'web 1.6.6';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -55,6 +55,8 @@ const SERIES = [
   ['floorQ25', 'Q25: 75% of BTC dollars underwater', 'Q25', rgba(0.55, 0.85, 0.55), 1.2, FLOOR_DASH],
   ['floorQ20', 'Q20: 80% of BTC dollars underwater', 'Q20', rgba(0.35, 0.75, 0.50), 1.2, FLOOR_DASH],
   ['floorQ15', 'Q15: 85% of BTC dollars underwater', 'Q15', rgba(0.25, 0.62, 0.48), 1.2, FLOOR_DASH],
+  ['floorQ10', 'Q10: 90% of BTC dollars underwater', 'Q10', rgba(0.18, 0.55, 0.58), 1.2, FLOOR_DASH],
+  ['floorQ5', 'Q5: 95% of BTC dollars underwater', 'Q5', rgba(0.14, 0.44, 0.50), 1.2, FLOOR_DASH],
   ['realizedPrice', 'Realized: average cost of every coin', 'Realized', rgba(0.30, 0.62, 0.80), 1.2, FLOOR_DASH],
   ['lthCostBasis', "LTH CB: long-term holders' average cost", 'LTH CB', rgba(0.42, 0.48, 0.85), 1.2, FLOOR_DASH],
   ['floorTmm', 'TMM: active investors\' average cost', 'TMM', COL.trueMean, 1.2, FLOOR_DASH],
@@ -146,7 +148,7 @@ function legendTitle(id) {
 }
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
-const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'realizedPrice', 'lthCostBasis'].includes(id);
+const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'floorQ10', 'floorQ5', 'realizedPrice', 'lthCostBasis'].includes(id);
 const isZoneSeries = id => id === 'buyerCushion' || id === 'liquidationMagnet';
 const CUSHION_LO = 62300, CUSHION_HI = 64200;
 const MAGNET_LO = 59500, MAGNET_HI = 62200; // fallback if banner_levels.json is missing
@@ -164,7 +166,7 @@ function magnetRangeText() {
 function cushionMagnetNote() {
   return `If the cushion drains, the ${magnetRangeText()} liquidation magnet is next.`;
 }
-const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm' };
+const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', q10: 'floorQ10', q5: 'floorQ5', realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm' };
 const DEFAULT_ON = new Set(['spot', 'wma50', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy']);
 
 const MACRO_SERIES = [
@@ -755,7 +757,7 @@ function buildBundle(range, displayBars) {
     if (!f || f.value == null || !f.history.length) { put(id, []); continue; }
     put(id, clip(f.history));
   }
-  if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: Q25/Q20/Q15, realized price, LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
+  if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: Q25/Q20/Q15/Q10/Q5, realized price, LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
 
 
   const hasOnChain = sth.length > 0 && tm.length > 0;
