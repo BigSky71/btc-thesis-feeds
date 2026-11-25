@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.6';
+const WEB_VERSION = 'web 1.6.7';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -43,20 +43,12 @@ const SERIES = [
   ['sthCostBasis', 'STH Cost Basis', 'STH CB', rgba(0.75, 0.55, 0.95), 1.4, null],
   ['trueMean', 'True Mean Price', 'True Mean', COL.trueMean, 1.4, null],
   ['bullInvalidation', 'Weekly invalidation', 'Weekly inv.', COL.bullInvalidation, 1.0, BULL_DASH],
-  ['checkQ50', 'Check Q50 (dated, unused)', 'Check Q50', rgba(0.30, 0.80, 0.95), 1.6, null],
-  ['checkQ75', 'Check Q75 (dated, unused)', 'Check Q75', rgba(0.95, 0.45, 0.70), 1.6, null],
-  ['checkQ50Proxy', 'Check Q50 proxy (STH CB p75)', 'Q50 proxy', rgba(0.30, 0.80, 0.95, 0.75), 1.3, [6, 3]],
-  ['sthQ75', 'STH Q75 (profit-taking)', 'STH Q75', rgba(0.72, 0.62, 0.90, 0.8), 1.0, BULL_DASH],
-  ['sthQ90', 'STH Q90 (profit-taking)', 'STH Q90', rgba(0.62, 0.55, 0.82, 0.8), 1.0, BULL_DASH],
   ['mriMidpoint', 'MRI midpoint (Check Q50)', 'MRI mid', rgba(0.55, 0.78, 0.74, 0.85), 1.0, BULL_DASH],
+  ['checkMriQ10', 'Check MRI Q10', 'MRI Q10', rgba(0.68, 0.38, 0.55), 1.2, FLOOR_DASH],  // muted plum
+  ['checkMriQ5', 'Check MRI Q5', 'MRI Q5', rgba(0.80, 0.46, 0.30), 1.2, FLOOR_DASH],     // terracotta
   ['recoveryGate', 'Recovery to excitement', '$100k gate', COL.recoveryGate, 1.0, BULL_DASH],
   ['mayer15', 'Mayer 1.5×', 'Mayer 1.5×', COL.mayer15, 1.0, BULL_DASH],
   ['valuationTop', 'Valuation-range top', '$150k top', rgba(0.72, 0.50, 0.48, 0.8), 1.0, BULL_DASH],
-  ['floorQ25', 'Q25: 75% of BTC dollars underwater', 'Q25', rgba(0.55, 0.85, 0.55), 1.2, FLOOR_DASH],
-  ['floorQ20', 'Q20: 80% of BTC dollars underwater', 'Q20', rgba(0.35, 0.75, 0.50), 1.2, FLOOR_DASH],
-  ['floorQ15', 'Q15: 85% of BTC dollars underwater', 'Q15', rgba(0.25, 0.62, 0.48), 1.2, FLOOR_DASH],
-  ['floorQ10', 'Q10: 90% of BTC dollars underwater', 'Q10', rgba(0.18, 0.55, 0.58), 1.2, FLOOR_DASH],
-  ['floorQ5', 'Q5: 95% of BTC dollars underwater', 'Q5', rgba(0.14, 0.44, 0.50), 1.2, FLOOR_DASH],
   ['realizedPrice', 'Realized: average cost of every coin', 'Realized', rgba(0.30, 0.62, 0.80), 1.2, FLOOR_DASH],
   ['lthCostBasis', "LTH CB: long-term holders' average cost", 'LTH CB', rgba(0.42, 0.48, 0.85), 1.2, FLOOR_DASH],
   ['floorTmm', 'TMM: active investors\' average cost', 'TMM', COL.trueMean, 1.2, FLOOR_DASH],
@@ -148,7 +140,7 @@ function legendTitle(id) {
 }
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
-const isSupportFloor = id => ['floorQ25', 'floorQ20', 'floorQ15', 'floorQ10', 'floorQ5', 'realizedPrice', 'lthCostBasis'].includes(id);
+const isSupportFloor = id => ['checkMriQ10', 'checkMriQ5', 'realizedPrice', 'lthCostBasis'].includes(id);
 const isZoneSeries = id => id === 'buyerCushion' || id === 'liquidationMagnet';
 const CUSHION_LO = 62300, CUSHION_HI = 64200;
 const MAGNET_LO = 59500, MAGNET_HI = 62200; // fallback if banner_levels.json is missing
@@ -166,8 +158,9 @@ function magnetRangeText() {
 function cushionMagnetNote() {
   return `If the cushion drains, the ${magnetRangeText()} liquidation magnet is next.`;
 }
-const FLOOR_ID = { q25: 'floorQ25', q20: 'floorQ20', q15: 'floorQ15', q10: 'floorQ10', q5: 'floorQ5', realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm' };
-const DEFAULT_ON = new Set(['spot', 'wma50', 'wma200', 'dma200', 'sthCostBasis', 'trueMean', 'checkQ50Proxy']);
+const HIDDEN_FLOOR_IDS = new Set(['q25', 'q20', 'q15', 'q10', 'q5']); // cost-basis Qs: keep in the feed, hide in the UI
+const FLOOR_ID = { realized: 'realizedPrice', lth: 'lthCostBasis', tmm: 'floorTmm', mri_q10: 'checkMriQ10', mri_q5: 'checkMriQ5' };
+const DEFAULT_ON = new Set(['spot', 'wma50', 'wma200', 'dma200', 'sthCostBasis', 'trueMean']);
 
 const MACRO_SERIES = [
   { id: 'ust10y', title: 'US 10-year yield', short: '10-year', color: rgba(0.92, 0.78, 0.35), width: 1.6 },
@@ -395,6 +388,10 @@ function chartAnchors(levels, watch) {
     checkQ50Proxy: liveValue(g('check_q50_proxy')), checkQ50ProxyHistory: (g('check_q50_proxy') || {}).history || [],
     mriHistory: (g('mri_q50') || {}).history || [],
     mriMidpoint: liveValue(g('mri_q50')) ?? lvlVal(levels, 'mri_midpoint'),
+    mriQ10History: (g('mri_q10') || {}).history || [],
+    mriQ10: liveValue(g('mri_q10')),
+    mriQ5History: (g('mri_q5') || {}).history || [],
+    mriQ5: liveValue(g('mri_q5')),
     recoveryGate: lvlVal(levels, 'recovery_excitement_gate'),
     valuationTop: lvlVal(levels, 'valuation_range_top'),
     mayerMultiple: multiple > 0 ? multiple : 1.5,
@@ -475,12 +472,7 @@ function bullSnapshot(levels, watch) {
     livePriceRow('sth_cost_basis', 'Short-term holder cost basis', W.sth_cost_basis, 'The dip flag fires only when STH-MVRV and STH-SOPR are both under 1.', 'support'),
     dmaRow(W.dma_200),
   ];
-  const overhead = [
-    proxyRow('check_q50_proxy', 'Check Q50 proxy (STH CB p75)', liveValue(W.check_q50_proxy), "Daily Bitview STH cost-basis 75th percentile. Live proxy, not Check's published number."),
-    proxyRow('urpd_poc_proxy', 'Q50 pivot · live proxy (URPD POC)', liveValue(W.urpd_poc), urpdNote(W.urpd_poc)),
-    bandRow('sth_q75', 'Q75 profit-taking · live proxy (STH band)', W.sth_q75, null, profitBandNote('Q75', W.sth_q75 && W.sth_q75.multiple, 'About 25% of days were hotter')),
-    bandRow('sth_q90', 'STH Q90 (profit-taking band)', W.sth_q90, null, profitBandNote('Q90', W.sth_q90 && W.sth_q90.multiple, 'Q90 means only about 10% of days were hotter')),
-  ];
+  const overhead = [];
   const placeThesis = (r) => { if (r.role === 'support') supports.push(r); else overhead.push(r); };
   placeThesis(thesisRow('weekly_invalidation', lvl(levels, 'weekly_invalidation'),
     { support: 'Weekly invalidation ($72k)', overhead: '$72k, resistance to reclaim', testing: 'Weekly invalidation (testing)' },
@@ -606,15 +598,39 @@ function floorsSnapshot(json) {
   if (!json || !json.floors || !json.floors.length) return { hasFeed: false, floors: [], priceHistory: [], bearLows: [] };
   const h = json.history || {}, t = h.t || [];
   const column = key => { const col = h[key]; if (!col) return []; const out = []; for (let i = 0; i < col.length && i < t.length; i++) if (col[i] > 0) out.push({ t: t[i] > 1e12 ? t[i] / 1000 : t[i], v: col[i] }); return out; };
-  const floors = json.floors.map(f => {
+  const floors = json.floors.filter(f => !HIDDEN_FLOOR_IDS.has(f.id)).map(f => {
     const ok = f.available ?? (f.value != null);
     return { id: f.id, short: f.short || f.id.toUpperCase(), title: f.title || f.short || f.id, plain: f.plain || '', value: ok ? f.value : null, change7dPct: ok ? f.change_7d_pct : null, history: column(f.id), seriesID: FLOOR_ID[f.id] || null,
-      get label() { return `${this.short}: ${this.plain}`; } };
+      get label() { return this.plain ? `${this.short}: ${this.plain}` : this.short; } };
   });
+  const watch = (typeof state !== 'undefined' && state.feeds) ? state.feeds['bull_watch.json'] : null;
+  const mriFloor = (id, short, block) => {
+    const ok = !!(block && block.available !== false && isNum(block.value) && block.value > 0);
+    const history = tv(block && block.history);
+    return { id, short, title: short, plain: 'price versus its history', value: ok ? block.value : null, change7dPct: null, history, seriesID: FLOOR_ID[id] || null,
+      get label() { return `${this.short}: ${this.plain}`; } };
+  };
+  if (watch) {
+    const q10 = mriFloor('mri_q10', 'Check MRI Q10', watch.mri_q10);
+    const q5 = mriFloor('mri_q5', 'Check MRI Q5', watch.mri_q5);
+    if (q10.value != null || q10.history.length) floors.push(q10);
+    if (q5.value != null || q5.history.length) floors.push(q5);
+  }
+  const nearestHist = (pts, t) => {
+    if (!pts || !pts.length || t == null) return null;
+    let best = null, bestAbs = Infinity;
+    for (const p of pts) { const d = Math.abs(p.t - t); if (d < bestAbs) { bestAbs = d; best = p; } }
+    return (best && bestAbs <= 8 * DAY) ? best.v : null;
+  };
   const bearLows = (json.bear_lows || []).map(l => {
     const date = l.t != null ? l.t : isoToUnix(l.date);
     if (date == null || !(l.price > 0)) return null;
-    const ratios = {}; for (const [k, v] of Object.entries(l.price_to_floor || {})) if (v != null) ratios[k] = v;
+    const ratios = {}; for (const [k, v] of Object.entries(l.price_to_floor || {})) if (v != null && !HIDDEN_FLOOR_IDS.has(k)) ratios[k] = v;
+    for (const f of floors) {
+      if (ratios[f.id] != null) continue;
+      const v = nearestHist(f.history, date);
+      if (v > 0) ratios[f.id] = l.price / v;
+    }
     return { id: l.id, label: l.label || l.id, t: date, price: l.price, priceToFloor: ratios };
   }).filter(Boolean);
   return { hasFeed: floors.some(f => f.value != null), asOfLabel: json.as_of, floors, priceHistory: column('price'), bearLows,
@@ -737,17 +753,14 @@ function buildBundle(range, displayBars) {
     put(id, !tooOld && visible ? [{ t: asOf, v: value }] : []);
   };
   datedLabels.checkQ50 = null; datedLabels.checkQ75 = null;
-  put('checkQ50', []); // Dated Check Q50 is not drawn. The live Q50 proxy line carries it.
-  put('checkQ75', []); // Dated Check Q75 (Oct 13 provisional $100k) is not drawn. The live STH Q75 band carries the sell-side level.
-  curve('checkQ50Proxy', bull.checkQ50ProxyHistory, bull.checkQ50Proxy);
   flat('bullInvalidation', bull.weeklyInvalidation);
-  curve('sthQ75', bull.sthQ75History, bull.sthQ75);
-  curve('sthQ90', bull.sthQ90History, bull.sthQ90);
   curve('mriMidpoint', bull.mriHistory, bull.mriMidpoint);
+  curve('checkMriQ10', bull.mriQ10History, bull.mriQ10);
+  curve('checkMriQ5', bull.mriQ5History, bull.mriQ5);
   flat('recoveryGate', bull.recoveryGate);
   flat('valuationTop', bull.valuationTop);
   put('mayer15', series.dma200.points.map(p => ({ t: p.t, v: p.v * bull.mayerMultiple })));
-  notes.push('STH Q75/Q90, the Q50 proxy, URPD point of control, and the MRI midpoint update daily. Thesis lines ($72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
+  notes.push('The MRI midpoint, Check MRI Q10 and Check MRI Q5 update daily. MRI bands measure how stretched price is versus its history. Thesis lines ($72k, $100k gate, $150k top) stay flat. Off until you turn them on in the legend.');
 
   // Support floors
   const floors = floorsSnapshot(state.feeds['support_floors.json']);
@@ -757,7 +770,7 @@ function buildBundle(range, displayBars) {
     if (!f || f.value == null || !f.history.length) { put(id, []); continue; }
     put(id, clip(f.history));
   }
-  if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: Q25/Q20/Q15/Q10/Q5, realized price, LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
+  if (floors.hasFeed) notes.push(`Support floors${floors.asOfLabel ? ` (as of ${floors.asOfLabel})` : ''}: realized price and LTH cost basis (Bitview) and True Market Mean (CheckOnChain) are cost-based zones, updated daily. Check MRI Q10 and Q5 are Mean Reversion Index bands (how stretched price is versus its history), distinct from those cost-basis lines. Off until you turn them on in the legend. Not sell triggers. TMM also lives on this chart as True Mean.`);
 
 
   const hasOnChain = sth.length > 0 && tm.length > 0;
@@ -881,7 +894,7 @@ function legendRows() {
     }
     return s && s.available && s.points.length ? s.points[s.points.length - 1].v : null;
   };
-  const ids = SERIES.map(s => s.id).filter(id => id !== 'checkQ50' && id !== 'checkQ75' && id !== 'floorTmm');
+  const ids = SERIES.map(s => s.id).filter(id => id !== 'floorTmm');
   const rows = ids.map(id => ({ id, value: valueFor(id), available: !!(b && b.series[id] && b.series[id].available) }));
   const cmp = (a, b2) => legendTitle(a.id).localeCompare(legendTitle(b2.id), undefined, { numeric: true });
   const byPrice = (a, b2) => {
@@ -926,7 +939,7 @@ function bannerRangeText(low, high) {
   return a + '–' + b;
 }
 
-const HIDDEN_LEVEL_IDS = new Set(['bears_last_stand', 'buyer_cushion', 'liquidation_cluster']);
+const HIDDEN_LEVEL_IDS = new Set(['bears_last_stand', 'buyer_cushion', 'liquidation_cluster', 'q15', 'q25', 'q20', 'q10', 'q5']);
 const isHiddenLevel = L => !L || HIDDEN_LEVEL_IDS.has(L.id) || L.type === 'liquidation_cluster';
 const DEFAULT_BANNER_LEVELS = [
   { id: 'recovery_gate', label: '$100k recovery to excitement', support_label: '$100k recovery gate', overhead_label: '$100k recovery gate, overhead', testing_label: '$100k recovery gate (testing)', price: 100000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: false, in_daily: true, note_support: 'Thesis line: recovery-to-excitement gate.', note_overhead: 'Thesis line: $100k recovery-to-excitement gate, now overhead.' },
@@ -935,7 +948,6 @@ const DEFAULT_BANNER_LEVELS = [
   { id: '70k', label: '$70k', support_label: '$70k', overhead_label: '$70k, resistance to reclaim', price: 70000, kind: 'level', type: 'level', badge: 'thesis line', in_banner: true, in_daily: true, note_support: 'Thesis line: confluence near $70k. The bull card carries the weekly-close line at $72k.', note_overhead: 'Thesis line: $70k is overhead. Resistance to reclaim.' },
   { id: 'wma200', label: '200-week average', support_label: '200-week average (live)', overhead_label: '200-week average (live), overhead', testing_label: '200-week average (live, testing)', kind: 'average', type: 'level', live: 'wma200', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live 200-week average from ~1,400 daily closes.', note_overhead: 'Live 200-week average from ~1,400 daily closes. Now overhead. Resistance to reclaim.' },
   { id: 'wma50', label: '50-week average', support_label: '50-week average (live)', overhead_label: '50-week average (live), overhead', testing_label: '50-week average (live, testing)', kind: 'average', type: 'level', live: 'wma50', badge: 'live', in_banner: false, in_daily: true, note_support: 'Live 50-week average from ~350 daily closes.', note_overhead: 'Live 50-week average from ~350 daily closes. Now overhead.' },
-  { id: 'q15', label: 'Q15 band', support_label: 'Q15 band (soft support)', overhead_label: 'Q15 band, overhead', testing_label: 'Q15 band (testing)', kind: 'level', type: 'level', live: 'q15', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart (85% of BTC dollars underwater). Soft support.', note_overhead: 'Live Q15 cost-basis band from the same Bitview / Check overlays as the chart. Now overhead.' },
   { id: 'june_30_low', label: 'June 30 low', support_label: 'June 30 low', overhead_label: 'June 30 low, resistance to reclaim', price: 58367, kind: 'level', type: 'level', date: '2026-06-30', badge: 'history', in_banner: true, in_daily: true, note_support: 'June 30, 2026 low at $58,367 (event series). price_history daily close that day was $58,558.86; that file has no lows.', note_overhead: 'The June 30, 2026 low at $58,367 is overhead. Resistance to reclaim.' },
   { id: 'realized', label: 'Realized price', support_label: 'Realized price', overhead_label: 'Realized price, overhead', testing_label: 'Realized price (testing)', kind: 'level', type: 'level', live: 'realized', badge: 'live', in_banner: true, in_daily: true, note_support: 'Live realized price from the same Bitview / Check overlays as the chart: the average cost of every coin.', note_overhead: 'Live realized price from the same Bitview / Check overlays as the chart. Now overhead.' },
 ];
@@ -1234,14 +1246,6 @@ function dailyLevels() {
     const title = rel === 'overhead' ? labels.overhead : (rel === 'testing' ? labels.testing : labels.support);
     rows.push(L(id, 'level', title, value, null, 'live', note));
   };
-  addLiveBand('sth_q75',
-    { support: 'STH Q75 (profit-taking)', overhead: 'STH Q75 (profit-taking, overhead)', testing: 'STH Q75 (testing)' },
-    liveValue(w.sth_q75),
-    'Live: short-term holder cost basis times the point-in-time Q75 of STH-MVRV. Updates daily.');
-  addLiveBand('sth_q90',
-    { support: 'STH Q90 (profit-taking)', overhead: 'STH Q90 (profit-taking, overhead)', testing: 'STH Q90 (testing)' },
-    liveValue(w.sth_q90),
-    'Live: short-term holder cost basis times the point-in-time Q90 of STH-MVRV. Updates daily.');
   rows.sort((a, b) => ((b.priceHigh != null ? b.priceHigh : b.price) - (a.priceHigh != null ? a.priceHigh : a.price)));
   rows.push(L('liveSupports', 'note', 'Other live levels', null, null, 'note', 'True Market Mean, short-term holder cost basis, and the 200-day average are live on the bull-market card and on the chart.'));
   rows.push(L('mayer', 'note', 'Mayer Multiple ~1.5×', null, null, 'note', 'Dollar level is on the bull card: the multiple times the live 200-day average. It is not a fixed price.'));
