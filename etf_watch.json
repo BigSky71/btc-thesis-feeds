@@ -20,19 +20,19 @@
   },
   "partial_week_excluded": {
     "etf_net_flow_1w_usd": {
-      "date": "2026-11-24",
-      "value": -804200000.0,
-      "days_after_prior": 2
+      "date": "2026-11-25",
+      "value": -1257200000.0,
+      "days_after_prior": 3
     },
     "etf_volume_1w_usd": {
-      "date": "2026-11-24",
-      "value": 5915771464.16,
-      "days_after_prior": 4
+      "date": "2026-11-25",
+      "value": 9043699199.43,
+      "days_after_prior": 5
     }
   },
   "paths": {
     "box_canonical": "/workspace/btc-thesis-dashboard/data/etf_watch.json",
     "github_repo_relative": "data/etf_watch.json"
   },
-  "refreshed_at_utc": "2026-11-25T12:47:46.759547+00:00"
+  "refreshed_at_utc": "2026-11-26T12:50:54.714419+00:00"
 }
