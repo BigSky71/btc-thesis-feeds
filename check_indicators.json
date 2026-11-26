@@ -1,43 +1,43 @@
 {
-  "generated_at": "2026-11-25T12:48:09+00:00",
+  "generated_at": "2026-11-26T12:51:13+00:00",
   "source": "Check Oct-2026 Premium Q&A checklist; Bitview REST + CheckOnChain CDN",
   "capital_multiplier": {
-    "as_of": "2026-11-24",
-    "market_cap": 1200440337147.99,
-    "realized_cap": 1068131419354.71,
+    "as_of": "2026-11-25",
+    "market_cap": 1212522422838.4,
+    "realized_cap": 1066826910564.87,
     "windows": {
       "30d": {
-        "from": "2026-10-25",
-        "d_market_cap": -412492380306,
-        "d_realized_cap": -18511207058,
+        "from": "2026-10-26",
+        "d_market_cap": -392918392875,
+        "d_realized_cap": -19975972706,
         "value": null,
         "reason": "realized cap fell over window (multiplier undefined)"
       },
       "90d": {
-        "from": "2026-08-26",
-        "d_market_cap": -376441023648,
-        "d_realized_cap": 4836410280,
-        "value": -77.83
+        "from": "2026-08-27",
+        "d_market_cap": -399022508834,
+        "d_realized_cap": 2839081332,
+        "value": -140.55
       },
       "180d": {
-        "from": "2026-05-28",
-        "d_market_cap": -268840853441,
-        "d_realized_cap": -14882117592,
+        "from": "2026-05-29",
+        "d_market_cap": -256196580104,
+        "d_realized_cap": -15407033515,
         "value": null,
         "reason": "realized cap fell over window (multiplier undefined)"
       },
       "365d": {
-        "from": "2025-11-24",
-        "d_market_cap": -561498155009,
-        "d_realized_cap": -56350798567,
+        "from": "2025-11-25",
+        "d_market_cap": -528914501862,
+        "d_realized_cap": -57514430872,
         "value": null,
         "reason": "realized cap fell over window (multiplier undefined)"
       },
       "since_2023_01_01": {
         "from": "2023-01-01",
-        "d_market_cap": 880992896578,
-        "d_realized_cap": 687808139840,
-        "value": 1.28
+        "d_market_cap": 893074982269,
+        "d_realized_cap": 686503631050,
+        "value": 1.3
       }
     },
     "series_ids": [
@@ -47,11 +47,11 @@
     "check_ref": "Check: since Jan-2023 rcap +$720B vs mcap +$2T; currently 1.4-3; <1 bear/oversupply; ~5 at seller-exhaustion peak."
   },
   "aviv": {
-    "as_of": "2026-11-24",
-    "aviv_ratio": 0.7836,
-    "true_market_mean": 76155.0,
-    "z_full_history": -0.88,
-    "z_trailing_4y": -1.35,
+    "as_of": "2026-11-25",
+    "aviv_ratio": 0.7926,
+    "true_market_mean": 76044.0,
+    "z_full_history": -0.86,
+    "z_trailing_4y": -1.32,
     "series_ids": [
       "aviv",
       "true_market_mean"
@@ -67,48 +67,48 @@
       "sth_realized_profit_sum_1m"
     ],
     "realized_profit_sum_1w": {
-      "as_of": "2026-11-24",
-      "usd": 1504312294.0,
-      "pctile_365d": 13.4,
-      "median_365d": 2438920146.0
+      "as_of": "2026-11-25",
+      "usd": 1521853251.0,
+      "pctile_365d": 14.2,
+      "median_365d": 2436318147.0
     },
     "realized_profit_sum_1m": {
-      "as_of": "2026-11-24",
-      "usd": 9257789503.0,
-      "pctile_365d": 26.6,
-      "median_365d": 12412582398.0
+      "as_of": "2026-11-25",
+      "usd": 8806879615.0,
+      "pctile_365d": 21.6,
+      "median_365d": 12371166455.0
     },
     "lth_realized_profit_sum_1w": {
-      "as_of": "2026-11-24",
-      "usd": 589762462.0,
-      "pctile_365d": 10.1,
-      "median_365d": 1124083704.0
+      "as_of": "2026-11-25",
+      "usd": 567898515.0,
+      "pctile_365d": 8.2,
+      "median_365d": 1114735495.0
     },
     "lth_realized_profit_sum_1m": {
-      "as_of": "2026-11-24",
-      "usd": 4586084097.0,
-      "pctile_365d": 39.2,
-      "median_365d": 5109529376.0
+      "as_of": "2026-11-25",
+      "usd": 4371439485.0,
+      "pctile_365d": 35.9,
+      "median_365d": 5081569063.0
     },
     "sth_realized_profit_sum_1m": {
-      "as_of": "2026-11-24",
-      "usd": 4671705406.0,
-      "pctile_365d": 27.7,
+      "as_of": "2026-11-25",
+      "usd": 4435440130.0,
+      "pctile_365d": 22.5,
       "median_365d": 6054199105.0
     },
     "flag": "quiet (no one taking profit)",
     "by_age_1m": {
       "under_1h": {
         "series_id": "age_under_1h_realized_profit_sum_1m",
-        "usd_1m": 543972948.0
+        "usd_1m": 530857628.0
       },
       "1h_to_1d": {
         "series_id": "age_1h_to_1d_realized_profit_sum_1m",
-        "usd_1m": 1570278912.0
+        "usd_1m": 1603934980.0
       },
       "1d_to_1w": {
         "series_id": "age_1d_to_1w_realized_profit_sum_1m",
-        "usd_1m": 682467742.0
+        "usd_1m": 687698378.0
       },
       "1w_to_1m": {
         "series_id": "age_1w_to_1m_realized_profit_sum_1m",
@@ -116,27 +116,27 @@
       },
       "1m_to_2m": {
         "series_id": "age_1m_to_2m_realized_profit_sum_1m",
-        "usd_1m": 43062689.0
+        "usd_1m": 36419745.0
       },
       "2m_to_3m": {
         "series_id": "age_2m_to_3m_realized_profit_sum_1m",
-        "usd_1m": 671026007.0
+        "usd_1m": 478653806.0
       },
       "3m_to_4m": {
         "series_id": "age_3m_to_4m_realized_profit_sum_1m",
-        "usd_1m": 568015069.0
+        "usd_1m": 561054915.0
       },
       "4m_to_5m": {
         "series_id": "age_4m_to_5m_realized_profit_sum_1m",
-        "usd_1m": 592030921.0
+        "usd_1m": 535969559.0
       },
       "5m_to_6m": {
         "series_id": "age_5m_to_6m_realized_profit_sum_1m",
-        "usd_1m": 150887879.0
+        "usd_1m": 150207756.0
       },
       "6m_to_9m": {
         "series_id": "age_6m_to_9m_realized_profit_sum_1m",
-        "usd_1m": 328306826.0
+        "usd_1m": 317787291.0
       },
       "9m_to_1y": {
         "series_id": "age_9m_to_1y_realized_profit_sum_1m",
@@ -148,88 +148,88 @@
       },
       "18m_to_2y": {
         "series_id": "age_18m_to_2y_realized_profit_sum_1m",
-        "usd_1m": 1398844.0
+        "usd_1m": 1241117.0
       },
       "2y_to_3y": {
         "series_id": "age_2y_to_3y_realized_profit_sum_1m",
-        "usd_1m": 371253469.0
+        "usd_1m": 362104159.0
       },
       "3y_to_4y": {
         "series_id": "age_3y_to_4y_realized_profit_sum_1m",
-        "usd_1m": 1143222635.0
+        "usd_1m": 977647146.0
       },
       "4y_to_5y": {
         "series_id": "age_4y_to_5y_realized_profit_sum_1m",
-        "usd_1m": 502557320.0
+        "usd_1m": 497786302.0
       },
       "5y_to_6y": {
         "series_id": "age_5y_to_6y_realized_profit_sum_1m",
-        "usd_1m": 229583998.0
+        "usd_1m": 224159733.0
       },
       "6y_to_7y": {
         "series_id": "age_6y_to_7y_realized_profit_sum_1m",
-        "usd_1m": 695629642.0
+        "usd_1m": 686457888.0
       },
       "7y_to_8y": {
         "series_id": "age_7y_to_8y_realized_profit_sum_1m",
-        "usd_1m": 184558588.0
+        "usd_1m": 178927195.0
       },
       "8y_to_10y": {
         "series_id": "age_8y_to_10y_realized_profit_sum_1m",
-        "usd_1m": 756833437.0
+        "usd_1m": 755924286.0
       },
       "10y_to_12y": {
         "series_id": "age_10y_to_12y_realized_profit_sum_1m",
-        "usd_1m": 91023093.0
+        "usd_1m": 93752787.0
       },
       "12y_to_15y": {
         "series_id": "age_12y_to_15y_realized_profit_sum_1m",
-        "usd_1m": 84195247.0
+        "usd_1m": 78801864.0
       },
       "over_15y": {
         "series_id": "age_over_15y_realized_profit_sum_1m",
-        "usd_1m": 31591621.0
+        "usd_1m": 31600465.0
       }
     }
   },
   "profit_loss": {
     "supply_in_profit_share": {
-      "as_of": "2026-11-24",
-      "value": 44.46,
-      "pctile_365d": 0.5
+      "as_of": "2026-11-25",
+      "value": 46.38,
+      "pctile_365d": 2.7
     },
     "sth_supply_in_profit_share": {
-      "as_of": "2026-11-24",
-      "value": 6.28,
-      "pctile_365d": 10.1
+      "as_of": "2026-11-25",
+      "value": 14.03,
+      "pctile_365d": 20.0
     },
     "lth_supply_in_profit_share": {
-      "as_of": "2026-11-24",
-      "value": 53.94,
-      "pctile_365d": 0.8
+      "as_of": "2026-11-25",
+      "value": 54.48,
+      "pctile_365d": 1.1
     },
     "unrealized_loss": {
-      "as_of": "2026-11-24",
-      "value": 266787441001.47,
-      "pctile_365d": 95.3
+      "as_of": "2026-11-25",
+      "value": 258916928499.35,
+      "pctile_365d": 92.6
     },
     "sth_unrealized_loss": {
-      "as_of": "2026-11-24",
-      "value": 51237678276.3,
-      "pctile_365d": 67.7
+      "as_of": "2026-11-25",
+      "value": 48452807900.55,
+      "pctile_365d": 65.8
     },
     "lth_unrealized_loss": {
-      "as_of": "2026-11-24",
-      "value": 215549762725.17,
-      "pctile_365d": 85.8
+      "as_of": "2026-11-25",
+      "value": 210464120598.8,
+      "pctile_365d": 82.5
     },
     "realized_cap": {
-      "as_of": "2026-11-24",
-      "value": 1068131419354.71,
-      "pctile_365d": 21.9
+      "as_of": "2026-11-25",
+      "value": 1066826910564.87,
+      "pctile_365d": 19.2
     },
     "realized_cap_in_profit_share": {
-      "value_pct": 12.6,
+      "value_pct": 14.79,
       "series_ids": [
         "profit_0_to_10_percent_realized_cap",
         "profit_10_to_20_percent_realized_cap",
@@ -259,92 +259,92 @@
       "vocdd_sum_1m"
     ],
     "coindays_destroyed_sum_1m": {
-      "as_of": "2026-11-24",
-      "value": 413840214.0,
-      "pctile_365d": 75.9,
-      "pctile_4y": 63.7
+      "as_of": "2026-11-25",
+      "value": 416200198.0,
+      "pctile_365d": 76.4,
+      "pctile_4y": 64.2
     },
     "lth_coindays_destroyed_sum_1m": {
-      "as_of": "2026-11-24",
-      "value": 357078625.0,
-      "pctile_365d": 75.1,
-      "pctile_4y": 63.0
+      "as_of": "2026-11-25",
+      "value": 360576967.0,
+      "pctile_365d": 76.4,
+      "pctile_4y": 63.8
     },
     "lth_coindays_destroyed_sum_1w": {
-      "as_of": "2026-11-24",
-      "value": 91195265.0,
-      "pctile_365d": 86.8,
-      "pctile_4y": 71.3
+      "as_of": "2026-11-25",
+      "value": 89338008.0,
+      "pctile_365d": 84.7,
+      "pctile_4y": 70.0
     },
     "vocdd_sum_1m": {
-      "as_of": "2026-11-24",
-      "value": 1463680.0,
-      "pctile_365d": 67.4,
-      "pctile_4y": 64.0
+      "as_of": "2026-11-25",
+      "value": 1454515.0,
+      "pctile_365d": 66.8,
+      "pctile_4y": 63.6
     }
   },
   "mri_bands": {
     "source": "https://charts-cdn.checkonchain.com/btconchain/pricing/meanreversion_bands/meanreversion_bands_light.html",
     "note": "Check's published MRI bands chart. Whether it is his point-in-time (no-hindsight) variant is not confirmed.",
     "Q25": {
-      "as_of": "2026-11-24",
-      "value": 71369
+      "as_of": "2026-11-25",
+      "value": 71218
     },
     "Q50": {
-      "as_of": "2026-11-24",
-      "value": 89857
+      "as_of": "2026-11-25",
+      "value": 89744
     },
     "Q75": {
-      "as_of": "2026-11-24",
-      "value": 123558
+      "as_of": "2026-11-25",
+      "value": 123466
     },
     "rule": "Check: buy below Q25, start DCA-selling above Q75."
   },
   "urpd": {
-    "as_of": "2026-11-24",
-    "close": 59673.65,
-    "realized_cap_share_58k_70k_pct": 19.97,
-    "realized_cap_share_below_70k_pct": 30.98,
+    "as_of": "2026-11-25",
+    "close": 60272.75,
+    "realized_cap_share_58k_70k_pct": 20.26,
+    "realized_cap_share_below_70k_pct": 31.28,
     "check_ref": "Check: 25% of realized cap has formed every bear floor; 26.5% sits $58k-$70k (his figure). Bitview below-$70k cumulative share is the closer match to his number.",
     "sth_top_clusters_1k": [
       {
         "floor": 81000,
-        "btc": 414582
+        "btc": 412413
       },
       {
         "floor": 63000,
-        "btc": 340588
+        "btc": 335344
       },
       {
         "floor": 64000,
-        "btc": 317798
+        "btc": 314189
       },
       {
         "floor": 77000,
-        "btc": 269788
+        "btc": 268346
       },
       {
         "floor": 83000,
-        "btc": 231701
+        "btc": 231346
       },
       {
         "floor": 80000,
-        "btc": 220774
+        "btc": 218240
       }
     ],
-    "sth_btc_63k_68k": 786255,
-    "sth_btc_71k_73k": 95280,
-    "sth_supply": 4000704,
-    "source": "https://bitview.space/api/urpd/{all,sth}/2026-11-24",
+    "sth_btc_63k_68k": 772201,
+    "sth_btc_71k_73k": 91742,
+    "sth_supply": 4027611,
+    "source": "https://bitview.space/api/urpd/{all,sth}/2026-11-25",
     "sth_cutoff": "Bitview STH = <150d"
   },
   "hashrate": {
-    "as_of": "2026-11-24",
-    "hashrate_sma_1m_ehs": 1022.0,
+    "as_of": "2026-11-25",
+    "hashrate_sma_1m_ehs": 1016.1,
     "hashrate_ath_ehs": 1365.6,
-    "pct_of_ath": 74.8,
+    "pct_of_ath": 74.4,
     "sma_1m_peak_ehs": 1116.1,
-    "pct_of_sma_1m_peak": 91.6,
+    "pct_of_sma_1m_peak": 91.0,
     "series_ids": [
       "hashrate_sma_1m",
       "hashrate_ath"
