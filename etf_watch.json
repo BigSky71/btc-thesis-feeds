@@ -26,7 +26,7 @@
     },
     "etf_volume_1w_usd": {
       "date": "2026-11-25",
-      "value": 9043699199.43,
+      "value": 9063019003.28,
       "days_after_prior": 5
     }
   },
@@ -34,5 +34,5 @@
     "box_canonical": "/workspace/btc-thesis-dashboard/data/etf_watch.json",
     "github_repo_relative": "data/etf_watch.json"
   },
-  "refreshed_at_utc": "2026-11-26T12:50:54.714419+00:00"
+  "refreshed_at_utc": "2026-11-27T12:53:15.612656+00:00"
 }
