@@ -38,3 +38,4 @@ in `app/app.js` on each app change.
 |------|---------|
 | `price_history.json` | Daily BTC-USD closes 2010→last finished UTC day + Yahoo daily volume (columnar `t`/`c`/`v`) |
 | `sth_exhaustion.json` | Short-term holder seller-exhaustion gauge + weekly/2y charts (Bitview, last finished UTC day; written by `data/refresh_sth_exhaustion.py` in the dashboard repo) |
+| `metals_history.json` | Daily COMEX gold (`GC=F`) and silver (`SI=F`) futures closes, USD/oz (Yahoo; written by `data/refresh_metals_history.py` in the dashboard repo) |

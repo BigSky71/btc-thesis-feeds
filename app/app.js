@@ -5,7 +5,7 @@
 (function () {
 'use strict';
 
-const WEB_VERSION = 'web 1.6.10';
+const WEB_VERSION = 'web 1.6.11';
 const CHART_VERSION = 'chart v2.34';
 const FEED_BASE = '../';                         // same-origin GitHub Pages copy of btc-thesis-feeds
 const RAW_BASE = 'https://raw.githubusercontent.com/BigSky71/btc-thesis-feeds/main/';
@@ -42,6 +42,9 @@ const SERIES = [
   ['dma200', '200 DMA', '200 DMA', rgba(0.45, 0.85, 0.65), 1.4, MA_DASH],
   ['sthCostBasis', 'STH Cost Basis', 'STH CB', rgba(0.75, 0.55, 0.95), 1.4, null],
   ['trueMean', 'True Mean Price', 'True Mean', COL.trueMean, 1.4, null],
+  // COMEX futures (Yahoo GC=F / SI=F), not London spot. Own axes; not on the BTC y-scale.
+  ['gold', 'Gold (COMEX futures)', 'Gold', rgba(0.79, 0.64, 0.15), 1.6, null],       // antique gold, not TMM lemon / 10Y gold
+  ['silver', 'Silver (COMEX futures)', 'Silver', rgba(0.55, 0.66, 0.74), 1.6, null], // cool solid silver, not 50 WMA #DBE0F0 dashed
   ['bullInvalidation', 'Weekly invalidation', 'Weekly inv.', COL.bullInvalidation, 1.0, BULL_DASH],
   // Check MRI bands, cool (low Q) → warm (high Q), distinct from BTC orange.
   ['checkMriQ5',  'Check MRI Q5', 'MRI Q5',  rgba(0.10, 0.58, 0.64), 1.2, FLOOR_DASH],
@@ -147,6 +150,7 @@ function legendTitle(id) {
 const isMarker = id => id === 'checkQ50' || id === 'checkQ75';
 const isPriceDerived = id => id === 'spot' || id === 'wma50' || id === 'wma200' || id === 'dma200';
 const isSupportFloor = id => ['realizedPrice', 'lthCostBasis'].includes(id);
+const isMetal = id => id === 'gold' || id === 'silver';
 const isZoneSeries = id => id === 'buyerCushion' || id === 'liquidationMagnet';
 const CUSHION_LO = 62300, CUSHION_HI = 64200;
 const MAGNET_LO = 59500, MAGNET_HI = 62200; // fallback if banner_levels.json is missing
@@ -212,6 +216,8 @@ const CONFIG = {
 // ---------- formatting ----------
 const nf0 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const usd = v => '$' + nf0.format(Math.round(v));
+const usdCents = v => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtOverlayVal = (id, v) => id === 'silver' ? usdCents(v) : usd(v);
 const fx = (v, d) => Number(v).toFixed(d);
 const signed = (v, d = 2) => (v >= 0 ? '+' : '') + fx(v, d);
 const pct = f => fx(f * 100, 2) + '%';
@@ -750,6 +756,22 @@ function buildBundle(range, displayBars) {
   put('sthCostBasis', sth.length ? clip(sth) : []);
   put('trueMean', tm.length ? clip(tm) : []);
 
+  // Gold / silver: daily COMEX futures. Align to BTC bars (hold the last official close;
+  // never invent an intraday metals print). Yahoo blocks browser CORS, so this is the feed.
+  const metals = state.feeds['metals_history.json'];
+  const metalCol = (col) => {
+    if (!metals || !Array.isArray(metals.t) || !Array.isArray(metals[col])) return [];
+    const out = [];
+    for (let i = 0; i < metals.t.length; i++) if (isNum(metals[col][i]) && metals[col][i] > 0) out.push({ t: metals.t[i], v: metals[col][i] });
+    return out;
+  };
+  const goldDaily = metalCol('gold_v'), silverDaily = metalCol('silver_v');
+  put('gold', goldDaily.length && spotPts.length ? alignToBars(goldDaily, spotPts) : []);
+  put('silver', silverDaily.length && spotPts.length ? alignToBars(silverDaily, spotPts) : []);
+  if (goldDaily.length || silverDaily.length) {
+    notes.push(`Gold and silver are COMEX futures closes (Yahoo GC=F and SI=F), USD per troy ounce, not London spot.${metals && metals.as_of ? ` Daily history through ${metals.as_of}.` : ''} Each line has its own axis when it is on. Off until you turn them on in the legend.`);
+  }
+
   // Bull overlays (appendBullOverlays). Flat thesis lines still start at the May 2026 peak date.
   const lineDates = spotPts.map(p => p.t).filter(t => t >= CONFIG.weeklyConfirmVisibleFrom);
   const flat = (id, value) => { if (!(value > 0) || !lineDates.length) return put(id, []); put(id, lineDates.map(t => ({ t, v: value }))); };
@@ -850,13 +872,13 @@ function yScaleDomain() {
     const leash = Math.max(span * 1.25, mid * 0.02);
     const leashLo = sLo - leash, leashHi = sHi + leash;
     for (const s of vis) {
-      if (s.id === 'spot') continue;
+      if (s.id === 'spot' || isMetal(s.id)) continue;
       const always = isSupportFloor(s.id);
       for (const p of s.points) { if (!always && (p.v < leashLo || p.v > leashHi)) continue; if (p.v < lo) lo = p.v; if (p.v > hi) hi = p.v; }
     }
     rawMin = lo; rawMax = hi;
   } else {
-    const vals = vis.flatMap(s => s.points.map(p => p.v));
+    const vals = vis.filter(s => !isMetal(s.id)).flatMap(s => s.points.map(p => p.v));
     if (!vals.length) return null;
     rawMin = Math.min(...vals); rawMax = Math.max(...vals);
   }
@@ -869,7 +891,12 @@ function yScaleDomain() {
 function plottableSeries(domain) {
   const vis = visibleSeries();
   if (!domain) return vis;
-  return vis.filter(s => { let lo = Infinity, hi = -Infinity; for (const p of s.points) { if (p.v < lo) lo = p.v; if (p.v > hi) hi = p.v; } return hi >= domain[0] && lo <= domain[1]; });
+  return vis.filter(s => {
+    if (isMetal(s.id)) return true;
+    let lo = Infinity, hi = -Infinity;
+    for (const p of s.points) { if (p.v < lo) lo = p.v; if (p.v > hi) hi = p.v; }
+    return hi >= domain[0] && lo <= domain[1];
+  });
 }
 function xDomain() {
   const b = state.bundle; if (!b) return null;
@@ -911,7 +938,13 @@ function legendRows() {
     if (a.value != null) return -1; if (b2.value != null) return 1; return cmp(a, b2);
   };
   const isOn = r => state.enabled.has(r.id) && r.available;
-  return { on: rows.filter(isOn).sort(byPrice), off: rows.filter(r => !isOn(r)).sort(byPrice) };
+  // Metals sit after BTC-priced lines: sorting them by raw USD would pin them at the bottom in a misleading way.
+  const grp = (pred) => {
+    const btc = rows.filter(r => pred(r) && !isMetal(r.id)).sort(byPrice);
+    const metals = rows.filter(r => pred(r) && isMetal(r.id)).sort(byPrice);
+    return btc.concat(metals);
+  };
+  return { on: grp(isOn), off: grp(r => !isOn(r)) };
 }
 function toggleSeries(id) {
   if (state.enabled.has(id)) { if (id === 'spot') return; state.enabled.delete(id); }
@@ -1369,6 +1402,78 @@ function yPadRange(vals, minSpan) {
   else { const pad = Math.max((hi - lo) * 0.12, minSpan); lo -= pad; hi += pad; }
   return [lo, hi];
 }
+function niceTicks(lo, hi, target) {
+  if (!(hi > lo)) return [lo];
+  const raw = (hi - lo) / (target || 4);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const residual = raw / mag;
+  const step = residual >= 5 ? 5 * mag : residual >= 2 ? 2 * mag : mag;
+  const start = Math.ceil(lo / step) * step;
+  const ticks = [];
+  for (let v = start; v <= hi + step * 1e-9; v = +(v + step).toPrecision(12)) ticks.push(v);
+  return ticks.length ? ticks : [lo, hi];
+}
+function fmtMetalAxis(id, v, step) {
+  if (id === 'silver') {
+    if (step != null && step >= 1) return usd(v);
+    if (step != null && step >= 0.1) return '$' + (Math.round(v * 10) / 10).toFixed(1);
+    return usdCents(v);
+  }
+  return usd(v);
+}
+// Visible inset USD axes for gold/silver, drawn inside the plot so the BTC right
+// gutter (and the macro left spacer) stay unchanged. No extra width, no overflow.
+function drawMetalAxes(u) {
+  const axes = view && view.metalAxes;
+  if (!axes || !axes.length) return;
+  const ctx = u.ctx, dpr = devicePixelRatio || 1;
+  ctx.save();
+  ctx.font = AXIS_FONT.replace('11px', (11 * dpr) + 'px');
+  ctx.textAlign = 'left';
+  const plotL = u.bbox.left, plotT = u.bbox.top, plotB = u.bbox.top + u.bbox.height;
+  let cursorX = plotL + 5 * dpr;
+  for (const ax of axes) {
+    const ticks = niceTicks(ax.domain[0], ax.domain[1], 4);
+    const step = ticks.length > 1 ? ticks[1] - ticks[0] : null;
+    const labels = ticks.map(v => fmtMetalAxis(ax.id, v, step));
+    ctx.font = AXIS_FONT.replace('11px', (10 * dpr) + 'px');
+    const titleW = ctx.measureText(ax.title).width;
+    ctx.font = AXIS_FONT.replace('11px', (11 * dpr) + 'px');
+    const maxW = Math.max(titleW, ...labels.map(t => ctx.measureText(t).width));
+    const xLine = cursorX;
+    ctx.strokeStyle = ax.color;
+    ctx.lineWidth = Math.max(1, dpr);
+    ctx.beginPath();
+    ctx.moveTo(xLine, plotT + 13 * dpr);
+    ctx.lineTo(xLine, plotB);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(11,14,20,0.72)';
+    ctx.fillRect(xLine + 4 * dpr - 2 * dpr, plotT + 1 * dpr, titleW + 4 * dpr, 12 * dpr);
+    ctx.fillStyle = ax.color;
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold ' + AXIS_FONT.replace('11px', (10 * dpr) + 'px');
+    ctx.fillText(ax.title, xLine + 4 * dpr, plotT + 1 * dpr);
+    ctx.font = AXIS_FONT.replace('11px', (11 * dpr) + 'px');
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < ticks.length; i++) {
+      const y = u.valToPos(ticks[i], ax.scale, true);
+      if (y < plotT + 16 * dpr || y > plotB - 2 * dpr) continue;
+      ctx.strokeStyle = ax.color;
+      ctx.beginPath();
+      ctx.moveTo(xLine, y);
+      ctx.lineTo(xLine + 4 * dpr, y);
+      ctx.stroke();
+      const text = labels[i];
+      const tw = ctx.measureText(text).width;
+      ctx.fillStyle = 'rgba(11,14,20,0.72)';
+      ctx.fillRect(xLine + 6 * dpr - 2 * dpr, y - 7 * dpr, tw + 4 * dpr, 14 * dpr);
+      ctx.fillStyle = ax.color;
+      ctx.fillText(text, xLine + 6 * dpr, y);
+    }
+    cursorX = xLine + maxW + 16 * dpr;
+  }
+  ctx.restore();
+}
 
 // Everything the two plots need for the current bundle + toggles. Live polls reuse the same
 // uPlot instances (setData) when the plotted set and gutter are unchanged, so nothing flickers.
@@ -1391,7 +1496,24 @@ function computeView() {
     data.push(arr);
     const def = SID[s.id];
     if (isMarker(s.id)) sOpts.push({ label: def.short, stroke: def.color, width: 0, paths: () => null, points: { show: true, size: 10, width: 1.5, stroke: def.color, fill: def.color, space: 0 } });
-    else sOpts.push({ label: def.short, stroke: def.color, width: def.width, dash: def.dash || undefined, spanGaps: true, points: { show: false } });
+    else {
+      const opt = { label: def.short, stroke: def.color, width: def.width, dash: def.dash || undefined, spanGaps: true, points: { show: false } };
+      if (isMetal(s.id)) opt.scale = s.id === 'gold' ? 'yGold' : 'ySilver';
+      sOpts.push(opt);
+    }
+  }
+  const metalDomains = {};
+  const metalAxes = [];
+  for (const id of ['gold', 'silver']) {
+    const s = plot.find(p => p.id === id);
+    if (!s || !s.points.length || !xd) continue;
+    const vals = [];
+    for (const pt of s.points) if (pt.t >= xd[0] && pt.t <= xd[1] && isNum(pt.v)) vals.push(pt.v);
+    if (!vals.length) continue;
+    const scale = id === 'gold' ? 'yGold' : 'ySilver';
+    const mDomain = yPadRange(vals, id === 'gold' ? 5 : 0.2);
+    metalDomains[scale] = mDomain;
+    metalAxes.push({ id, scale, color: SID[id].color, domain: mDomain, title: SID[id].short });
   }
   const withMacro = showMacroPanel();
   const leftG = withMacro ? gutterWidthText('0.00%') : 0;
@@ -1400,8 +1522,9 @@ function computeView() {
   const vols = aggregateVolume(b.volumePoints, state.range).filter(p => p.t >= xd[0] - 40 * DAY && p.t <= xd[1]);
   const vmax = vols.length ? Math.max(...vols.map(p => p.v)) : 1;
   const macroOn = withMacro ? MACRO_SERIES.map(s => s.id).filter(id => state.macroEnabled.has(id) && macroPoints(id).length).join(',') : '';
-  const sig = plot.map(p => p.id).join(',') + '|' + leftG + '|' + rightG + '|' + (vols.length > 0) + '|' + state.range + '|' + withMacro + '|' + macroOn + '|' + zoneSig;
-  return { domain, xd, plot, xs, data, sOpts, gutter: rightG, leftG, rightG, withMacro, vols, vmax, sig };
+  const metalSig = metalAxes.map(a => a.id).join(',');
+  const sig = plot.map(p => p.id).join(',') + '|' + leftG + '|' + rightG + '|' + (vols.length > 0) + '|' + state.range + '|' + withMacro + '|' + macroOn + '|' + zoneSig + '|' + metalSig;
+  return { domain, xd, plot, xs, data, sOpts, gutter: rightG, leftG, rightG, withMacro, vols, vmax, sig, metalDomains, metalAxes };
 }
 function liveRedraw() {
   if (!uPrice || !view || !state.bundle || !visibleSeries().length) { renderChart(); return; }
@@ -1509,16 +1632,20 @@ function renderChart() {
     scales: { x: { time: true, range: () => [view.xd[0], view.xd[1]] } },
     ...(isIntraday(state.range) ? {} : { tzDate: ts => uPlot.tzDate(new Date(ts * 1e3), 'Etc/UTC') }),
   };
+  const priceScales = { ...common.scales, y: { range: () => view.domain } };
+  if (v.metalDomains) {
+    for (const name of Object.keys(v.metalDomains)) priceScales[name] = { range: () => view.metalDomains[name] };
+  }
   uPrice = new uPlot({
     ...common, height: priceH,
-    scales: { ...common.scales, y: { range: () => view.domain } },
+    scales: priceScales,
     axes: [
       { stroke: T.text2, font: XAXIS_FONT, grid: { stroke: T.grid, width: 0.5 }, ticks: { show: false }, size: 26, space: Math.max(60, width / 6), values: xAxisValues(state.range) },
       ...leftAxis,
       { side: 1, stroke: T.text2, font: AXIS_FONT, size: rightG, gap: 4, grid: { stroke: T.gridY, width: 0.5 }, ticks: { show: false }, space: Math.max(36, priceH / 6), values: (u, vals) => vals.map(axisUSD) },
     ],
     series: sOpts,
-    hooks: { drawClear: [drawPriceZones], setCursor: [u => onCursor(u, 'price')] },
+    hooks: { drawClear: [drawPriceZones], draw: [drawMetalAxes], setCursor: [u => onCursor(u, 'price')] },
   }, data, priceEl);
   // Volume strip: same width, same right gutter (blank labels), no date labels.
   const vols = v.vols;
@@ -1618,7 +1745,7 @@ function renderLegend() {
     if (r.available && isZoneSeries(r.id)) {
       const ext = zoneExtents(r.id);
       valTxt = ext ? bannerRangeText(ext[0], ext[1]) : null;
-    } else if (r.available && r.value != null) valTxt = usd(r.value);
+    } else if (r.available && r.value != null) valTxt = fmtOverlayVal(r.id, r.value);
     const val = valTxt ? `<span class="lval" style="color:${on ? def.color : T.text2}">${valTxt}</span>` : (!r.available ? '<span class="lna">n/a</span>' : '');
     return `<button class="lrow" data-sid="${r.id}" ${r.available ? '' : 'disabled'} aria-pressed="${on}">
       <span class="ldot" style="background:${dot};opacity:${on ? 1 : 0.35}"></span>
@@ -4611,7 +4738,7 @@ function setTab(tab) {
 }
 $('#tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json', 'banner_levels.json', 'buyer_cushion.json'];
+const FEEDS = ['price_history.json', 'checkonchain_overlays.json', 'bull_levels.json', 'bull_watch.json', 'support_floors.json', 'btd_watch.json', 'etf_watch.json', 'funding_watch.json', 'sth_exhaustion.json', 'macro_history.json', 'liquidity_history.json', 'buyer_exhaustion.json', 'banner_levels.json', 'buyer_cushion.json', 'metals_history.json'];
 async function refreshAll() {
   if (state.feedsLoading) return;
   state.feedsLoading = true; setSpinner();
